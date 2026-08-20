@@ -1,0 +1,10 @@
+.build/
+build/
+dist/
+.swiftpm/
+DerivedData/
+.playwright-mcp/
+*.p12
+*.p8
+*.mobileprovision
+.DS_Store

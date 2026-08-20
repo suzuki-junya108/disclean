@@ -1,0 +1,56 @@
+/* HEAVY CANDY — design tokens (docs/design-system.md v1.0)
+   Swift 側 DesignTokens.swift と同値。変更は design-system.md を先に更新すること。 */
+:root {
+  /* color */
+  --ink:        #16121F;
+  --paper:      #FFF2DC;
+  --void:       #100D18;
+  --lime:       #C6F833;
+  --sunbeam:    #FFD23F;
+  --sky:        #4CD8FF;
+  --grape:      #6C2BEA;
+  --tomato:     #FF4A32;
+  --bubblegum:  #FF6FB5;
+
+  /* surface roles — 明色: 地=paper / 暗色: 地=void（design-system.md §2.3） */
+  --ground:     var(--paper);
+  --card:       var(--paper);
+  --line:       var(--ink);
+  --on-card:    var(--ink);
+
+  /* shape */
+  --r-card: 22px;
+  --r-pill: 999px;
+  --r-chunk: 14px;
+  --key: 3px;
+
+  /* type scale */
+  --t-hero: 84px;
+  --t-d1: 44px;
+  --t-d2: 28px;
+  --t-chunk: 32px;
+  --t-body: 15px;
+  --t-label: 12px;
+  --t-caption: 12px;
+
+  /* motion */
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --drop-ms: 420ms;
+  --hover-ms: 120ms;
+
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: var(--void);
+    --card: #1C1726;
+    --line: var(--paper);
+    --on-card: var(--paper);
+  }
+}
+:root[data-theme="dark"] {
+  --ground: var(--void);
+  --card: #1C1726;
+  --line: var(--paper);
+  --on-card: var(--paper);
+}

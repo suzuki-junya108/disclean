@@ -1,0 +1,61 @@
+[
+  {
+    "id": "user-caches",
+    "title": "Application caches",
+    "titleJa": "アプリのキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": ["~/Library/Caches"],
+    "minAgeDays": 3,
+    "whatIsLost": "Per-app caches. Most apps rebuild them; a few re-download assets.",
+    "whatIsLostJa": "アプリごとの一時データ。多くは自動で作り直されますが、再ダウンロードが必要なものもあります。",
+    "minMacOS": "14.0"
+  },
+  {
+    "id": "user-logs",
+    "title": "Application logs",
+    "titleJa": "アプリのログ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": ["~/Library/Logs"],
+    "minAgeDays": 7,
+    "whatIsLost": "Diagnostic logs. Useful only when investigating a past crash.",
+    "whatIsLostJa": "診断用のログ。過去の不具合を調べるとき以外は使いません。",
+    "minMacOS": "14.0"
+  },
+  {
+    "id": "chrome-cache",
+    "title": "Google Chrome cache",
+    "titleJa": "Google Chrome のキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": ["~/Library/Caches/Google/Chrome"],
+    "requiresQuitApps": ["com.google.Chrome"],
+    "whatIsLost": "Cached web assets. Sites reload them; logins are kept.",
+    "whatIsLostJa": "ウェブの一時データ。サイトは読み直されます。ログイン状態は保たれます。",
+    "minMacOS": "14.0"
+  },
+  {
+    "id": "spotify-cache",
+    "title": "Spotify cache",
+    "titleJa": "Spotify のキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": ["~/Library/Application Support/Spotify/PersistentCache"],
+    "requiresQuitApps": ["com.spotify.client"],
+    "whatIsLost": "Streamed audio cache; re-downloaded on next play.",
+    "whatIsLostJa": "再生済み音源の一時データ。次の再生時に取り直されます。",
+    "minMacOS": "14.0"
+  },
+  {
+    "id": "adobe-media-cache",
+    "title": "Adobe media cache",
+    "titleJa": "Adobe のメディアキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": ["~/Library/Application Support/Adobe/Common/Media Cache Files"],
+    "whatIsLost": "Rendered previews; regenerated when a project is reopened.",
+    "whatIsLostJa": "プレビュー用の中間ファイル。プロジェクトを開き直すと作り直されます。",
+    "minMacOS": "14.0"
+  }
+]

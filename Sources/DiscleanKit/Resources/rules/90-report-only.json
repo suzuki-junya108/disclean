@@ -1,0 +1,74 @@
+[
+  {
+    "id": "trash",
+    "title": "Trash",
+    "titleJa": "ゴミ箱",
+    "tier": "C",
+    "kind": "report",
+    "paths": ["~/.Trash"],
+    "whatIsLost": "Everything you already chose to delete. disclean does not empty it.",
+    "whatIsLostJa": "あなたが捨てたもの。ディスクリンは空にしません。",
+    "manualSteps": "Finder のゴミ箱を開き、内容を確認してから「空にする」を選びます。",
+    "minMacOS": "14.0"
+  },
+  {
+    "id": "xcode-archives",
+    "title": "Xcode Archives",
+    "titleJa": "Xcode のアーカイブ",
+    "tier": "C",
+    "kind": "report",
+    "paths": ["~/Library/Developer/Xcode/Archives"],
+    "whatIsLost": "Shipped build archives and their dSYMs; needed to symbolicate old crashes.",
+    "whatIsLostJa": "配布済みビルドの控えと dSYM。過去のクラッシュ解析に必要です。",
+    "manualSteps": "Xcode の Organizer で不要なアーカイブを選び、右クリックから削除します。",
+    "minMacOS": "14.0"
+  },
+  {
+    "id": "downloads",
+    "title": "Downloads folder",
+    "titleJa": "ダウンロードフォルダ",
+    "tier": "C",
+    "kind": "report",
+    "paths": ["~/Downloads"],
+    "whatIsLost": "Files you downloaded. Some cannot be downloaded again.",
+    "whatIsLostJa": "ダウンロードしたファイル。取り直せないものが混ざります。",
+    "manualSteps": "Finder で大きい順に並べ替え、中身を確認してから手で削除します。",
+    "minMacOS": "14.0"
+  },
+  {
+    "id": "ollama-models",
+    "title": "Ollama models",
+    "titleJa": "Ollama のモデル",
+    "tier": "C",
+    "kind": "report",
+    "paths": ["~/.ollama"],
+    "whatIsLost": "Downloaded model weights (tens of GB, slow to re-download).",
+    "whatIsLostJa": "ダウンロード済みのモデル。数十 GB を取り直すことになります。",
+    "manualSteps": "ollama list で確認し、ollama rm <model> で個別に削除します。",
+    "minMacOS": "14.0"
+  },
+  {
+    "id": "huggingface-cache",
+    "title": "Hugging Face cache",
+    "titleJa": "Hugging Face のキャッシュ",
+    "tier": "C",
+    "kind": "report",
+    "paths": ["~/.cache/huggingface"],
+    "whatIsLost": "Downloaded model weights and datasets.",
+    "whatIsLostJa": "ダウンロード済みのモデルとデータセット。取り直しに時間がかかります。",
+    "manualSteps": "huggingface-cli delete-cache で対象を選んで削除します。",
+    "minMacOS": "14.0"
+  },
+  {
+    "id": "colima-disk",
+    "title": "Colima disk image",
+    "titleJa": "Colima のディスクイメージ",
+    "tier": "C",
+    "kind": "report",
+    "paths": ["~/.colima"],
+    "whatIsLost": "The Linux VM disk, including anything stored inside it.",
+    "whatIsLostJa": "Linux VM のディスク。中に置いたものも一緒に消えます。",
+    "manualSteps": "colima stop && colima delete で VM ごと作り直します（中身は失われます）。",
+    "minMacOS": "14.0"
+  }
+]

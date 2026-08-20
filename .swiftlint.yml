@@ -1,0 +1,39 @@
+included:
+  - Sources
+  - Tests
+disabled_rules:
+  # 整形は swift-format を出典にする。この 2 つは swift-format の出力と衝突するため無効化する
+  # （swift-format が末尾カンマを付け、開き波括弧を改行後に置く）。
+  - trailing_comma
+  - opening_brace
+opt_in_rules:
+  - force_unwrapping
+analyzer_rules: []
+force_unwrapping:
+  severity: error
+force_try:
+  severity: error
+force_cast:
+  severity: error
+line_length:
+  warning: 140
+  error: 200
+  ignores_comments: true
+  ignores_urls: true
+type_body_length:
+  warning: 400
+  error: 600
+file_length:
+  warning: 600
+  error: 900
+function_body_length:
+  warning: 80
+  error: 140
+cyclomatic_complexity:
+  warning: 15
+  error: 25
+identifier_name:
+  min_length: 1
+  excluded: [id, ts, at, to, up]
+type_name:
+  min_length: 3
