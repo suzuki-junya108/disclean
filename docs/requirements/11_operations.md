@@ -34,7 +34,7 @@
 
 **Build & Code Quality**
 - [ ] `swift build -c release --arch arm64 --arch x86_64` が 0 errors（成果物 `./.build/apple/Products/Release/disclean` が存在）
-- [ ] `xcodebuild -project Disclean.xcodeproj -scheme Disclean -configuration Release build` が `BUILD SUCCEEDED`
+- [x] `tools/make-app.sh --universal --sign …` が署名済みユニバーサルの `Disclean.app` を生成
 - [ ] `swiftlint lint --strict` が 0 violations
 - [ ] `xcrun swift-format lint --recursive --strict Sources Tests` が 0 diagnostics
 - [ ] バンドルサイズ上限: `N/A — reason: Web バンドルを持たないネイティブアプリのため。` 代わりに CLI バイナリ 20MB 以内を目安とする
@@ -44,7 +44,7 @@
 - [ ] `swift test --enable-code-coverage` 全 PASS、`DiscleanKit` 行カバレッジ 80% 以上
 - [ ] `PathGuard` と `RuleCatalog` の検証経路が分岐カバレッジ 100%
 - [ ] `acceptance/run-all.sh`（AT-001〜AT-010, AT-014〜AT-018）全 PASS
-- [ ] `xcodebuild test -scheme DiscleanUITests`（AT-011〜AT-013）全 PASS
+- [ ] `xcodebuild test -scheme DiscleanUITests`（AT-011〜AT-013）: `N/A — reason: Xcode プロジェクトを持たない構成にしたため（§7）。` GUI は実機の手動 QA（MQ-6, MQ-14）で確認する
 
 **Verification**
 - [ ] §10.5 の WS-a / WS-d / WS-h / WS-i / WS-j / WS-k / WS-l / WS-o / WS-p が全 PASS（WS-b, c, e, f, g は N/A — reason: ネットワーク待受・iOS/Android/Flutter を持たないため。根拠は ../REQUIREMENTS.md §10.5 の各行）

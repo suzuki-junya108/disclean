@@ -132,7 +132,7 @@ python3 -m http.server 4173 --directory site
 | WS-g | Flutter analyze | `N/A` | N/A — reason: Swift のみで Flutter を使用しない |
 | WS-h | release ビルド成果物 | `swift build -c release && test -x ./.build/release/disclean` | exit 0（`Build complete!` を含み、実行可能ファイルが存在） |
 | WS-i | 単体テスト起動 | `swift test` | exit 0 かつ stdout に `Test run with` と `passed` を含む |
-| WS-j | GUI ビルド | `xcodebuild -project Disclean.xcodeproj -scheme Disclean -configuration Debug -destination 'platform=macOS' build` | stdout に `BUILD SUCCEEDED` を含み exit 0 |
+| WS-j | GUI ビルド | `tools/make-app.sh`（SwiftPM の実行ファイルにバンドル構造を被せる方式。Xcode プロジェクトは持たない） | `build/Disclean.app` が生成され exit 0 |
 | WS-k | scan が読み取り専用 | `DISCLEAN_STATE_DIR=$(mktemp -d) ./.build/release/disclean scan --json > /tmp/disclean-ws-k.json; jq -e '.items \| length >= 0' /tmp/disclean-ws-k.json` | exit 0 かつ `$DISCLEAN_STATE_DIR/quarantine` が空（`find "$DISCLEAN_STATE_DIR/quarantine" -mindepth 1 \| wc -l` が `0`） |
 | WS-l | Lint clean | `swiftlint lint --strict` | exit 0 かつ `0 violations` を含む |
 | WS-m | LP が単体で開ける | `python3 -m http.server 4173 --directory site & sleep 2; curl -sf -o /dev/null -w '%{http_code}' http://localhost:4173/index.html` | `200` を出力（ビルド工程なしで配信できる） |
