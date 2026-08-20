@@ -37,7 +37,8 @@ enum Tokens {
     // MARK: - 書体（§3）
 
     static func display(_ size: CGFloat) -> Font {
-        custom("BricolageGrotesque-ExtraBold", size: size, fallback: .system(size: size, weight: .heavy, design: .rounded))
+        custom(
+            "BricolageGrotesque-ExtraBold", size: size, fallback: .system(size: size, weight: .heavy, design: .rounded))
     }
 
     static func body(_ size: CGFloat = 15) -> Font {
@@ -49,7 +50,8 @@ enum Tokens {
     }
 
     static func data(_ size: CGFloat = 12) -> Font {
-        custom("MartianMono-SemiBold", size: size, fallback: .system(size: size, weight: .semibold, design: .monospaced))
+        custom(
+            "MartianMono-SemiBold", size: size, fallback: .system(size: size, weight: .semibold, design: .monospaced))
     }
 
     /// 同梱フォントがあれば使い、無ければシステムのフォールバックで描く（機能は損なわない）。

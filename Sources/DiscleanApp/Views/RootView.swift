@@ -55,7 +55,8 @@ struct RootView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .buttonStyle(
-                    CandyButtonStyle(fill: model.section == section ? Tokens.lime : surface.card))
+                    CandyButtonStyle(fill: model.section == section ? Tokens.lime : surface.card)
+                )
                 .accessibilityAddTraits(model.section == section ? [.isSelected] : [])
             }
             Spacer()

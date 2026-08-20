@@ -155,8 +155,10 @@ struct QuarantineView: View {
                                         .font(Tokens.data(22))
                                     Text("\(run.entries.count) 件 / \(run.runId)")
                                         .font(Tokens.data(11))
-                                    Text("失効まで \(daysLeft(run)) 日（\(run.expiresAt.formatted(date: .abbreviated, time: .shortened))）")
-                                        .font(Tokens.body(12))
+                                    Text(
+                                        "失効まで \(daysLeft(run)) 日（\(run.expiresAt.formatted(date: .abbreviated, time: .shortened))）"
+                                    )
+                                    .font(Tokens.body(12))
                                 }
                                 .foregroundStyle(Tokens.ink)
                                 Spacer()
@@ -250,13 +252,17 @@ struct SettingsView: View {
                             "隔離庫に置いておく日数: \(model.config.quarantineTtlDays) 日",
                             value: Binding(
                                 get: { model.config.quarantineTtlDays },
-                                set: { model.config.quarantineTtlDays = $0; model.saveConfig() }),
+                                set: {
+                                    model.config.quarantineTtlDays = $0; model.saveConfig()
+                                }),
                             in: 1...90)
                         Stepper(
                             "同時に調べる数: \(model.config.concurrency)",
                             value: Binding(
                                 get: { model.config.concurrency },
-                                set: { model.config.concurrency = $0; model.saveConfig() }),
+                                set: {
+                                    model.config.concurrency = $0; model.saveConfig()
+                                }),
                             in: 1...32)
                         Button("ルールの上書きフォルダを開く") { model.openRulesFolder() }
                             .buttonStyle(CandyButtonStyle(fill: Tokens.sky))
@@ -272,7 +278,9 @@ struct SettingsView: View {
                             "掃除ルールの更新を自動で受け取る",
                             isOn: Binding(
                                 get: { model.config.autoUpdate },
-                                set: { model.config.autoUpdate = $0; model.saveConfig() }))
+                                set: {
+                                    model.config.autoUpdate = $0; model.saveConfig()
+                                }))
                         Text("受け取っても、消す対象が増える変更はあなたが承認するまで有効になりません。オフにすると通信そのものが起きません。")
                             .font(Tokens.body(12))
                             .fixedSize(horizontal: false, vertical: true)
