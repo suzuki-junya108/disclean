@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    # 実行 OS は明示的に固定する。macos-latest は GitHub 側の切り替えで
+    # ある日突然変わり、無関係なタイミングで壊れるため。
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          swift --version
+          xcodebuild -version
+
+      - name: Install lint tools
+        run: brew install swiftlint jq
+
+      - name: SwiftLint
+        run: swiftlint lint --strict
+
+      - name: swift-format
+        run: xcrun swift-format lint --recursive --strict Sources Tests
+
+      - name: Build (release)
+        run: swift build -c release
+
+      - name: Unit and integration tests
+        run: swift test --enable-code-coverage
+
+      - name: Acceptance tests
+        run: |
+          swift build   # AT-016 はテスト鍵を注入するため debug ビルドを使う
+          tests/acceptance/run-all.sh
+
+      - name: Build app bundle
+        run: tools/make-app.sh
+
+  latest-os-canary:
+    # 次期 OS での破綻を早めに知るための見張り。失敗しても CI は落とさない。
+    runs-on: macos-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - run: swift build -c release
+      - run: swift test
