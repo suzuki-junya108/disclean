@@ -36,7 +36,7 @@ jobs:
       - name: Acceptance tests
         run: |
           swift build   # AT-016 はテスト鍵を注入するため debug ビルドを使う
-          tests/acceptance/run-all.sh
+          acceptance/run-all.sh
 
       - name: Build app bundle
         run: tools/make-app.sh

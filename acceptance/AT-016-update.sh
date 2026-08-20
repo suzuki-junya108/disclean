@@ -6,7 +6,7 @@ source "$(dirname "$0")/lib.sh"
 setup_sandbox
 trap cleanup EXIT
 
-REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DEBUG_BIN="$REPO_ROOT/.build/debug/disclean"
 CATALOG_TOOL="$REPO_ROOT/.build/debug/disclean-catalog"
 SERVE_DIR="$SANDBOX/serve"
@@ -40,7 +40,17 @@ ACCESS_LOG="$SANDBOX/access.log"
 cd "$SERVE_DIR" && python3 -m http.server 4599 > "$ACCESS_LOG" 2>&1 &
 SERVER_PID=$!
 cd "$REPO_ROOT"
-sleep 1
+
+# CI では起動が遅れることがあるため、実際に応答するまで待つ（sleep では足りない）。
+for _ in $(seq 1 50); do
+    curl -sf -o /dev/null "http://127.0.0.1:4599/catalog-manifest.json" && break
+    sleep 0.2
+done
+if ! curl -sf -o /dev/null "http://127.0.0.1:4599/catalog-manifest.json"; then
+    echo "テスト用の配信サーバが起動しませんでした" >&2
+    exit 1
+fi
+
 export DISCLEAN_UPDATE_ENDPOINT="http://127.0.0.1:4599/"
 export DISCLEAN_AUTO_UPDATE=1
 

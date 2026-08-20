@@ -9,7 +9,7 @@
 - **Runtime**: macOS 14.0 以降（`platforms: [.macOS(.v14)]`）。開発機は macOS 26.5.2 (25F84) / Apple M4 / 10 コア
 - **Package manager**: Swift Package Manager（Swift 6.3.3 同梱）。CocoaPods / Carthage は使用しない
 - **Framework**: なし（Foundation + AppKit + SwiftUI のみ）。CLI 引数解析に swift-argument-parser 1.8.2
-- **Test framework**: swift-testing（Swift 6.3 ツールチェーン同梱, Testing Library Version 1902）を DiscleanKit の単体・結合テストに使用。GUI は XCTest + XCUITest（Xcode 26.6 同梱）。受入テストは bash スクリプト（`tests/acceptance/AT-*.sh`）+ jq 1.7
+- **Test framework**: swift-testing（Swift 6.3 ツールチェーン同梱, Testing Library Version 1902）を DiscleanKit の単体・結合テストに使用。GUI は XCTest + XCUITest（Xcode 26.6 同梱）。受入テストは bash スクリプト（`acceptance/AT-*.sh`）+ jq 1.7
 - **Lint / Format**: SwiftLint 0.65.0（`.swiftlint.yml` をリポジトリ直下に配置、`--strict` で 0 violations が CI ゲート）+ swift-format 6.3.0（Xcode 26.6 同梱の `xcrun swift-format`、`.swift-format` をリポジトリ直下に配置）
 - **Build target**: ユニバーサルバイナリ（arm64 + x86_64）。CLI は `swift build -c release --arch arm64 --arch x86_64`、GUI は Xcode プロジェクトで `Disclean.app` を生成
 - **Build output**:

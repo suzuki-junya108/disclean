@@ -9,12 +9,12 @@
 |---|---|---|---|
 | Unit | `PathGuard` の SG-01〜SG-09、`RuleCatalog` のスキーマ検証・上書き解決、`Planner` の既定選択、サイズ集計、ULID 生成、JSON エンコード/デコード | swift-testing (Testing Library 1902) | `swift test --filter DiscleanKitTests` |
 | Integration | 一時ディレクトリ上の fixture に対する scan → plan → apply → undo → purge の一巡、`index.json` と実体の整合、監査ログの追記 | swift-testing | `swift test --filter IntegrationTests` |
-| E2E (CLI) | ビルド済みバイナリを実行し、stdout の JSON を jq で検証（AT-001〜AT-010） | bash + jq 1.7 | `tests/acceptance/run-all.sh` |
-| E2E (更新) | ローカル HTTP サーバー（テスト鍵で署名した manifest を配信）に対する取得・検証・差分分類・承認適用・巻き戻し拒否（AT-016〜AT-017） | bash + jq + python3 `http.server` | `tests/acceptance/AT-016-update.sh` / `AT-017-app-update.sh` |
-| E2E (OS ドリフト) | `env.json` の書き換えによる OS 変化検知、`minMacOS` / `maxMacOS` の評価（AT-018） | bash + jq | `tests/acceptance/AT-018-os-drift.sh` |
+| E2E (CLI) | ビルド済みバイナリを実行し、stdout の JSON を jq で検証（AT-001〜AT-010） | bash + jq 1.7 | `acceptance/run-all.sh` |
+| E2E (更新) | ローカル HTTP サーバー（テスト鍵で署名した manifest を配信）に対する取得・検証・差分分類・承認適用・巻き戻し拒否（AT-016〜AT-017） | bash + jq + python3 `http.server` | `acceptance/AT-016-update.sh` / `AT-017-app-update.sh` |
+| E2E (OS ドリフト) | `env.json` の書き換えによる OS 変化検知、`minMacOS` / `maxMacOS` の評価（AT-018） | bash + jq | `acceptance/AT-018-os-drift.sh` |
 | E2E (GUI) | 起動 → スキャン → 選択 → 実行 → 隔離庫 → 復元 → 設定、レバーのキーボード操作（AT-011〜AT-013, AT-014 AC3） | XCUITest (Xcode 26.6) | `xcodebuild test -project Disclean.xcodeproj -scheme DiscleanUITests -destination 'platform=macOS'` |
-| Design parity | Swift と CSS のトークン値の一致、ぼかし影・グラデーションの禁則（AT-014） | bash + grep | `tests/acceptance/AT-014-design-parity.sh` |
-| E2E (LP) | 7 セクションの存在、360px 無横スクロール、JS 無効時の可読性、axe-core、外部ホスト数、reduced-motion（AT-015） | Playwright 1.56 + axe-core 4.10 | `tests/acceptance/AT-015-lp.sh` |
+| Design parity | Swift と CSS のトークン値の一致、ぼかし影・グラデーションの禁則（AT-014） | bash + grep | `acceptance/AT-014-design-parity.sh` |
+| E2E (LP) | 7 セクションの存在、360px 無横スクロール、JS 無効時の可読性、axe-core、外部ホスト数、reduced-motion（AT-015） | Playwright 1.56 + axe-core 4.10 | `acceptance/AT-015-lp.sh` |
 | Manual QA | 実機での回収量確認、FDA 未付与時の表示、Time Machine スナップショット有無での容量表示 | 手動 | §10.4 |
 
 #### 10.2 テスト用の隔離環境

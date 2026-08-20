@@ -45,13 +45,13 @@ swiftlint lint --strict                       # 0 violations 期待
 xcrun swift-format lint --recursive --strict Sources Tests   # 0 diagnostics 期待
 swift build -c release                        # "Build complete!" 期待
 swift test --enable-code-coverage             # 全 PASS + DiscleanKit 行カバレッジ 80% 以上
-tests/acceptance/run-all.sh                   # AT-001〜AT-010 全 PASS
+acceptance/run-all.sh                   # AT-001〜AT-010 全 PASS
 xcodebuild -project Disclean.xcodeproj -scheme Disclean -destination 'platform=macOS' build   # BUILD SUCCEEDED
 xcodebuild test -project Disclean.xcodeproj -scheme DiscleanUITests -destination 'platform=macOS'  # AT-011〜AT-013
-tests/acceptance/AT-014-design-parity.sh      # Swift と CSS のトークン一致 + 禁則（ぼかし影 / グラデーション）
-tests/acceptance/AT-015-lp.sh                 # LP の 7 セクション / 無横スクロール / JS 無効 / axe / 外部ホスト
-tests/acceptance/AT-016-update.sh             # 署名不一致 / 巻き戻し / 承認前の非適用 / 無効化時に通信 0
-tests/acceptance/AT-018-os-drift.sh           # OS 変化の検知 / minMacOS・maxMacOS の評価
+acceptance/AT-014-design-parity.sh      # Swift と CSS のトークン一致 + 禁則（ぼかし影 / グラデーション）
+acceptance/AT-015-lp.sh                 # LP の 7 セクション / 無横スクロール / JS 無効 / axe / 外部ホスト
+acceptance/AT-016-update.sh             # 署名不一致 / 巻き戻し / 承認前の非適用 / 無効化時に通信 0
+acceptance/AT-018-os-drift.sh           # OS 変化の検知 / minMacOS・maxMacOS の評価
 ```
 
 ### 14.3 ディレクトリ構成
@@ -96,7 +96,7 @@ mac_cleanup/
 │   ├── DiscleanKitTests/           # swift-testing（Unit）
 │   ├── IntegrationTests/          # swift-testing（一時ディレクトリ上の一巡）
 │   └── DiscleanUITests/         # XCUITest
-├── tests/acceptance/              # AT-001〜AT-013 の bash + jq
+├── acceptance/              # AT-001〜AT-013 の bash + jq
 │   └── run-all.sh
 ├── docs/
 │   ├── REQUIREMENTS.md

@@ -74,13 +74,13 @@
     - GIVEN 追加のユーザールールを置いていない状態
     - WHEN `disclean rules list --json` を実行する
     - THEN stdout の `.rules \| length` が 1 以上、すべての要素が `source == "builtin"`
-    - 検証コマンド: `tests/acceptance/AT-001-rules.sh`
+    - 検証コマンド: `acceptance/AT-001-rules.sh`
     - 期待結果: exit 0, 出力に `"valid": true` を含む
   - AC2:
     - GIVEN `$DISCLEAN_CONFIG_DIR/rules.d/99-bad.json` に `{"id":"evil","tier":"A","kind":"directory","paths":["/"]}` を置く
     - WHEN `disclean rules validate` を実行する
     - THEN stderr に `forbidden path "/"` を含み、有効カタログにこのルールが含まれない
-    - 検証コマンド: `tests/acceptance/AT-001-rules.sh`
+    - 検証コマンド: `acceptance/AT-001-rules.sh`
     - 期待結果: exit 5
 
 #### F-02: スキャン（読み取り専用）
@@ -114,19 +114,19 @@
     - GIVEN 一時ディレクトリに 1MiB のファイルを 3 個作り、それを対象にするユーザールールを置く
     - WHEN `disclean scan --rule test-fixture --json` を実行する
     - THEN `.items[0].bytes` が 3145728 以上 3670016 以下（ブロック丸め許容）、`.items[0].state == "ready"`
-    - 検証コマンド: `tests/acceptance/AT-002-scan.sh`
+    - 検証コマンド: `acceptance/AT-002-scan.sh`
     - 期待結果: exit 0
   - AC2:
     - GIVEN 直前に同じスキャンを実行済み（キャッシュあり）
     - WHEN `time disclean scan --rule test-fixture --json` を実行する
     - THEN 実時間が 5.0 秒未満
-    - 検証コマンド: `tests/acceptance/AT-002-scan.sh`
+    - 検証コマンド: `acceptance/AT-002-scan.sh`
     - 期待結果: exit 0, 出力に `"cacheHit": true` を含む
   - AC3:
     - GIVEN `DISCLEAN_STATE_DIR` を空の一時ディレクトリに設定する
     - WHEN `disclean scan --json` を実行する
     - THEN `$DISCLEAN_STATE_DIR/quarantine` 配下のエントリ数が 0 のまま
-    - 検証コマンド: `tests/acceptance/AT-002-scan.sh`
+    - 検証コマンド: `acceptance/AT-002-scan.sh`
     - 期待結果: exit 0, `find "$DISCLEAN_STATE_DIR/quarantine" -mindepth 1 \| wc -l` が `0`
 
 #### F-03: 空き容量の計測と回収量の帰属
@@ -154,13 +154,13 @@
     - GIVEN 任意の状態
     - WHEN `disclean scan --json` を実行する
     - THEN `.capacity.strictBytes > 0` かつ `.capacity.importantBytes >= .capacity.strictBytes`
-    - 検証コマンド: `tests/acceptance/AT-003-capacity.sh`
+    - 検証コマンド: `acceptance/AT-003-capacity.sh`
     - 期待結果: exit 0
   - AC2:
     - GIVEN 隔離対象が 1 件以上ある状態で `disclean apply --yes` を実行した直後
     - WHEN 出力を読む
     - THEN 「回収量」は隔離バイト合計として表示され、空き容量差分は `参考` ラベル付きの別行として表示される
-    - 検証コマンド: `tests/acceptance/AT-003-capacity.sh`
+    - 検証コマンド: `acceptance/AT-003-capacity.sh`
     - 期待結果: exit 0, 出力に `reclaimedBytes` と `freeSpaceDeltaBytes` の両キーを含む
 
 #### F-04: プラン生成と選択
@@ -191,13 +191,13 @@
     - GIVEN Tier A と Tier B のルールがそれぞれ 1 件以上「ready」である
     - WHEN `disclean plan --json` を実行する
     - THEN `.selected` の全要素の tier が `A` であり、Tier B の項目は含まれない
-    - 検証コマンド: `tests/acceptance/AT-004-plan.sh`
+    - 検証コマンド: `acceptance/AT-004-plan.sh`
     - 期待結果: exit 0
   - AC2:
     - GIVEN Tier C のルール id `trash` が存在する
     - WHEN `disclean plan --select trash` を実行する
     - THEN stderr に `tier C rules cannot be selected` を含む
-    - 検証コマンド: `tests/acceptance/AT-004-plan.sh`
+    - 検証コマンド: `acceptance/AT-004-plan.sh`
     - 期待結果: exit 2
 
 #### F-05: 実行（隔離庫への移動）と安全ガード
@@ -246,19 +246,19 @@
     - GIVEN 一時ディレクトリ配下に fixture を作り、それを対象とする Tier A ルールを置く
     - WHEN `disclean apply --rule test-fixture --yes --json` を実行する
     - THEN `.quarantined \| length == 3`、元パスにファイルが存在せず、`$DISCLEAN_STATE_DIR/quarantine/<runId>/` 配下に 3 件存在する
-    - 検証コマンド: `tests/acceptance/AT-005-apply-undo.sh`
+    - 検証コマンド: `acceptance/AT-005-apply-undo.sh`
     - 期待結果: exit 0
   - AC2:
     - GIVEN `paths` に `$HOME` 直下（`~/Library`）を指定したユーザールールを置く
     - WHEN `disclean apply --rule shallow-test --yes --json` を実行する
     - THEN `.skipped[0].reason == "too-shallow"` であり `.quarantined` が空
-    - 検証コマンド: `tests/acceptance/AT-005-apply-undo.sh`
+    - 検証コマンド: `acceptance/AT-005-apply-undo.sh`
     - 期待結果: exit 0, `~/Library` が変更されていない
   - AC3:
     - GIVEN 非対話環境（`< /dev/null`）
     - WHEN `disclean apply` を `--yes` なしで実行する
     - THEN stderr に `--yes is required in non-interactive mode` を含み、隔離庫が空のまま
-    - 検証コマンド: `tests/acceptance/AT-005-apply-undo.sh`
+    - 検証コマンド: `acceptance/AT-005-apply-undo.sh`
     - 期待結果: exit 2
 
 #### F-06: 隔離庫の失効処理
@@ -289,13 +289,13 @@
     - GIVEN `DISCLEAN_QUARANTINE_TTL_DAYS=0` で `disclean apply --yes` を実行済み
     - WHEN 次に `disclean scan` を実行する
     - THEN 直前の run のディレクトリが削除され、`index.json` の `runs` が空になる
-    - 検証コマンド: `tests/acceptance/AT-006-purge.sh`
+    - 検証コマンド: `acceptance/AT-006-purge.sh`
     - 期待結果: exit 0, 出力に `"purged"` を含む
   - AC2:
     - GIVEN 隔離庫に有効期限内の run が 1 件ある
     - WHEN `disclean purge --json` を実行する
     - THEN `.purged \| length == 0` であり run が残っている
-    - 検証コマンド: `tests/acceptance/AT-006-purge.sh`
+    - 検証コマンド: `acceptance/AT-006-purge.sh`
     - 期待結果: exit 0
 
 #### F-07: 復元（undo）
@@ -327,13 +327,13 @@
     - GIVEN AT-005 AC1 の直後（3 件が隔離済み）
     - WHEN `disclean undo --last --json` を実行する
     - THEN `.restored \| length == 3`、元の 3 ファイルが元パスに存在し、合計バイト数が隔離前と一致する
-    - 検証コマンド: `tests/acceptance/AT-005-apply-undo.sh`
+    - 検証コマンド: `acceptance/AT-005-apply-undo.sh`
     - 期待結果: exit 0
   - AC2:
     - GIVEN 復元先に同名ファイルを手動で作成した状態
     - WHEN `disclean undo --last --json` を実行する
     - THEN `.skipped[0].reason == "destination-exists"`
-    - 検証コマンド: `tests/acceptance/AT-005-apply-undo.sh`
+    - 検証コマンド: `acceptance/AT-005-apply-undo.sh`
     - 期待結果: exit 4
 
 #### F-08: 監査ログと履歴表示
@@ -360,13 +360,13 @@
     - GIVEN `disclean apply --yes` を 1 回実行済み
     - WHEN `disclean history --json` を実行する
     - THEN `.records` に `action == "apply"` の行が隔離件数と同数存在し、各行が `ts` `runId` `path` `bytes` を持つ
-    - 検証コマンド: `tests/acceptance/AT-007-history.sh`
+    - 検証コマンド: `acceptance/AT-007-history.sh`
     - 期待結果: exit 0
   - AC2:
     - GIVEN 監査ログディレクトリを 0500（書き込み不可）にする
     - WHEN `disclean apply --rule test-fixture --yes` を実行する
     - THEN 元パスのファイルが 1 件も消えていない
-    - 検証コマンド: `tests/acceptance/AT-007-history.sh`
+    - 検証コマンド: `acceptance/AT-007-history.sh`
     - 期待結果: exit 1, stderr に `audit: cannot write log` を含む
 
 #### F-09: 環境診断（doctor）
@@ -395,13 +395,13 @@
     - GIVEN 任意の環境
     - WHEN `disclean doctor --json` を実行する
     - THEN `.fullDiskAccess` が真偽値、`.tools` が 1 要素以上、`.state.stateDir` が絶対パス
-    - 検証コマンド: `tests/acceptance/AT-008-doctor.sh`
+    - 検証コマンド: `acceptance/AT-008-doctor.sh`
     - 期待結果: exit 0 または 3（FDA 未付与時は 3）
   - AC2:
     - GIVEN `DISCLEAN_STATE_DIR` を存在しない一時パスに設定する
     - WHEN `disclean doctor --init --json` を実行する
     - THEN `$DISCLEAN_STATE_DIR/quarantine` `audit` `cache` の 3 ディレクトリが 0700 で作成される
-    - 検証コマンド: `tests/acceptance/AT-008-doctor.sh`
+    - 検証コマンド: `acceptance/AT-008-doctor.sh`
     - 期待結果: exit 0
 
 #### F-10: コマンド型ルールの実行
@@ -441,13 +441,13 @@
     - GIVEN `docker` が PATH に存在するがデーモンが停止している
     - WHEN `disclean apply --rule docker-prune --yes --json` を実行する
     - THEN `.skipped[0].reason == "daemon-not-running"` であり `.failed` が空
-    - 検証コマンド: `tests/acceptance/AT-009-command-rule.sh`
+    - 検証コマンド: `acceptance/AT-009-command-rule.sh`
     - 期待結果: exit 0
   - AC2:
     - GIVEN テスト用に `sleep 30` を実行し `timeoutSeconds: 1` としたユーザールールを置く
     - WHEN `disclean apply --rule slow-test --yes --json` を実行する
     - THEN `.failed[0].error` に `timeout` を含み、`sleep` プロセスが残っていない（`pgrep -f "sleep 30"` が 1）
-    - 検証コマンド: `tests/acceptance/AT-009-command-rule.sh`
+    - 検証コマンド: `acceptance/AT-009-command-rule.sh`
     - 期待結果: exit 4
 
 #### F-11: Tier C レポート（削除せず提示のみ）
@@ -474,13 +474,13 @@
     - GIVEN 任意の環境
     - WHEN `disclean report --json` を実行する
     - THEN 全要素が `whatIsLost` と `manualSteps` を非空で持ち、`apply` 対象に Tier C が一切含まれない
-    - 検証コマンド: `tests/acceptance/AT-010-report.sh`
+    - 検証コマンド: `acceptance/AT-010-report.sh`
     - 期待結果: exit 0 または 3
   - AC2:
     - GIVEN 任意の環境
     - WHEN `disclean apply --tier C --yes` を実行する
     - THEN stderr に `tier C rules cannot be selected` を含む
-    - 検証コマンド: `tests/acceptance/AT-010-report.sh`
+    - 検証コマンド: `acceptance/AT-010-report.sh`
     - 期待結果: exit 2
 
 #### F-12: GUI スキャン → 選択 → 実行フロー
@@ -586,7 +586,7 @@
 - **Preconditions**: `docs/design-system.md` のトークン定義が確定している
 - **Main flow**:
   1. GUI は `Sources/DiscleanApp/DesignTokens.swift` に色・書体・角丸・影・モーションの定数を定義し、View から直接リテラル値を書かない
-  2. LP は `site/tokens.css` の `:root` カスタムプロパティに同じ値を定義する。両者の値は `tests/acceptance/AT-014-design-parity.sh` が突合する
+  2. LP は `site/tokens.css` の `:root` カスタムプロパティに同じ値を定義する。両者の値は `acceptance/AT-014-design-parity.sh` が突合する
   3. 容量はチャンク（高さ = `clamp(48, 48 + GB * 3.2, 320)` pt/px）として描画する
   4. 破壊的操作はレバー（§5.2）経由でのみ発火する。キーボード操作の代替経路を必ず持つ
   5. Tier は色に加えて文字ラベル（`A` / `B` / `見るだけ`）を必ず併記する
@@ -611,15 +611,15 @@
 - **Acceptance criteria**:
   - AC1:
     - GIVEN `site/tokens.css` と `Sources/DiscleanApp/DesignTokens.swift` が存在する
-    - WHEN `tests/acceptance/AT-014-design-parity.sh` を実行する
+    - WHEN `acceptance/AT-014-design-parity.sh` を実行する
     - THEN 9 個のカラートークンと 7 個のタイプスケール値が完全一致する
-    - 検証コマンド: `tests/acceptance/AT-014-design-parity.sh`
+    - 検証コマンド: `acceptance/AT-014-design-parity.sh`
     - 期待結果: exit 0, 出力に `parity: 16/16` を含む
   - AC2:
     - GIVEN LP をローカル配信している
-    - WHEN `tests/acceptance/AT-015-lp.sh` の禁則検査を実行する
+    - WHEN `acceptance/AT-015-lp.sh` の禁則検査を実行する
     - THEN ぼかし影 0 件・グラデーション 0 件
-    - 検証コマンド: `tests/acceptance/AT-015-lp.sh`
+    - 検証コマンド: `acceptance/AT-015-lp.sh`
     - 期待結果: exit 0, 出力に `blur-shadow: 0` と `gradient: 0` を含む
   - AC3:
     - GIVEN GUI をテスト用データで起動する
@@ -662,27 +662,27 @@
 - **Acceptance criteria**:
   - AC1:
     - GIVEN `python3 -m http.server 4173 --directory site` で配信している
-    - WHEN `tests/acceptance/AT-015-lp.sh` を実行する
+    - WHEN `acceptance/AT-015-lp.sh` を実行する
     - THEN 7 セクション（`#hero` `#numbers` `#safety` `#hands-off` `#install` `#faq` `#footer`）が全て存在し、360px 幅で横スクロールが発生しない
-    - 検証コマンド: `tests/acceptance/AT-015-lp.sh`
+    - 検証コマンド: `acceptance/AT-015-lp.sh`
     - 期待結果: exit 0, 出力に `sections: 7/7` と `overflow: none` を含む
   - AC2:
     - GIVEN LP を配信している
     - WHEN Playwright で JavaScript を無効化して読み込む
     - THEN インストールコマンド文字列 `brew install suzuki-junya108/disclean/disclean` が本文に存在し、可視である
-    - 検証コマンド: `tests/acceptance/AT-015-lp.sh`
+    - 検証コマンド: `acceptance/AT-015-lp.sh`
     - 期待結果: exit 0, 出力に `nojs: ok` を含む
   - AC3:
     - GIVEN LP を配信している
     - WHEN axe-core を実行する
     - THEN critical と serious の違反が 0 件
-    - 検証コマンド: `tests/acceptance/AT-015-lp.sh`
+    - 検証コマンド: `acceptance/AT-015-lp.sh`
     - 期待結果: exit 0, 出力に `axe: 0 critical, 0 serious` を含む
   - AC4:
     - GIVEN LP を配信している
     - WHEN Playwright でネットワークリクエストを記録して読み込む
     - THEN 外部ホストが `fonts.googleapis.com` と `fonts.gstatic.com` の 2 つのみ
-    - 検証コマンド: `tests/acceptance/AT-015-lp.sh`
+    - 検証コマンド: `acceptance/AT-015-lp.sh`
     - 期待結果: exit 0, 出力に `external-hosts: 2` を含む
 
 #### F-17: ルールカタログの自動更新
@@ -735,31 +735,31 @@
     - GIVEN テスト用のローカル HTTP サーバー（`DISCLEAN_UPDATE_ENDPOINT`）に、**署名を 1 バイト改竄した** manifest を置く
     - WHEN `disclean update --check --json` を実行する
     - THEN `active` カタログが変化せず、`.errors[0].reason == "signature"` を含む
-    - 検証コマンド: `tests/acceptance/AT-016-update.sh`
+    - 検証コマンド: `acceptance/AT-016-update.sh`
     - 期待結果: exit 7
   - AC2:
     - GIVEN 適用済み `catalogVersion: 5` の状態で、`catalogVersion: 4` の正しく署名された manifest を配信する
     - WHEN `disclean update --check --json` を実行する
     - THEN `.errors[0].reason == "rollback-detected"` であり `active` が version 5 のまま
-    - 検証コマンド: `tests/acceptance/AT-016-update.sh`
+    - 検証コマンド: `acceptance/AT-016-update.sh`
     - 期待結果: exit 7
   - AC3:
     - GIVEN 新しいルール（`paths` に一時ディレクトリを追加）を含む正当な manifest を配信する
     - WHEN `disclean scan --json` を実行する（自動チェックが走る）
     - THEN 新ルールは**有効化されておらず**、スキャン結果に現れない。`disclean update --json` の `.diff.expanding \| length >= 1` である
-    - 検証コマンド: `tests/acceptance/AT-016-update.sh`
+    - 検証コマンド: `acceptance/AT-016-update.sh`
     - 期待結果: exit 0
   - AC4:
     - GIVEN AC3 の状態
     - WHEN `disclean update --apply --yes --json` を実行する
     - THEN `.applied == true` となり、次の `disclean scan` に新ルールが現れる。監査ログに `action == "catalogUpdate"` の行がある
-    - 検証コマンド: `tests/acceptance/AT-016-update.sh`
+    - 検証コマンド: `acceptance/AT-016-update.sh`
     - 期待結果: exit 0
   - AC5:
     - GIVEN `DISCLEAN_AUTO_UPDATE=0` を設定する
     - WHEN `disclean scan` を実行し、プロセスの通信を記録する
     - THEN `updateEndpoint` への接続が 0 件
-    - 検証コマンド: `tests/acceptance/AT-016-update.sh`
+    - 検証コマンド: `acceptance/AT-016-update.sh`
     - 期待結果: exit 0, 出力に `network-requests: 0` を含む
 
 #### F-18: 本体バージョンの更新検知とインストール導線
@@ -793,13 +793,13 @@
     - GIVEN テスト用エンドポイントが `latestApp.version` に自分より新しい値を返す
     - WHEN `disclean update --json` を実行する
     - THEN `.app.latest` が新バージョン、`.app.installMethod` が `brew` / `app` / `manual` のいずれか
-    - 検証コマンド: `tests/acceptance/AT-017-app-update.sh`
+    - 検証コマンド: `acceptance/AT-017-app-update.sh`
     - 期待結果: exit 0
   - AC2:
     - GIVEN 本体アセットの sha256 を改竄した manifest を配信する
     - WHEN `disclean update --apply --yes` を実行する
     - THEN ダウンロードディレクトリにファイルが残らず、stderr に `hash-mismatch` を含む
-    - 検証コマンド: `tests/acceptance/AT-017-app-update.sh`
+    - 検証コマンド: `acceptance/AT-017-app-update.sh`
     - 期待結果: exit 7
 
 #### F-19: OS 変化の検知とルールの OS 条件評価
@@ -834,11 +834,11 @@
     - GIVEN `env.json` に現在と異なる OS ビルドを書き込む
     - WHEN `disclean doctor --json` を実行する
     - THEN `.os.changedSince` が非 null であり、スキャンキャッシュが破棄されている
-    - 検証コマンド: `tests/acceptance/AT-018-os-drift.sh`
+    - 検証コマンド: `acceptance/AT-018-os-drift.sh`
     - 期待結果: exit 0
   - AC2:
     - GIVEN `minMacOS: "99.0"` を持つ fixture ルールを置く
     - WHEN `disclean scan --json` を実行する
     - THEN そのルールが `state == "skipped"`, `reason == "os-unsupported"` として出力され、削除対象に含まれない
-    - 検証コマンド: `tests/acceptance/AT-018-os-drift.sh`
+    - 検証コマンド: `acceptance/AT-018-os-drift.sh`
     - 期待結果: exit 0

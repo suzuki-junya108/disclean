@@ -138,4 +138,4 @@ python3 -m http.server 4173 --directory site
 | WS-m | LP が単体で開ける | `python3 -m http.server 4173 --directory site & sleep 2; curl -sf -o /dev/null -w '%{http_code}' http://localhost:4173/index.html` | `200` を出力（ビルド工程なしで配信できる） |
 | WS-n | LP のデザイン禁則 | `! grep -rnE 'box-shadow:[^;]*[0-9]+px +[0-9]+px +[1-9]' site/ && ! grep -rn 'linear-gradient\|radial-gradient' site/*.css` | exit 0（ぼかし影とグラデーションが 0 件。`docs/design-system.md` D-02 / D-03） |
 | WS-o | オフラインでも動作する | `DISCLEAN_STATE_DIR=$(mktemp -d) DISCLEAN_UPDATE_ENDPOINT=http://127.0.0.1:1/ ./.build/release/disclean doctor --json` | 5 秒以内に exit 0（更新チェックの失敗が終了コードに影響せず、コマンド本体を待たせない） |
-| WS-p | 更新の検証が働く | `tests/acceptance/AT-016-update.sh --signature-only` | exit 7 かつ stderr に `signature` を含み、`$DISCLEAN_STATE_DIR/updates/active` が生成されない |
+| WS-p | 更新の検証が働く | `acceptance/AT-016-update.sh --signature-only` | exit 7 かつ stderr に `signature` を含み、`$DISCLEAN_STATE_DIR/updates/active` が生成されない |

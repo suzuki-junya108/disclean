@@ -1,7 +1,7 @@
 # 受入テスト共通部品。実ユーザーの状態には触れず、必ず一時ディレクトリを使う。
 set -uo pipefail
 
-DISCLEAN_BIN="${DISCLEAN_BIN:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/.build/release/disclean}"
+DISCLEAN_BIN="${DISCLEAN_BIN:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/.build/release/disclean}"
 PASS_COUNT=0
 FAIL_COUNT=0
 
