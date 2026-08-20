@@ -42,7 +42,7 @@
 - **A-07**: GUI（`Disclean.app`）は App Sandbox を無効にしてビルドする。サンドボックス下では他プロセスのキャッシュディレクトリへアクセスできないため。Mac App Store での配布は行わない。
 - **A-08**: リリースには Apple Developer Program の有効なメンバーシップ（Developer ID 証明書の発行に必要）があることを前提とする。無い場合、公証なしの配布となり、利用者は Gatekeeper の警告を手動で解除する必要がある。
 - **A-09**: ルール JSON のスキーマは v1.0 で `schemaVersion: 1` とし、破壊的変更を伴う場合のみ版数を上げる。
-- **A-15**: 「ディスクリン」と `disclean` を、表示名と識別子として使い分ける（§7 Naming）。2026-08-20 時点で `disclean` は Homebrew core（formula / cask とも）、npm、`github.com/suzuki-junya` のいずれにも存在せず取得可能であることを確認済み。GitHub 全体には無関係の類似名リポジトリが 9 件あるが、tap 名前空間はアカウント単位のため衝突しない。
+- **A-15**: 「ディスクリン」と `disclean` を、表示名と識別子として使い分ける（§7 Naming）。GitHub アカウントは実在の `suzuki-junya108`（要件初版に書いた `suzuki-junya` は存在しなかったため 2026-08-20 に修正）。2026-08-20 時点で `disclean` は Homebrew core（formula / cask とも）、npm、`github.com/suzuki-junya` のいずれにも存在せず取得可能であることを確認済み。GitHub 全体には無関係の類似名リポジトリが 9 件あるが、tap 名前空間はアカウント単位のため衝突しない。
 - **A-14**: LP の転送量目標（700KB）は 2026-08-20 に Playwright で実測した 679KB に基づく。フォントのサブセット構成が変われば再計測が必要。
 - **A-11**: 「究極にポップ」という要求を、`docs/design-system.md` の HEAVY CANDY（物理的な塊・キャンディ色・黒キーライン・ハードオフセット影・レバーと瓶）として具体化した。この解釈が意図と異なる場合、修正対象は同ドキュメントのトークンとシグネチャー定義であり、機能要件（§4）には影響しない。
 - **A-12**: LP は GitHub Pages の無料枠で配信し、独自ドメインを使わない（`https://suzuki-junya.github.io/disclean/`）。独自ドメインを使う場合は DNS 設定と証明書の手順が追加になる。

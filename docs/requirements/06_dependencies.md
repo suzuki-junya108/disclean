@@ -64,7 +64,7 @@
 | 既定エンドポイント | `https://github.com/suzuki-junya108/disclean/releases/latest/download/` |
 | 取得するファイル | `catalog-manifest.json`（数 KB）/ `catalog-manifest.json.sig`（Ed25519 detached, base64）/ `catalog-<catalogVersion>.tar.gz`（数十 KB） |
 | 本体成果物 | 同 manifest の `latestApp.assets[]`（`Disclean-<version>.dmg` / `disclean-<version>-macos-universal.tar.gz`）。**要求されたときのみ**取得する |
-| 許可するホスト | `github.com` と `objects.githubusercontent.com` の 2 つのみ。リダイレクト先がこれ以外なら中止する |
+| 許可するホスト | `github.com` / `objects.githubusercontent.com` / `release-assets.githubusercontent.com`（2026-08 時点の GitHub Releases のリダイレクト先。実測で確認）。これ以外へ飛んだら中止する |
 | プロトコル | HTTPS のみ（ATS 既定、TLS 1.2 以上）。HTTP へのフォールバックを実装しない |
 | 認証 | なし（公開アセット）。API トークン・認証情報を扱わない |
 | 送信する情報 | HTTP リクエストのみ（URL と `User-Agent: disclean/<version> (macOS <ver>; <arch>)`）。パス・スキャン結果・マシン識別子を送らない |

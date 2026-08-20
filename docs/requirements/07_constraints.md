@@ -23,7 +23,7 @@
 - **Browser support**: LP のみ対象。Safari 17+ / Chrome 120+ / Firefox 128+ の各最新 2 バージョン。JavaScript 無効時も全文とインストール手順が読める（F-16）
 - **OS support (CLI/Native)**: macOS 14.0 (Sonoma) 以降、arm64 と x86_64 の両方。macOS 13 以前は非対応
 - **Repo structure**: 単一 Git リポジトリ。`~/Sync/disclean` で `git init` し、GitHub のリモートを設定して公開する（monorepo にはしない）。SwiftPM の 1 パッケージに 3 ターゲット（`DiscleanKit` / `disclean` / `DiscleanApp`）+ 2 テストターゲット
-- **Network**: 通信は更新機構（F-17 / F-18）のみが行う。`URLSession` を使うのは `DiscleanKit/Update/` の 1 コンポーネントに限定し、他のコンポーネントは import しない。接続先は `github.com` と `objects.githubusercontent.com` の 2 ホスト、HTTPS のみ（ATS 既定のまま、`NSAllowsArbitraryLoads` を設定しない）。既定オン、`DISCLEAN_AUTO_UPDATE=0` で完全に無効化できる
+- **Network**: 通信は更新機構（F-17 / F-18）のみが行う。`URLSession` を使うのは `DiscleanKit/Update/` の 1 コンポーネントに限定し、他のコンポーネントは import しない。接続先は `github.com` / `objects.githubusercontent.com` / `release-assets.githubusercontent.com` の 3 ホスト、HTTPS のみ（ATS 既定のまま、`NSAllowsArbitraryLoads` を設定しない）。既定オン、`DISCLEAN_AUTO_UPDATE=0` で完全に無効化できる
 - **Update signing**: カタログ manifest は Ed25519（CryptoKit `Curve25519.Signing`）の detached 署名を必須とし、公開鍵はバイナリに埋め込む。検証を省略する経路・環境変数を実装しない。テスト用の信頼鍵注入（`DISCLEAN_UPDATE_TRUSTED_KEYS_FILE`）は **debug ビルドでのみ**有効とし、release ビルドでは値を無視する
 - **Signing / Distribution**: Developer ID Application 証明書で署名し、`notarytool` で公証、`stapler` で添付する。Homebrew tap（`homebrew-disclean`）で `disclean` を、GitHub Releases で `.dmg` を配布する
 - **Existing systems to respect**:

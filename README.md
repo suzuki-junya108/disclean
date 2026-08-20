@@ -106,6 +106,7 @@ swift build -c release            # CLI をビルド
 swift test                        # 単体・結合テスト
 tests/acceptance/run-all.sh       # 受入テスト（CLI の実バイナリを使う）
 tools/make-app.sh                 # Disclean.app を組み立てる
+tools/make-dist.sh                # 配布用 tar.gz を作る（展開して動くかを毎回検証する）
 swiftlint lint --strict           # 0 violations が条件
 xcrun swift-format lint --recursive --strict Sources Tests
 ```
