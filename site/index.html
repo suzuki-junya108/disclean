@@ -4,85 +4,104 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ディスクリン（disclean）— そのギガバイト、重さで見せます。</title>
-<meta name="description" content="ディスクリンは macOS のディスクを片づける道具です。消せるものを塊にして積み、引き下ろすと瓶に入ります。7日間は掴んで戻せます。">
+<meta name="description" content="ディスクリンは macOS のディスクを片づける道具です。消せるものを塊にして積み、レバーを引くと瓶に入ります。7日間は掴んで戻せます。">
 <meta property="og:title" content="ディスクリン（disclean）— そのギガバイト、重さで見せます。">
 <meta property="og:description" content="消す前に重さで見せる macOS クリーンアップ。7日間は取り消せます。">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://disclean.i4u.jp/">
+<meta property="og:image" content="https://disclean.i4u.jp/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://disclean.i4u.jp/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,800&family=Martian+Mono:wght@600&family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,800&family=Martian+Mono:wdth,wght@75..112.5,600&family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%236C2BEA' stroke='%2316121F' stroke-width='3'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<a class="visually-hidden" href="#install">インストール手順へ移動</a>
+<a class="skip" href="#install">インストール手順へ移動</a>
 
-<section id="hero" class="band band--lime hero">
+<!-- ============ ヒーロー: 計量台 ============ -->
+<section id="hero" class="band band--lime">
   <div class="wrap">
-    <div class="topbar">
+    <header class="topbar">
       <div class="brand">
         <span class="brand__mark" aria-hidden="true"></span>
         <span class="brand__names">
-          <span class="display brand__word">disclean</span>
+          <span class="brand__word">disclean</span>
           <span class="brand__yomi data">ディスクリン</span>
         </span>
       </div>
       <nav class="topbar__links data" aria-label="サイト内">
+        <a href="#numbers">実測</a>
         <a href="#safety">安全のしくみ</a>
         <a href="#hands-off">触らないもの</a>
-        <a href="#install">入れる</a>
+        <a href="#install" class="topbar__cta">入れる</a>
       </nav>
-    </div>
+    </header>
 
-    <div class="hero__grid">
-      <div>
+    <div class="hero">
+      <div class="hero__say">
         <p class="eyebrow">macOS 14+ / Apple Silicon · Intel</p>
-        <h1 class="display">そのギガバイト、<br>重さで見せます。</h1>
-        <p class="hero__lede">
-          ディスクリンは消せるものを塊にして積みます。塊の高さは容量そのもの。
+        <h1 class="hero__h1">
+          <span class="hero__line hero__line--1">そのギガバイト、</span>
+          <span class="hero__line hero__line--2">重さで見せます。</span>
+        </h1>
+        <p class="lede">
+          消せるものを塊にして積みます。塊の高さは容量そのもの。
           レバーを引くと瓶に落ち、<strong>7日間は掴んで戻せます</strong>。
           消えたものは 1 件残らず記録に残ります。
         </p>
-        <div class="hero__note">
+        <p class="hero__chips">
           <span class="chip chip--a">A 既定で選ぶ</span>
           <span class="chip chip--b">B 確認してから</span>
           <span class="chip chip--c">C 見るだけ</span>
-        </div>
-        <p class="caption" style="margin-top:18px;max-width:44ch">
+        </p>
+        <p class="hero__actions">
+          <a class="btn btn--grape btn--lg" href="#install">入れかたを見る</a>
+          <a class="btn btn--paper" href="https://github.com/suzuki-junya108/disclean">GitHub</a>
+        </p>
+        <p class="caption hero__disclaimer">
           このデモは実際に動きます。2026-08-20 に MacBook（Apple M4 / 460GB）で測った値を積んであります。
           <strong>あなたの Mac は読み込んでいません。</strong>
         </p>
       </div>
 
       <div class="stage">
-        <div class="stage__col">
+        <div class="stage__meter">
+          <span class="stage__meter-label data">瓶に入れた量</span>
+          <span class="stage__meter-value data" id="meter-value" style="--w:82">0.0<small>GB</small></span>
+        </div>
+
+        <div class="stage__main">
           <div class="frame">
             <svg class="frame__tear" viewBox="0 0 400 12" preserveAspectRatio="none" aria-hidden="true">
               <path d="M0 12 L0 6 L20 11 L40 4 L60 10 L80 3 L100 9 L120 2 L140 8 L160 3 L180 10 L200 4 L220 9 L240 2 L260 8 L280 3 L300 10 L320 4 L340 9 L360 3 L380 8 L400 5 L400 12 Z" fill="var(--frame-bg, var(--paper))"/>
               <path d="M0 6 L20 11 L40 4 L60 10 L80 3 L100 9 L120 2 L140 8 L160 3 L180 10 L200 4 L220 9 L240 2 L260 8 L280 3 L300 10 L320 4 L340 9 L360 3 L380 8 L400 5" fill="none" stroke="var(--frame-line, var(--ink))" stroke-width="3"/>
             </svg>
             <div class="tower" id="tower" role="group" aria-label="片づけの候補。塊の高さが容量です"></div>
+            <div class="plate" aria-hidden="true"></div>
           </div>
 
-          <div class="jar">
-            <div class="jar__head">
-              <span class="jar__title data">隔離庫（7日）</span>
-              <span class="jar__title data" id="jar-count">からっぽ</span>
+          <div class="lever">
+            <div class="lever__track" id="lever-track">
+              <button class="lever__grip" id="lever-grip" type="button" aria-describedby="lever-label">ひく</button>
             </div>
-            <div class="jar__neck" aria-hidden="true"></div>
-            <div class="jar__body" id="jar-body" role="group" aria-label="隔離庫。押すと元に戻せます">
-              <p class="jar__empty caption" id="jar-empty">レバーを引くと、ここに落ちてきます。</p>
-            </div>
+            <p class="lever__label data" id="lever-label">つまんで下まで引くと実行します</p>
           </div>
         </div>
 
-        <div class="lever">
-          <div class="lever__track" id="lever-track">
-            <button class="lever__grip" id="lever-grip" type="button" aria-describedby="lever-label">ひく</button>
+        <div class="jar">
+          <div class="jar__head">
+            <span class="jar__title data">隔離庫（7日）</span>
+            <span class="jar__title data" id="jar-count">からっぽ</span>
           </div>
-          <p class="lever__label" id="lever-label">つまんで下まで引くと実行します</p>
+          <div class="jar__neck" aria-hidden="true"></div>
+          <div class="jar__body" id="jar-body" role="group" aria-label="隔離庫。押すと元に戻せます">
+            <p class="jar__empty caption" id="jar-empty">レバーを引くと、ここに落ちてきます。押せば戻ります。</p>
+          </div>
         </div>
       </div>
       <p class="visually-hidden" id="stage-status" role="status" aria-live="polite"></p>
@@ -90,27 +109,124 @@
   </div>
 </section>
 
-<svg class="cut" viewBox="0 0 100 14" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 L0 14 L100 14 L100 0 L96 8 L92 1 L88 9 L84 2 L80 10 L76 3 L72 11 L68 4 L64 12 L60 5 L56 12 L52 4 L48 11 L44 3 L40 10 L36 2 L32 9 L28 1 L24 8 L20 0 L16 8 L12 1 L8 9 L4 2 Z" fill="var(--lime)"/></svg>
+<!-- ============ 実測値のベルトコンベア ============ -->
+<div class="ticker" aria-hidden="true">
+  <div class="ticker__rail">
+    <span class="ticker__set">
+      <span class="ticker__item"><b class="data" style="--w:112">71.5GB</b> 使っていない iOS シミュレータ</span>
+      <span class="ticker__dot">●</span>
+      <span class="ticker__item"><b class="data" style="--w:106">26.6GB</b> Docker のイメージとキャッシュ</span>
+      <span class="ticker__dot">●</span>
+      <span class="ticker__item"><b class="data" style="--w:100">10.0GB</b> Colima の仮想ディスク</span>
+      <span class="ticker__dot">●</span>
+      <span class="ticker__item"><b class="data" style="--w:96">9.7GB</b> <code>~/.cache</code></span>
+      <span class="ticker__dot">●</span>
+      <span class="ticker__item"><b class="data" style="--w:90">6.5GB</b> ollama のモデル（触りません）</span>
+      <span class="ticker__dot">●</span>
+    </span>
+    <span class="ticker__set">
+      <span class="ticker__item"><b class="data" style="--w:112">71.5GB</b> 使っていない iOS シミュレータ</span>
+      <span class="ticker__dot">●</span>
+      <span class="ticker__item"><b class="data" style="--w:106">26.6GB</b> Docker のイメージとキャッシュ</span>
+      <span class="ticker__dot">●</span>
+      <span class="ticker__item"><b class="data" style="--w:100">10.0GB</b> Colima の仮想ディスク</span>
+      <span class="ticker__dot">●</span>
+      <span class="ticker__item"><b class="data" style="--w:96">9.7GB</b> <code>~/.cache</code></span>
+      <span class="ticker__dot">●</span>
+      <span class="ticker__item"><b class="data" style="--w:90">6.5GB</b> ollama のモデル（触りません）</span>
+      <span class="ticker__dot">●</span>
+    </span>
+  </div>
+</div>
 
+<!-- ============ 実測: 天秤 ============ -->
 <section id="numbers" class="band band--paper">
   <div class="wrap">
-    <div class="section__head">
+    <div class="head">
       <p class="eyebrow">実測 / 2026-08-20</p>
-      <h2 class="display">消せるつもりだった 2GB と、<br>本当に埋まっていた 118GB。</h2>
-      <p>これまで使っていたシェルスクリプトが狙っていた場所を測ったら、ほとんど空でした。容量は、その隣にありました。</p>
+      <h2 class="h2">消せるつもりだった 2GB と、<br>本当に埋まっていた 118GB。</h2>
+      <p class="lede">これまで使っていたシェルスクリプトが狙っていた場所を測ったら、ほとんど空でした。容量は、その隣にありました。</p>
     </div>
 
-    <div class="versus">
-      <div class="card">
-        <p class="eyebrow">旧 mac_cleanup.sh が消しに行く場所</p>
-        <span class="versus__num data">2 GB</span>
-        <p>しかも <code class="data">~/.Trash</code> と <code class="data">~/Downloads</code> は権限で触れておらず、消えていないのに「削除しました」と出ていました。</p>
+    <div class="weigh">
+      <div class="weigh__side">
+        <p class="weigh__label"><span class="weigh__num data" style="--w:80">2<small>GB</small></span> 旧スクリプトが消しに行っていた場所</p>
+        <div class="wall wall--thin" role="img" aria-label="2 ギガバイト。ブロック 1 個分。">
+          <span class="brick brick--empty"></span>
+        </div>
       </div>
-      <div class="card">
-        <p class="eyebrow">実際に埋まっていた場所（ディスクリンの対象）</p>
-        <span class="versus__num data">118 GB</span>
-        <p>シミュレータ 71.5GB、Docker 26.6GB、Colima 10.0GB、各種キャッシュ 9.7GB。どれも旧スクリプトの守備範囲の外でした。</p>
+
+      <div class="weigh__side">
+        <p class="weigh__label"><span class="weigh__num data" style="--w:112">118<small>GB</small></span> 実際に埋まっていた場所</p>
+        <div class="wall" role="img" aria-label="118 ギガバイト。ブロック 59 個分。内訳は iOS シミュレータ 36 個、Docker と Colima 18 個、~/.cache 5 個。">
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--a"></span>
+          <span class="brick brick--b"></span>
+          <span class="brick brick--b"></span>
+          <span class="brick brick--b"></span>
+          <span class="brick brick--b"></span>
+          <span class="brick brick--b"></span>
+          <span class="brick brick--b"></span>
+          <span class="brick brick--b"></span>
+          <span class="brick brick--b"></span>
+          <span class="brick brick--b"></span>
+          <span class="brick brick--b"></span>
+          <span class="brick brick--b"></span>
+          <span class="brick brick--b"></span>
+          <span class="brick brick--b"></span>
+          <span class="brick brick--b"></span>
+          <span class="brick brick--b"></span>
+          <span class="brick brick--b"></span>
+          <span class="brick brick--b"></span>
+          <span class="brick brick--b"></span>
+          <span class="brick brick--c"></span>
+          <span class="brick brick--c"></span>
+          <span class="brick brick--c"></span>
+          <span class="brick brick--c"></span>
+          <span class="brick brick--c"></span>
+        </div>
       </div>
+
+      <p class="weigh__key caption">
+        <span class="key"><span class="brick brick--a"></span> iOS シミュレータ 71.5GB</span>
+        <span class="key"><span class="brick brick--b"></span> Docker・Colima 36.6GB</span>
+        <span class="key"><span class="brick brick--c"></span> <code class="data">~/.cache</code> 9.7GB（一部は見るだけ）</span>
+        <span class="key">ブロック 1 個 = 2GB（2026-08-20 実測）</span>
+      </p>
     </div>
 
     <div class="tablewrap">
@@ -120,58 +236,60 @@
           <tr><th scope="col">場所</th><th scope="col">区分</th><th scope="col">旧スクリプト</th><th scope="col">実サイズ</th></tr>
         </thead>
         <tbody>
-          <tr><td>iOS シミュレータのデバイス</td><td>A</td><td>対象外</td><td>71.5 GB</td></tr>
-          <tr><td>Docker のイメージ・キャッシュ</td><td>B</td><td>無確認で全消し</td><td>26.6 GB</td></tr>
-          <tr><td>Colima の仮想ディスク</td><td>B</td><td>対象外</td><td>10.0 GB</td></tr>
-          <tr><td><code class="data">~/.cache</code>（uv / whisper ほか）</td><td>A / C</td><td>対象外</td><td>9.7 GB</td></tr>
-          <tr><td><code class="data">~/Library/Caches</code></td><td>A</td><td>丸ごと削除</td><td>0.1 GB</td></tr>
-          <tr><td><code class="data">~/.Trash</code> / <code class="data">~/Downloads</code></td><td>C</td><td>「削除しました」と表示</td><td>測定不可</td></tr>
+          <tr><td>iOS シミュレータのデバイス</td><td>A</td><td>対象外</td><td class="num data">71.5 GB</td></tr>
+          <tr><td>Docker のイメージ・キャッシュ</td><td>B</td><td>無確認で全消し</td><td class="num data">26.6 GB</td></tr>
+          <tr><td>Colima の仮想ディスク</td><td>B</td><td>対象外</td><td class="num data">10.0 GB</td></tr>
+          <tr><td><code class="data">~/.cache</code>（uv / whisper ほか）</td><td>A / C</td><td>対象外</td><td class="num data">9.7 GB</td></tr>
+          <tr><td><code class="data">~/Library/Caches</code></td><td>A</td><td>丸ごと削除</td><td class="num data">0.1 GB</td></tr>
+          <tr><td><code class="data">~/.Trash</code> / <code class="data">~/Downloads</code></td><td>C</td><td>「削除しました」と表示</td><td class="num data">測定不可</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 </section>
 
-<svg class="cut" viewBox="0 0 100 14" preserveAspectRatio="none" aria-hidden="true"><path d="M0 14 L0 0 L4 8 L8 1 L12 9 L16 2 L20 10 L24 3 L28 11 L32 4 L36 12 L40 5 L44 12 L48 4 L52 11 L56 3 L60 10 L64 2 L68 9 L72 1 L76 8 L80 0 L84 8 L88 1 L92 9 L96 2 L100 10 L100 14 Z" fill="var(--sky)"/></svg>
+<svg class="cut" style="background: var(--card)" viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 L0 12 L100 12 L100 0 L96 7 L92 1 L88 8 L84 2 L80 9 L76 3 L72 10 L68 4 L64 11 L60 4 L56 10 L52 3 L48 9 L44 2 L40 8 L36 1 L32 7 L28 1 L24 8 L20 0 L16 7 L12 1 L8 8 L4 2 Z" fill="var(--sky)"/></svg>
 
+<!-- ============ 安全のしくみ ============ -->
 <section id="safety" class="band band--sky">
   <div class="wrap">
-    <div class="section__head">
+    <div class="head">
       <p class="eyebrow">安全のしくみ</p>
-      <h2 class="display">消す前に、戻せるようにしてから消します。</h2>
-      <p>ディスクリンが「削除」と呼ぶ操作は、同じディスクの中で場所を移すことです。実際に消えるのはそのあとです。</p>
+      <h2 class="h2">消す前に、戻せるようにしてから消します。</h2>
+      <p class="lede">ディスクリンが「削除」と呼ぶ操作は、同じディスクの中で場所を移すことです。実際に消えるのは、そのあとです。</p>
     </div>
-    <div class="cards4">
-      <div class="card">
-        <span class="card__step">01 うつす</span>
-        <h3 class="card__title display">瓶に入れる</h3>
+    <ol class="steps">
+      <li class="sticker">
+        <span class="sticker__step data">01 うつす</span>
+        <h3 class="sticker__title">瓶に入れる</h3>
         <p>選んだものは同じディスク内の隔離庫へ移ります。容量によらず一瞬で終わります。</p>
-      </div>
-      <div class="card">
-        <span class="card__step">02 まつ</span>
-        <h3 class="card__title display">7日おいておく</h3>
+      </li>
+      <li class="sticker">
+        <span class="sticker__step data">02 まつ</span>
+        <h3 class="sticker__title">7日おいておく</h3>
         <p>既定で 7 日。1〜90 日に変えられます。この間は元の場所へそのまま戻せます。</p>
-      </div>
-      <div class="card">
-        <span class="card__step">03 もどす</span>
-        <h3 class="card__title display">掴んで戻す</h3>
-        <p><code class="data">disclean undo</code> か、瓶から掴み出すだけ。戻した先とバイト数が一致することを確認します。</p>
-      </div>
-      <div class="card">
-        <span class="card__step">04 のこす</span>
-        <h3 class="card__title display">記録が残る</h3>
+      </li>
+      <li class="sticker">
+        <span class="sticker__step data">03 もどす</span>
+        <h3 class="sticker__title">掴んで戻す</h3>
+        <p><code class="data">disclean undo</code> か、瓶から掴み出すだけ。戻したバイト数が一致することを確認します。</p>
+      </li>
+      <li class="sticker">
+        <span class="sticker__step data">04 のこす</span>
+        <h3 class="sticker__title">記録が残る</h3>
         <p>移動・復元・完全削除を 1 件ずつ記録します。記録できないときは、削除自体を行いません。</p>
-      </div>
-    </div>
+      </li>
+    </ol>
   </div>
 </section>
 
-<svg class="cut" viewBox="0 0 100 14" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 L0 14 L100 14 L100 0 L96 8 L92 1 L88 9 L84 2 L80 10 L76 3 L72 11 L68 4 L64 12 L60 5 L56 12 L52 4 L48 11 L44 3 L40 10 L36 2 L32 9 L28 1 L24 8 L20 0 L16 8 L12 1 L8 9 L4 2 Z" fill="var(--sky)"/></svg>
+<svg class="cut" style="background: var(--sky)" viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 L0 12 L100 12 L100 0 L96 7 L92 1 L88 8 L84 2 L80 9 L76 3 L72 10 L68 4 L64 11 L60 4 L56 10 L52 3 L48 9 L44 2 L40 8 L36 1 L32 7 L28 1 L24 8 L20 0 L16 7 L12 1 L8 8 L4 2 Z" fill="var(--card)"/></svg>
 
+<!-- ============ 触らないもの（意図的に装飾を落とす） ============ -->
 <section id="hands-off" class="band band--paper">
   <div class="wrap plain">
     <p class="eyebrow">区分 C</p>
-    <h2 class="display">ディスクリンが触らないもの。</h2>
+    <h2 class="h2 h2--plain">ディスクリンが触らないもの。</h2>
     <p>取り戻せないもの、取り直すのに時間がかかるものには、削除の機能そのものを作っていません。大きさは見せますが、消すのはあなたの手です。</p>
     <ul>
       <li>
@@ -202,83 +320,87 @@
   </div>
 </section>
 
-<svg class="cut" viewBox="0 0 100 14" preserveAspectRatio="none" aria-hidden="true"><path d="M0 14 L0 0 L4 8 L8 1 L12 9 L16 2 L20 10 L24 3 L28 11 L32 4 L36 12 L40 5 L44 12 L48 4 L52 11 L56 3 L60 10 L64 2 L68 9 L72 1 L76 8 L80 0 L84 8 L88 1 L92 9 L96 2 L100 10 L100 14 Z" fill="var(--sunbeam)"/></svg>
+<svg class="cut" style="background: var(--card)" viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 L0 12 L100 12 L100 0 L96 7 L92 1 L88 8 L84 2 L80 9 L76 3 L72 10 L68 4 L64 11 L60 4 L56 10 L52 3 L48 9 L44 2 L40 8 L36 1 L32 7 L28 1 L24 8 L20 0 L16 7 L12 1 L8 8 L4 2 Z" fill="var(--sunbeam)"/></svg>
 
+<!-- ============ 入れる ============ -->
 <section id="install" class="band band--sun">
   <div class="wrap">
-    <div class="section__head">
+    <div class="head">
       <p class="eyebrow">入れる</p>
-      <h2 class="display">1 行で入ります。</h2>
-      <p>入れたあとは <code class="data">disclean doctor</code> で環境を確認し、<code class="data">disclean scan</code> で読み取りだけを実行できます。何も消しません。</p>
+      <h2 class="h2">1 行で入ります。</h2>
+      <p class="lede">入れたあとは <code class="data">disclean doctor</code> で環境を確認し、<code class="data">disclean scan</code> で読み取りだけを実行できます。何も消しません。</p>
     </div>
-    <div class="install__box">
+    <div class="install">
       <div class="cmd">
         <code id="brew-cmd">brew install suzuki-junya108/disclean/disclean</code>
         <button class="btn btn--paper" id="copy-btn" type="button" data-copy="brew install suzuki-junya108/disclean/disclean">コピー</button>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:12px">
-        <a class="btn btn--grape" href="https://github.com/suzuki-junya108/disclean/releases/latest/download/Disclean-0.1.0.dmg">.dmg をダウンロード（GUI）</a>
-        <a class="btn" href="https://github.com/suzuki-junya108/disclean">GitHub でソースを見る</a>
-      </div>
-      <p class="install__meta">
-        <span>macOS 14 以降</span><span>Apple Silicon / Intel</span><span>Developer ID で署名・公証済み</span><span>MIT ライセンス</span><span class="data">v0.1.0</span>
+      <p class="install__row">
+        <a class="btn btn--grape btn--lg" href="https://github.com/suzuki-junya108/disclean/releases/latest/download/Disclean-0.1.0.dmg">.dmg をダウンロード（GUI）</a>
+        <a class="btn btn--paper" href="https://github.com/suzuki-junya108/disclean">GitHub でソースを見る</a>
+      </p>
+      <p class="install__meta data">
+        <span>macOS 14 以降</span><span>Apple Silicon / Intel</span><span>Developer ID で署名・公証済み</span><span>MIT</span><span>v0.1.0</span>
       </p>
       <p class="caption">配布は GitHub Releases と Homebrew tap のみです。このページからバイナリは配信していません。</p>
     </div>
   </div>
 </section>
 
-<svg class="cut" viewBox="0 0 100 14" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 L0 14 L100 14 L100 0 L96 8 L92 1 L88 9 L84 2 L80 10 L76 3 L72 11 L68 4 L64 12 L60 5 L56 12 L52 4 L48 11 L44 3 L40 10 L36 2 L32 9 L28 1 L24 8 L20 0 L16 8 L12 1 L8 9 L4 2 Z" fill="var(--sunbeam)"/></svg>
+<svg class="cut" style="background: var(--sunbeam)" viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 L0 12 L100 12 L100 0 L96 7 L92 1 L88 8 L84 2 L80 9 L76 3 L72 10 L68 4 L64 11 L60 4 L56 10 L52 3 L48 9 L44 2 L40 8 L36 1 L32 7 L28 1 L24 8 L20 0 L16 7 L12 1 L8 8 L4 2 Z" fill="var(--bubblegum)"/></svg>
 
-<section id="faq" class="band band--paper">
+<!-- ============ FAQ ============ -->
+<section id="faq" class="band band--bubble">
   <div class="wrap">
-    <div class="section__head">
+    <div class="head">
       <p class="eyebrow">よくある質問</p>
-      <h2 class="display">先に答えておきます。</h2>
+      <h2 class="h2">先に答えておきます。</h2>
     </div>
     <div class="faq">
       <details>
         <summary>本当に元に戻せますか？</summary>
-        <p>ディレクトリを移す種類の片づけは戻せます。既定で 7 日、<code class="data">disclean undo</code> で元のパスに戻します。ただし <code class="data">brew cleanup</code> や <code class="data">npm cache clean</code> のように外部ツールに実行を任せるものは戻せません。実行前の確認画面で「これは取り消せません」と表示します。</p>
+        <div class="faq__body"><p>ディレクトリを移す種類の片づけは戻せます。既定で 7 日、<code class="data">disclean undo</code> で元のパスに戻します。ただし <code class="data">brew cleanup</code> や <code class="data">npm cache clean</code> のように外部ツールに実行を任せるものは戻せません。実行前の確認画面で「これは取り消せません」と表示します。</p></div>
       </details>
       <details>
         <summary>sudo は必要ですか？</summary>
-        <p>使いません。ディスクリンはあなたのホームディレクトリの外に出ません。システム領域は大きさを見せるだけで、削除の機能を持ちません。</p>
+        <div class="faq__body"><p>使いません。ディスクリンはあなたのホームディレクトリの外に出ません。システム領域は大きさを見せるだけで、削除の機能を持ちません。</p></div>
       </details>
       <details>
         <summary>何かデータを送信しますか？</summary>
-        <p>あなたのファイルの情報は送りません。スキャンの結果・ファイルの場所・片づけた量は、すべて手元のディスクにだけ残ります。通信するのは<strong>掃除ルールの更新を取りに行くときだけ</strong>で、そのとき相手（GitHub）に伝わるのは、ディスクリンのバージョンと macOS のバージョンだけです。接続元の IP アドレスと時刻は、どんな通信でも相手側の記録に残ります。このページも解析ツールを置いていません。</p>
+        <div class="faq__body"><p>あなたのファイルの情報は送りません。スキャンの結果・ファイルの場所・片づけた量は、すべて手元のディスクにだけ残ります。通信するのは<strong>掃除ルールの更新を取りに行くときだけ</strong>で、そのとき相手（GitHub）に伝わるのは、ディスクリンのバージョンと macOS のバージョンだけです。接続元の IP アドレスと時刻は、どんな通信でも相手側の記録に残ります。このページも解析ツールを置いていません。</p></div>
       </details>
       <details>
         <summary>更新はどうやって届きますか？ 止められますか？</summary>
-        <p>macOS が新しくなるとキャッシュの置き場所が変わることがあるため、掃除ルールだけを署名付きで配っています。ディスクリンは 1 日 1 回、実行したときにだけ確認します（常駐しません）。<strong>受け取ったルールは、署名を確かめたうえで、消す対象が増える変更なら必ずあなたの承認を待ちます</strong>。承認するまで消えるものは 1 つも増えません。止めるときは <code class="data">disclean update --off</code>（または <code class="data">DISCLEAN_AUTO_UPDATE=0</code>）で、以後は通信そのものが発生しません。アプリ本体は自動で入れ替えず、新しい版があることをお知らせするだけです。</p>
+        <div class="faq__body"><p>macOS が新しくなるとキャッシュの置き場所が変わることがあるため、掃除ルールだけを署名付きで配っています。ディスクリンは 1 日 1 回、実行したときにだけ確認します（常駐しません）。<strong>受け取ったルールは、署名を確かめたうえで、消す対象が増える変更なら必ずあなたの承認を待ちます</strong>。承認するまで消えるものは 1 つも増えません。止めるときは <code class="data">disclean update --off</code>（または <code class="data">DISCLEAN_AUTO_UPDATE=0</code>）で、以後は通信そのものが発生しません。アプリ本体は自動で入れ替えず、新しい版があることをお知らせするだけです。</p></div>
       </details>
       <details>
         <summary>消したのに空き容量が増えません。</summary>
-        <p>隔離庫は同じディスクの中にあるため、7 日たつまでは容量が戻りません。すぐ空けたいときは <code class="data">disclean purge</code> を実行してください。Time Machine のローカルスナップショットが残っている場合も、反映が遅れることがあります。</p>
+        <div class="faq__body"><p>隔離庫は同じディスクの中にあるため、7 日たつまでは容量が戻りません。すぐ空けたいときは <code class="data">disclean purge</code> を実行してください。Time Machine のローカルスナップショットが残っている場合も、反映が遅れることがあります。</p></div>
       </details>
       <details>
         <summary>やめるときはどうしますか？</summary>
-        <p><code class="data">disclean purge --all</code> で隔離庫を空にし、<code class="data">brew uninstall disclean</code> と、状態フォルダ <code class="data">~/.local/state/disclean</code> の削除で終わりです。記録を残したい場合は <code class="data">audit/</code> だけ退避してください。</p>
+        <div class="faq__body"><p><code class="data">disclean purge --all</code> で隔離庫を空にし、<code class="data">brew uninstall disclean</code> と、状態フォルダ <code class="data">~/.local/state/disclean</code> の削除で終わりです。記録を残したい場合は <code class="data">audit/</code> だけ退避してください。</p></div>
       </details>
     </div>
   </div>
 </section>
 
+<svg class="cut" style="background: var(--bubblegum)" viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 L0 12 L100 12 L100 0 L96 7 L92 1 L88 8 L84 2 L80 9 L76 3 L72 10 L68 4 L64 11 L60 4 L56 10 L52 3 L48 9 L44 2 L40 8 L36 1 L32 7 L28 1 L24 8 L20 0 L16 7 L12 1 L8 8 L4 2 Z" fill="var(--void)"/></svg>
+
 <footer id="footer" class="footer">
   <div class="wrap footer__grid">
     <div>
-      <div class="brand" style="margin-bottom:12px">
+      <div class="brand brand--dark">
         <span class="brand__mark" aria-hidden="true"></span>
         <span class="brand__names">
-          <span class="display brand__word">disclean</span>
+          <span class="brand__word">disclean</span>
           <span class="brand__yomi data">ディスクリン</span>
         </span>
       </div>
-      <p class="caption" style="max-width:36ch">消す前に重さで見せる、macOS のディスク片づけ。バックアップの代わりにはなりません。</p>
+      <p class="caption footer__note">消す前に重さで見せる、macOS のディスク片づけ。バックアップの代わりにはなりません。</p>
     </div>
     <div>
-      <h3>リンク</h3>
+      <h3 class="data">リンク</h3>
       <ul>
         <li><a href="https://github.com/suzuki-junya108/disclean">GitHub リポジトリ</a></li>
         <li><a href="https://github.com/suzuki-junya108/disclean/releases">リリース</a></li>
@@ -286,7 +408,7 @@
       </ul>
     </div>
     <div>
-      <h3>クレジット</h3>
+      <h3 class="data">クレジット</h3>
       <ul>
         <li>Bricolage Grotesque (OFL)</li>
         <li>Zen Maru Gothic (OFL)</li>
@@ -302,8 +424,10 @@ document.addEventListener("click", function (e) {
   var b = e.target.closest("#copy-btn");
   if (!b) return;
   navigator.clipboard && navigator.clipboard.writeText(b.dataset.copy).then(function () {
-    var old = b.textContent; b.textContent = "コピーしました";
-    setTimeout(function () { b.textContent = old; }, 1600);
+    var old = b.textContent;
+    b.textContent = "コピーしました";
+    b.classList.add("is-done");
+    setTimeout(function () { b.textContent = old; b.classList.remove("is-done"); }, 1600);
   });
 });
 </script>

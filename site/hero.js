@@ -12,8 +12,8 @@
     { id: "uv",     gb: 3.2,  tier: "A", name: "uv のキャッシュ", lost: "次の install で取り直し" }
   ];
 
-  var SCALE = 0.62;           // ヒーロー表示用の縮尺（比例関係は保つ）
-  var MIN_PX = 80;            // 文字が 2 行入る下限。これ未満は高さを揃え、大小の逆転を作らない
+  var SCALE = 0.48;           // ヒーロー表示用の縮尺（比例関係は保つ）。瓶まで画面に入る高さに収める
+  var MIN_PX = 68;            // 文字が 2 行入る下限。これ未満は高さを揃え、大小の逆転を作らない
   var PULL_THRESHOLD = 120;   // design-system.md §5.2
 
   var tower = document.getElementById("tower");
@@ -23,6 +23,7 @@
   var grip = document.getElementById("lever-grip");
   var track = document.getElementById("lever-track");
   var status = document.getElementById("stage-status");
+  var meter = document.getElementById("meter-value");
   if (!tower || !grip) return;
 
   var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -77,6 +78,7 @@
     jarEmpty.hidden = inJar.length > 0;
     var total = inJar.reduce(function (a, i) { return a + i.gb; }, 0);
     jarCount.textContent = inJar.length === 0 ? "からっぽ" : inJar.length + "件 / " + total.toFixed(1) + " GB";
+    setMeter(total);
     inJar.forEach(function (item) {
       var b = document.createElement("button");
       b.type = "button";
@@ -94,6 +96,14 @@
   }
 
   function say(msg) { if (status) status.textContent = msg; }
+
+  /* 数字そのものを重くする: 量が増えるほど字面を広げる（Martian Mono の wdth 軸）。 */
+  function setMeter(gb) {
+    if (!meter) return;
+    var width = Math.round(82 + Math.min(1, gb / 100) * 30);   // 82 → 112
+    meter.style.setProperty("--w", width);
+    meter.innerHTML = gb.toFixed(1) + "<small>GB</small>";
+  }
 
   function pull() {
     var picked = ITEMS.filter(function (i) { return state[i.id] === "on"; });

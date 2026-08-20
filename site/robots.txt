@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://disclean.i4u.jp/sitemap.xml
