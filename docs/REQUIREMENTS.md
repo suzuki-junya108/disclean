@@ -65,12 +65,12 @@
 | S-21 | Sources/DiscleanApp/Views/SettingsView.swift | GUI 設定 | 設定 | S-14, S-32 | 隔離TTL日数, 同時実行数, 除外パス編集, ルール上書きディレクトリを開く, 自動更新のオン/オフ, チェック間隔, 適用中の catalogVersion と最終チェック時刻, 「今すぐ確認」, 送信される情報の説明 |
 | S-22 | Sources/DiscleanApp/Views/PermissionGuideView.swift | GUI 権限案内 | オンボーディング | S-13, S-14 | フルディスクアクセス未付与の説明, 「システム設定を開く」ボタン, 未付与時に測定できない範囲の一覧 |
 | S-23 | Sources/DiscleanApp/Views/ErrorBannerView.swift | GUI エラー | エラー状態 | S-14 | エラー文言, 対象パス, 再試行ボタン, ログを開くボタン |
-| S-24 | site/index.html#hero | LP ヒーロー | オンボーディング | S-25, S-28, S-30 | 実測値のチャンクタワー, 実行レバー, 隔離庫の瓶, 見出し, 「これはデモです」注記 |
-| S-25 | site/index.html#numbers | LP 実測比較 | メイン | S-26, S-28 | 旧スクリプトとの回収量比較表, 実測日と機種の明記 |
+| S-24 | site/index.html#hero | LP ヒーロー | オンボーディング | S-25, S-28, S-30 | 実測値のチャンクタワー, 実行レバー, 隔離庫の瓶, 「瓶に入れた量」メーター（字面の幅が量に比例）, 見出し, 「これはデモです」注記 |
+| S-25 | site/index.html#numbers | LP 実測比較 | メイン | S-26, S-28 | 1 ブロック = 2GB の壁（1 個 対 59 個）, 内訳の凡例, 旧スクリプトとの比較表, 実測日と機種の明記 |
 | S-26 | site/index.html#safety | LP 安全のしくみ | メイン | S-27, S-28 | 隔離庫 / 7日 / undo / 監査ログ の4カード, 各カードに「取り消せる範囲」 |
 | S-27 | site/index.html#hands-off | LP 触らないもの | メイン | S-28 | Tier C 一覧, 「disclean は削除しません」の明示, 手動手順へのリンク |
 | S-28 | site/index.html#install | LP 導入 | 成功確認 | S-29, S-30 | brew コマンドのコピーボタン, .dmg リンク, 対応 OS, 署名と公証の記載 |
-| S-29 | site/index.html#faq | LP よくある質問 | 設定 | S-28, S-30 | 6問（復元可否 / sudo / 送信データと更新の通信 / 更新の届き方と止め方 / 空き容量 / アンインストール） |
+| S-29 | site/index.html#faq | LP よくある質問 | 設定 | S-28, S-30 | 6問（復元可否 / sudo / 送信データと更新の通信 / 更新の届き方と止め方 / 空き容量 / アンインストール）。開閉は details/summary |
 | S-30 | site/index.html#footer | LP フッタ | エラー状態 | S-24 | GitHub リンク, ライセンス, 旧 mac_cleanup.sh からの移行, JS 無効時の代替表示 |
 | S-31 | Sources/disclean/UI/UpdateView.swift | 更新の状態と差分 (update) | 確認 | S-03, (終了) | 適用中の catalogVersion, 配信中の版数と発行日, 差分 3 分類（拡大 / 縮小 / 中立）, **新たに削除対象になるパスと実サイズ**（最上部）, 本体の新版とインストール方法別の案内, `yes` 入力要求, 無効化の方法 |
 | S-32 | Sources/DiscleanApp/Views/UpdateSheet.swift | GUI 更新シート | 確認 | S-14, S-21 | 差分一覧（拡大差分を最上部・装飾なし）, 「承認するまで削除対象は増えません」の明示, 承認 / 後で / この更新を無視, 本体の新版の案内, 設定へのリンク |

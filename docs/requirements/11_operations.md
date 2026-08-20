@@ -12,7 +12,7 @@
   - **ルールだけの更新**（OS 更新でパスが変わった場合など）: 本体を再ビルドせず、ルール JSON の修正 → `catalogVersion` を +1 → manifest の再署名 → Release 更新、だけで全利用者に届く。到達は「利用者の次回実行時（24 時間間隔）＋拡大差分なら承認後」。
   - **緊急のルール停止（revocation）**: 誤ったルールを配ってしまった場合、`revocations: ["<ruleId>"]` を含む manifest を公開する。無効化は削除対象が減る方向のため、利用者の承認を待たずに次回実行時へ自動適用される。
   - **署名鍵の管理**: Ed25519 秘密鍵は GitHub Actions の Encrypted Secrets のみに置く。公開鍵は `release-keys.json` としてバイナリに埋め込む。ローテーションは「新鍵を `validFrom` 付きで追加した本体を先にリリース → 旧鍵での署名を止める → 十分に普及したら旧鍵を削除」の順に行う（新鍵だけを配ると旧バージョンが更新を受け取れなくなる）。
-  - LP: `site/` を GitHub Pages（`gh-pages` ブランチ）へ公開する。ビルド工程を持たないため、`main` の `site/` をそのまま同期する。公開前に `acceptance/AT-015-lp.sh` を CI で実行し、失敗した場合は公開しない。LP に記載するバージョン番号とチェックサムは Release の値をワークフローが差し込む。
+  - LP: `site/` を GitHub Pages へ公開する（`.github/workflows/pages.yml` の Actions デプロイ）。独自ドメインは `disclean.i4u.jp`（Cloudflare の CNAME → `suzuki-junya108.github.io`、プロキシは使わず GitHub の証明書を使う）。`site/CNAME` を配信物に含める。ビルド工程を持たないため、`main` の `site/` をそのまま同期する。公開前に `acceptance/AT-015-lp.sh` を CI で実行し、失敗した場合は公開しない。LP に記載するバージョン番号とチェックサムは Release の値をワークフローが差し込む。
   - 秘密情報: 署名証明書（`.p12`）と App Store Connect API キー（`.p8`）、それらのパスワードは GitHub Actions の Encrypted Secrets に置く。リポジトリ・チャット・コミットメッセージには一切含めない。
 - **Monitoring**: `N/A — reason: ローカル CLI / GUI であり、監視対象のサーバーが存在しないため。` 利用者側の診断は `disclean doctor` と `disclean history` が担う。
 - **Alerting**: `N/A — reason: 常駐せず通知先を持たないため。` 失敗は終了コード（4 = 部分的失敗、3 = 権限不足、6 = 隔離庫不整合）と stderr で即時に伝える。
