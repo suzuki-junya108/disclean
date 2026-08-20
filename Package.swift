@@ -24,6 +24,10 @@ let package = Package(
             ]
         ),
         .executableTarget(
+            name: "DiscleanApp",
+            dependencies: ["DiscleanKit"]
+        ),
+        .executableTarget(
             name: "disclean-catalog",
             dependencies: ["DiscleanKit"]
         ),
