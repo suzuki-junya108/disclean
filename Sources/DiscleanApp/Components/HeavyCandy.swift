@@ -97,7 +97,7 @@ struct ChunkView: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 10) {
                     Text(sizeText)
-                        .font(Tokens.data(22))
+                        .font(Tokens.weightedData(22, bytes: item.bytes))
                         .foregroundStyle(Tokens.ink)
                     TierChip(tier: item.tier)
                     if !item.undoable {

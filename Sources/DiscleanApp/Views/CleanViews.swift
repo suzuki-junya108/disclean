@@ -69,7 +69,7 @@ struct ResultListView: View {
                             .font(Tokens.data(11))
                             .foregroundStyle(Tokens.ink)
                         Text(ByteCountFormatter.string(fromByteCount: model.selectedBytes, countStyle: .file))
-                            .font(Tokens.data(26))
+                            .font(Tokens.weightedData(26, bytes: model.selectedBytes))
                             .foregroundStyle(Tokens.ink)
                         Text("\(model.selectedItems.count) 件")
                             .font(Tokens.body(12))
@@ -180,7 +180,7 @@ struct CompletionSummaryView: View {
                         ByteCountFormatter.string(
                             fromByteCount: outcome?.reclaimedBytes ?? 0, countStyle: .file)
                     )
-                    .font(Tokens.data(32))
+                    .font(Tokens.weightedData(32, bytes: outcome?.reclaimedBytes ?? 0))
                     .foregroundStyle(Tokens.ink)
                     Text("\(outcome?.quarantined.count ?? 0) 件を隔離庫へ移しました")
                         .font(Tokens.bodyBold())

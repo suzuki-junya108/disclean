@@ -54,6 +54,18 @@ enum Tokens {
             "MartianMono-SemiBold", size: size, fallback: .system(size: size, weight: .semibold, design: .monospaced))
     }
 
+    /// 容量の数字は、量が増えるほど字面を重くする（LP と同じ考え方）。
+    /// 同梱フォントが無い環境ではウェイトで代替し、意味だけを残す。
+    static func weightedData(_ size: CGFloat, bytes: Int64) -> Font {
+        let gigabytes = Double(bytes) / 1_000_000_000
+        let heaviness = min(1, gigabytes / 100)
+        if NSFont(name: "MartianMono-SemiBold", size: size) != nil {
+            return Font.custom("MartianMono-SemiBold", size: size)
+                .width(.init((82 + heaviness * 30) / 100))
+        }
+        return .system(size: size, weight: heaviness > 0.35 ? .black : .semibold, design: .monospaced)
+    }
+
     /// 同梱フォントがあれば使い、無ければシステムのフォールバックで描く（機能は損なわない）。
     private static func custom(_ name: String, size: CGFloat, fallback: Font) -> Font {
         NSFont(name: name, size: size) != nil ? Font.custom(name, size: size) : fallback
