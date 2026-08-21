@@ -210,6 +210,20 @@ struct CatalogUpdateDiffTests {
         #expect(!diff.requiresApproval)
     }
 
+    @Test("測り方だけの変更は中立（承認を求めない）")
+    func measureOnlyChangeIsNeutral() {
+        let before = [rule(id: "r")]
+        let after = [
+            Rule(
+                id: "r", title: "t", tier: .a, kind: .directory, paths: ["~/Library/Caches/x"],
+                whatIsLost: "w",
+                measure: MeasureSpec(kind: .paths, paths: ["~/Library/Caches/x"]))
+        ]
+        let diff = CatalogDiffer.diff(current: before, next: after)
+        #expect(diff.neutral.contains { $0.change == .textChanged })
+        #expect(!diff.requiresApproval)
+    }
+
     @Test("ルール削除と revocation は縮小")
     func removals() {
         let before = [rule(id: "r")]

@@ -95,9 +95,11 @@ public enum CatalogDiffer {
                     before: "\(old.enabled)", after: "\(next.enabled)",
                     newPaths: next.enabled ? (next.paths ?? []) : []))
         }
+        // 表示や測り方だけの変更は中立。消える対象は変わらないため承認を求めない。
         if old.title != next.title || old.titleJa != next.titleJa
             || old.whatIsLost != next.whatIsLost || old.whatIsLostJa != next.whatIsLostJa
             || old.manualSteps != next.manualSteps || old.verifiedOn != next.verifiedOn
+            || old.measure != next.measure
         {
             add(DiffEntry(ruleId: id, change: .textChanged, before: nil, after: nil, newPaths: []))
         }
