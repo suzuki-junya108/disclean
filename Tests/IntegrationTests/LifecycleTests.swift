@@ -310,7 +310,8 @@ struct LifecycleTests {
         try data.write(to: URL(fileURLWithPath: sandbox.env.rulesOverrideDir + "/01-b.json"))
         try sandbox.makeFixtureFiles(count: 1, relativePath: "Library/Caches/b")
 
-        let result = await Scanner(env: sandbox.env, config: sandbox.config).scan(catalog: sandbox.catalog())
+        let result = await Scanner(env: sandbox.env, config: sandbox.config)
+            .scan(catalog: sandbox.catalog(), ruleIds: ["fixture-a", "fixture-b"])
         let plan = try Planner().plan(from: result)
         #expect(plan.selected.contains { $0.ruleId == "fixture-a" })
         #expect(!plan.selected.contains { $0.ruleId == "fixture-b" })

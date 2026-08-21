@@ -29,6 +29,9 @@ public struct MeasureSpec: Codable, Sendable, Equatable {
 
 /// `MeasureSpec` に従って対象量を測る。測れない場合は nil を返す（0 と区別する）。
 public enum CommandSizeProbe {
+    /// スキャン中に許す測定時間。実行時（apply）はルールの timeoutSeconds に従う。
+    public static let scanTimeoutSeconds = 10
+
     public static func measure(
         _ spec: MeasureSpec, home: String, timeoutSeconds: Int = 20,
         isCancelled: @Sendable () -> Bool = { false }

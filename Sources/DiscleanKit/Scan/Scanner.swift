@@ -151,8 +151,12 @@ public struct Scanner: Sendable {
         }
 
         // 実行前に量を測る。測れないルールだけが「実行してみるまで不明」になる。
+        // スキャン中の測定には上限を置く。遅いツール 1 つでスキャン全体を止めない。
+        // 測れなければ「不明」として扱い、0 バイトとは区別する。
         guard let spec = rule.measure,
-            let bytes = CommandSizeProbe.measure(spec, home: env.home, isCancelled: isCancelled)
+            let bytes = CommandSizeProbe.measure(
+                spec, home: env.home, timeoutSeconds: CommandSizeProbe.scanTimeoutSeconds,
+                isCancelled: isCancelled)
         else {
             return makeItem(
                 rule: rule, japanese: japanese, measurement: PathMeasurement(),

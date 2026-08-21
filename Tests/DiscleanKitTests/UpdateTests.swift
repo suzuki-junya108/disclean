@@ -242,7 +242,7 @@ struct CatalogUpdateDiffTests {
     }
 }
 
-@Suite("CommandSizeProbe: 外部ツールの対象量を測る")
+@Suite("CommandSizeProbe: 外部ツールの対象量を測る", .serialized)
 struct CommandSizeProbeTests {
     @Test("paths 指定のディレクトリを測る")
     func measurePaths() throws {
