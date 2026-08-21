@@ -246,7 +246,9 @@ struct CompletionSummaryView: View {
                     .font(Tokens.bodyBold(13))
                     .foregroundStyle(Surface(scheme: scheme).text)
             }
-            if let moved = outcome?.quarantined, !moved.isEmpty, !model.purgedLastRun {
+            if let moved = outcome?.quarantined, !moved.isEmpty, !model.purgedLastRun,
+                !model.lastRunUndone
+            {
                 let bytes = moved.reduce(Int64(0)) { $0 + $1.bytes }
                 VStack(alignment: .leading, spacing: 6) {
                     Text("空き容量は、まだ増えていません")
@@ -263,6 +265,12 @@ struct CompletionSummaryView: View {
                     .buttonStyle(CandyButtonStyle(fill: Tokens.tomato))
                 }
                 .foregroundStyle(Surface(scheme: scheme).text)
+            }
+
+            if model.lastRunUndone {
+                Text("元に戻しました。片づける前と同じ状態です。")
+                    .font(Tokens.bodyBold(14))
+                    .foregroundStyle(Surface(scheme: scheme).text)
             }
 
             if model.purgedLastRun {

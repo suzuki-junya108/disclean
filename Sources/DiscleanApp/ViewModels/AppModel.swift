@@ -51,6 +51,8 @@ final class AppModel {
     var showUpdateSheet = false
     var scanProgressLabel = ""
     var purgedLastRun = false
+    /// 直前の実行を隔離庫から戻した。完全削除の案内はもう出さない。
+    var lastRunUndone = false
 
     private var audit: AuditLog
 
@@ -105,6 +107,7 @@ final class AppModel {
         guard let catalog, let scanResult else { return }
         phase = .applying
         purgedLastRun = false
+        lastRunUndone = false
         do {
             let plan = try Planner().plan(
                 from: scanResult, tiers: [], select: Array(selection), deselect: [])
@@ -133,6 +136,8 @@ final class AppModel {
             let outcome = try executor.undo(runId: runId)
             if outcome.restored.isEmpty, let first = outcome.skipped.first {
                 errorMessage = "戻せませんでした: \(first.reason)（\(first.path)）"
+            } else if runId == applyOutcome?.runId {
+                lastRunUndone = true
             }
             refreshQuarantine()
             refreshHistory()
@@ -151,6 +156,7 @@ final class AppModel {
     func purge(runId: String) {
         do {
             _ = try QuarantineStore(root: env.quarantineDir).purge(runId: runId, all: false)
+            if runId == applyOutcome?.runId { purgedLastRun = true }
             refreshQuarantine()
             refreshHistory()
         } catch {
