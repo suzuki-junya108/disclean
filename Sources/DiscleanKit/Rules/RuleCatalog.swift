@@ -118,8 +118,11 @@ public struct RuleCatalogLoader: Sendable {
                 return "directory rules require paths or pathsFrom"
             }
             // `pathsFrom` と併記された既定の場所も、代替として使われるため必ず検証する。
+            // ひな形（`*` を含む）は、ワイルドカードより前の固定部分を検査する。
+            // 広げた先は解決時にもう一度、同じ規則で検証する。
             for path in rule.paths ?? [] {
-                if let violation = guardian.validateRulePath(path) {
+                let checked = PathPattern.hasWildcard(path) ? PathPattern.staticPrefix(path) : path
+                if let violation = guardian.validateRulePath(checked) {
                     return "forbidden path \"\(path)\" (\(violation.rawValue))"
                 }
             }

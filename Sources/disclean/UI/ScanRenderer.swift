@@ -5,6 +5,39 @@ import DiscleanKit
 struct ScanRenderer {
     let out: Output
 
+    /// 1 行ぶんの表示。量・取り消せるか・失うもの・注意書きの順に出す。
+    private func renderItem(_ item: ScanItem) {
+        let size: String
+        if item.state == .blocked {
+            size = out.japanese ? "測れません" : "unmeasurable"
+        } else if !item.sizeKnown {
+            // 測る方法を持たないルールだけが「実行後に判明」になる。
+            size = out.japanese ? "実行後に判明" : "known after running"
+        } else {
+            size = Output.bytes(item.bytes)
+        }
+        let mark = item.undoable ? "" : out.styled(out.japanese ? " 取り消せません" : " not undoable", .yellow)
+        out.print("  \(pad(item.ruleId, 26)) \(pad(size, 10)) \(item.title)\(mark)")
+        out.print(out.styled("    \(item.whatIsLost)", .dim))
+        if item.state == .blocked {
+            out.print(
+                out.styled(
+                    out.japanese
+                        ? "    フルディスクアクセスを付与すると測定できます"
+                        : "    grant Full Disk Access to measure this",
+                    .yellow))
+        }
+        // 上限で打ち切ったときは、必ずそう言う（見せている量は実際より少ない）。
+        if item.pathsTruncated {
+            out.print(
+                out.styled(
+                    out.japanese
+                        ? "    場所が多いため上限まででまとめています（実際はこれ以上あります）"
+                        : "    too many places; counted up to the limit (there is more)",
+                    .yellow))
+        }
+    }
+
     func render(result: ScanResult, context: Context) {
         context.printPendingNotices()
         let ready = result.readyItems
@@ -24,28 +57,7 @@ struct ScanRenderer {
                     ? (out.japanese ? "B 中身を見てから消すもの" : "B check before reclaiming")
                     : (out.japanese ? "見るだけ（消しません）" : "look only (never deleted)"))
             out.print(out.styled(heading, .green))
-            for item in items {
-                let size: String
-                if item.state == .blocked {
-                    size = out.japanese ? "測れません" : "unmeasurable"
-                } else if !item.sizeKnown {
-                    // 測る方法を持たないルールだけが「実行後に判明」になる。
-                    size = out.japanese ? "実行後に判明" : "known after running"
-                } else {
-                    size = Output.bytes(item.bytes)
-                }
-                let mark = item.undoable ? "" : out.styled(out.japanese ? " 取り消せません" : " not undoable", .yellow)
-                out.print("  \(pad(item.ruleId, 26)) \(pad(size, 10)) \(item.title)\(mark)")
-                out.print(out.styled("    \(item.whatIsLost)", .dim))
-                if item.state == .blocked {
-                    out.print(
-                        out.styled(
-                            out.japanese
-                                ? "    フルディスクアクセスを付与すると測定できます"
-                                : "    grant Full Disk Access to measure this",
-                            .yellow))
-                }
-            }
+            for item in items { renderItem(item) }
         }
 
         out.print()

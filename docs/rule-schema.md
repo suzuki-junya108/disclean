@@ -23,7 +23,7 @@
 | `titleJa` | string | | 日本語の表示名（省略時は `title`） |
 | `tier` | `"A"` \| `"B"` \| `"C"` | ✔ | リスク階層。A=既定選択 / B=要確認 / C=表示のみ |
 | `kind` | `"directory"` \| `"command"` \| `"report"` | ✔ | 処理方式 |
-| `paths` | string[] | `directory` では必須（`pathsFrom` があれば不要） | 対象パス。`~` 展開可 |
+| `paths` | string[] | `directory` では必須（`pathsFrom` があれば不要） | 対象パス。`~` 展開可。`*` `?` のひな形も書ける（下記） |
 | `pathsFrom` | PathsFrom | | 対象の場所を**ツール自身に聞いて**決める。`{"command": CommandSpec, "subpaths": [String]}` |
 | `command` | CommandSpec | `command` では必須 | 実行する外部コマンド |
 | `sizeProbe` | CommandSpec | | 対象量の推定に使うコマンド |
@@ -42,6 +42,26 @@
 
 `CommandSpec` は `{"executable": string, "arguments": string[], "expectSuccess": bool}` です。
 `executable` は絶対パスか PATH 上の名前。**シェルは経由しません**（`/bin/sh -c` に渡しません）。
+
+### ひな形（`*` と `?`）
+
+キャッシュは「機械ごとに変わる ID」の下に置かれることがあります（シミュレータの端末 ID、
+アプリのコンテナ ID など）。決め打ちで書くとその 1 台でしか当たらないため、ひな形で書けます。
+
+```json
+"paths": [
+  "~/Library/Developer/CoreSimulator/Devices/*/data/Containers/Data/Application/*/Library/Caches"
+]
+```
+
+規則は次のとおりです。
+
+- `*` `?` は **1 階層の中だけ**に効きます。`**`（階層をまたぐ）は用意しません
+- `*` は隠し項目（`.` で始まる名前）に当たりません。当てたいときは `.*` のように書きます
+- **途中の段がリンクなら、その先へは進みません**。当たった先がリンクなら対象にしません
+- ワイルドカードより前の固定部分は、カタログ検証のときに検査します（`~/*` のような浅いひな形は拒否）
+- 広げた 1 つ 1 つも、同梱ルールと同じ検証（ホーム配下・深さ 2 以上・除外に入っていない）を通します
+- 1 本のひな形から広げるのは 4096 か所までです。**上限に達した場合は「上限まででまとめています」と表示します**（黙って減らしません）
 
 ### PathsFrom — 場所をツールに聞く
 

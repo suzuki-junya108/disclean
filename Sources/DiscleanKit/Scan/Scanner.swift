@@ -26,6 +26,32 @@ public struct ScanItem: Codable, Sendable, Equatable {
     public let undoable: Bool
     /// 量が測れているか。false のときは「不明」であって「0 バイト」ではない。
     public let sizeKnown: Bool
+    /// 対象の場所が多すぎて数えきれなかった。見せている量は実際より少ない。
+    public let pathsTruncated: Bool
+
+    public init(
+        ruleId: String, tier: Tier, title: String, bytes: Int64, fileCount: Int, paths: [String],
+        state: ItemState, reason: String?, dataless: Bool, cacheHit: Bool, whatIsLost: String,
+        manualSteps: String?, kind: RuleKind, undoable: Bool, sizeKnown: Bool,
+        pathsTruncated: Bool = false
+    ) {
+        self.ruleId = ruleId
+        self.tier = tier
+        self.title = title
+        self.bytes = bytes
+        self.fileCount = fileCount
+        self.paths = paths
+        self.state = state
+        self.reason = reason
+        self.dataless = dataless
+        self.cacheHit = cacheHit
+        self.whatIsLost = whatIsLost
+        self.manualSteps = manualSteps
+        self.kind = kind
+        self.undoable = undoable
+        self.sizeKnown = sizeKnown
+        self.pathsTruncated = pathsTruncated
+    }
 }
 
 /// スキャン全体の結果。
@@ -250,7 +276,7 @@ public struct Scanner: Sendable {
         return MeasuredItem(
             item: makeItem(
                 rule: rule, japanese: japanese, measurement: measurement,
-                state: state.state, reason: state.reason),
+                state: state.state, reason: state.reason, pathsTruncated: resolved.truncated),
             cacheUpdates: cacheUpdates)
     }
 
@@ -311,14 +337,15 @@ public struct Scanner: Sendable {
 
     private static func makeItem(
         rule: Rule, japanese: Bool, measurement: PathMeasurement, state: ItemState, reason: String?,
-        sizeKnown: Bool = true
+        sizeKnown: Bool = true, pathsTruncated: Bool = false
     ) -> ScanItem {
         ScanItem(
             ruleId: rule.id, tier: rule.tier, title: rule.displayTitle(japanese: japanese),
             bytes: measurement.bytes, fileCount: measurement.fileCount, paths: measurement.paths,
             state: state, reason: reason, dataless: measurement.dataless, cacheHit: measurement.cacheHit,
             whatIsLost: rule.displayWhatIsLost(japanese: japanese), manualSteps: rule.manualSteps,
-            kind: rule.kind, undoable: rule.kind == .directory, sizeKnown: sizeKnown)
+            kind: rule.kind, undoable: rule.kind == .directory, sizeKnown: sizeKnown,
+            pathsTruncated: pathsTruncated)
     }
 }
 

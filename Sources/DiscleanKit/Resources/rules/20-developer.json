@@ -161,5 +161,153 @@
         ]
       }
     }
+  },
+  {
+    "id": "simulator-app-caches",
+    "title": "Simulator app caches",
+    "titleJa": "シミュレータ内アプリのキャッシュ",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Developer/CoreSimulator/Devices/*/data/Containers/Data/Application/*/Library/Caches",
+      "~/Library/Developer/CoreSimulator/Devices/*/data/Containers/Data/Application/*/tmp"
+    ],
+    "requiresQuitApps": [
+      "com.apple.iphonesimulator"
+    ],
+    "whatIsLost": "Caches written by apps installed in simulators. Rebuilt on next launch.",
+    "whatIsLostJa": "シミュレータに入れたアプリが作った一時データです。次に起動したときに作り直されます（機械学習モデルのコンパイル結果などが溜まります）。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "xcode-device-support",
+    "title": "Xcode device support files",
+    "titleJa": "Xcode の実機サポートファイル",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Developer/Xcode/iOS DeviceSupport",
+      "~/Library/Developer/Xcode/watchOS DeviceSupport",
+      "~/Library/Developer/Xcode/tvOS DeviceSupport"
+    ],
+    "whatIsLost": "Symbol caches for connected devices. Rebuilt when the device is connected again.",
+    "whatIsLostJa": "実機をつないだときに作られる記号情報です。次につないだときに作り直されます（数分かかります）。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "gradle-cache",
+    "title": "Gradle cache",
+    "titleJa": "Gradle のキャッシュ",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/.gradle/caches"
+    ],
+    "whatIsLost": "Downloaded dependencies and build caches; re-fetched on the next build.",
+    "whatIsLostJa": "Gradle がダウンロードした部品とビルドの控えです。次のビルドで取り直します。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "cargo-registry-cache",
+    "title": "Cargo registry cache",
+    "titleJa": "Cargo のキャッシュ",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/.cargo/registry/cache",
+      "~/.cargo/registry/src"
+    ],
+    "whatIsLost": "Downloaded crates and their extracted sources; re-fetched when needed.",
+    "whatIsLostJa": "Rust の部品をダウンロードして貯めた控えです。次のビルドで取り直します。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "go-module-cache",
+    "title": "Go module download cache",
+    "titleJa": "Go のモジュールキャッシュ",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/go/pkg/mod/cache/download"
+    ],
+    "whatIsLost": "Downloaded modules; re-fetched on the next build.",
+    "whatIsLostJa": "Go がダウンロードした部品の控えです。次のビルドで取り直します。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "bun-install-cache",
+    "title": "Bun install cache",
+    "titleJa": "Bun のキャッシュ",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/.bun/install/cache"
+    ],
+    "whatIsLost": "Downloaded packages; re-fetched on the next install.",
+    "whatIsLostJa": "Bun がダウンロードした部品の控えです。次のインストールで取り直します。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "deno-cache",
+    "title": "Deno cache",
+    "titleJa": "Deno のキャッシュ",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Caches/deno"
+    ],
+    "whatIsLost": "Downloaded modules and compiled output; re-fetched when needed.",
+    "whatIsLostJa": "Deno がダウンロードした部品と変換結果の控えです。次に使うときに取り直します。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "playwright-browsers",
+    "title": "Playwright browsers",
+    "titleJa": "Playwright のブラウザ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Caches/ms-playwright",
+      "~/Library/Caches/ms-playwright-mcp"
+    ],
+    "whatIsLost": "Downloaded test browsers; `playwright install` fetches them again.",
+    "whatIsLostJa": "テスト用にダウンロードしたブラウザ一式です。`playwright install` で取り直します（数百 MB の通信）。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "cypress-cache",
+    "title": "Cypress cache",
+    "titleJa": "Cypress のキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Caches/Cypress"
+    ],
+    "whatIsLost": "Downloaded Cypress binaries; re-fetched on the next run.",
+    "whatIsLostJa": "ダウンロード済みの Cypress 本体です。次に使うときに取り直します。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "jetbrains-caches",
+    "title": "JetBrains IDE caches",
+    "titleJa": "JetBrains の IDE キャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Caches/JetBrains"
+    ],
+    "whatIsLost": "Index and build caches for JetBrains IDEs; rebuilt on the next open.",
+    "whatIsLostJa": "JetBrains の IDE が作った索引です。次にプロジェクトを開いたときに作り直されます（その 1 回だけ遅くなります）。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
   }
 ]

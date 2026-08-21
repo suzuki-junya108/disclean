@@ -82,5 +82,38 @@
     "whatIsLostJa": "Linux の仮想マシンのディスクです。中に置いたものも一緒に消えます。",
     "manualSteps": "colima stop && colima delete で VM ごと作り直します（中身は失われます）。",
     "minMacOS": "14.0"
+  },
+  {
+    "id": "coresimulator-devices",
+    "title": "Simulator devices",
+    "titleJa": "シミュレータの端末",
+    "tier": "C",
+    "kind": "report",
+    "paths": [
+      "~/Library/Developer/CoreSimulator/Devices"
+    ],
+    "whatIsLost": "Every simulator device, with the apps and state inside it.",
+    "whatIsLostJa": "作られたシミュレータの端末すべてです。中に入れたアプリと、その状態も一緒に消えます。",
+    "manualSteps": "Xcode の Window → Devices and Simulators で不要な端末を削除します。端末ごとなら `xcrun simctl delete <UDID>`、いまの Xcode で使えない端末をまとめてなら `xcrun simctl delete unavailable` です。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "local-model-caches",
+    "title": "Local model caches",
+    "titleJa": "手元の AI モデル",
+    "tier": "C",
+    "kind": "report",
+    "paths": [
+      "~/.cache/whisper",
+      "~/.cache/whisper-cpp",
+      "~/.cache/torch",
+      "~/.cache/lm-studio"
+    ],
+    "whatIsLost": "Downloaded model weights; re-downloading takes time and bandwidth.",
+    "whatIsLostJa": "ダウンロード済みのモデルです。取り直しに時間と通信がかかります。",
+    "manualSteps": "中を見て、使わないモデルのファイルだけを個別に削除してください。`disclean inspect --path ~/.cache/whisper` で中身を確認できます。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
   }
 ]

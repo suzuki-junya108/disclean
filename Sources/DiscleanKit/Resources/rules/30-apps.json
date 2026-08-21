@@ -71,5 +71,54 @@
     "whatIsLost": "Rendered previews; regenerated when a project is reopened.",
     "whatIsLostJa": "動画編集のプレビュー用に作った中間ファイルです。プロジェクトを開き直すと作り直されます。",
     "minMacOS": "14.0"
+  },
+  {
+    "id": "electron-app-caches",
+    "title": "Desktop app web caches",
+    "titleJa": "デスクトップアプリの表示キャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Application Support/*/Cache",
+      "~/Library/Application Support/*/Code Cache",
+      "~/Library/Application Support/*/GPUCache",
+      "~/Library/Application Support/*/CachedData",
+      "~/Library/Application Support/*/Service Worker/CacheStorage"
+    ],
+    "minAgeDays": 1,
+    "whatIsLost": "Web caches of Electron-based apps (Slack, editors, and so on). Rebuilt on next launch.",
+    "whatIsLostJa": "Slack やエディタなどが表示を速くするために貯めた一時データです。次の起動時に作り直されます。最近使ったアプリのぶんは対象にしません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "browser-on-device-model",
+    "title": "Browser on-device AI model",
+    "titleJa": "ブラウザの端末内 AI モデル",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Application Support/Google/Chrome*/OptGuideOnDeviceModel",
+      "~/Library/Application Support/Microsoft Edge*/OptGuideOnDeviceModel",
+      "~/Library/Application Support/BraveSoftware/*/OptGuideOnDeviceModel"
+    ],
+    "whatIsLost": "The AI model the browser runs locally; downloaded again when needed.",
+    "whatIsLostJa": "ブラウザが端末の中で動かす AI モデルです。必要になれば自動で取り直します（数 GB の通信）。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "claude-vm-bundles",
+    "title": "Claude desktop VM bundles",
+    "titleJa": "Claude デスクトップの仮想マシン",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Application Support/Claude/vm_bundles"
+    ],
+    "whatIsLost": "Base images for the sandboxed VM; downloaded again when the feature is used.",
+    "whatIsLostJa": "Claude デスクトップが使う仮想マシンの土台です。次に使うときに取り直します（数 GB の通信）。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
   }
 ]

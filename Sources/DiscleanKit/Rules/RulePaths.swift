@@ -14,14 +14,18 @@ public enum RulePaths {
         public let rejected: [String]
         /// ツールに聞けなかったので、ルールに書かれた既定の場所を使った。
         public let usedFallback: Bool
+        /// 場所が多すぎて、途中で打ち切った（見せている量は実際より少ない）。
+        public let truncated: Bool
 
         public init(
-            paths: [String], toolUnavailable: Bool, rejected: [String], usedFallback: Bool = false
+            paths: [String], toolUnavailable: Bool, rejected: [String], usedFallback: Bool = false,
+            truncated: Bool = false
         ) {
             self.paths = paths
             self.toolUnavailable = toolUnavailable
             self.rejected = rejected
             self.usedFallback = usedFallback
+            self.truncated = truncated
         }
     }
 
@@ -29,9 +33,12 @@ public enum RulePaths {
     public static func resolve(
         _ rule: Rule, home: String, guardian: PathGuard, timeoutSeconds: Int = 10
     ) -> Resolved {
-        let listed = (rule.paths ?? []).map { PathGuard.normalize(Expand.tilde($0, home: home)) }
+        let declared = expandDeclared(rule.paths ?? [], home: home, guardian: guardian)
+        let listed = declared.paths
         guard let pathsFrom = rule.pathsFrom else {
-            return Resolved(paths: listed, toolUnavailable: false, rejected: [])
+            return Resolved(
+                paths: listed, toolUnavailable: false, rejected: declared.rejected,
+                truncated: declared.truncated)
         }
 
         // ツールが答えられないことがある（npm 10 は `config get cache` を拒む）。
@@ -77,6 +84,41 @@ public enum RulePaths {
             return fallback(toolUnavailable: false, rejected: rejected)
         }
         return Resolved(paths: accepted, toolUnavailable: false, rejected: rejected)
+    }
+
+    /// ルールに書かれた場所を実際のパスに広げる。
+    ///
+    /// ひな形（`*` を含む）は 1 階層ずつ広げ、**広げた先も同梱ルールと同じ規則で検証する**。
+    /// 広げた結果を無条件に信じると、ひな形の書き方ひとつで範囲外へ出られてしまう。
+    /// ルールに書かれた場所を広げた結果。
+    private struct Declared {
+        var paths: [String] = []
+        var rejected: [String] = []
+        var truncated = false
+    }
+
+    private static func expandDeclared(
+        _ patterns: [String], home: String, guardian: PathGuard
+    ) -> Declared {
+        var declared = Declared()
+        for pattern in patterns {
+            let expanded = PathGuard.normalize(Expand.tilde(pattern, home: home))
+            guard PathPattern.hasWildcard(expanded) else {
+                // 決め打ちの場所は、実物が無くても「見つかりません」と言えるよう素通しする。
+                declared.paths.append(expanded)
+                continue
+            }
+            let expansion = PathPattern.expandDetailed(expanded)
+            declared.truncated = declared.truncated || expansion.truncated
+            for match in expansion.paths {
+                if guardian.validateRulePath(match) == nil {
+                    declared.paths.append(match)
+                } else {
+                    declared.rejected.append(match)
+                }
+            }
+        }
+        return declared
     }
 
     private static func exists(_ path: String) -> Bool {

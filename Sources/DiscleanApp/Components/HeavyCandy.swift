@@ -127,6 +127,12 @@ struct ChunkView: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                 }
+                if item.pathsTruncated {
+                    Text("場所が多いため上限まででまとめています（実際はこれ以上あります）")
+                        .font(Tokens.body(11))
+                        .foregroundStyle(Tokens.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 if item.state != .blocked {
                     Button("なかを見る", action: onInspect)
                         .buttonStyle(CandyButtonStyle(fill: Tokens.paper))
