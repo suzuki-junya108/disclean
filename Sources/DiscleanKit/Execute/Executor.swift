@@ -137,6 +137,8 @@ public struct Executor: Sendable {
         let dryRun = context.dryRun
         let now = context.now
         let fm = FileManager.default
+        // スキャンが見せた場所と、いま動かす場所を必ず一致させる。
+        // item.paths はスキャン時点の解決結果なので、そのまま使う。
         for parent in item.paths {
             if isCancelled() { break }
             guard let children = try? fm.contentsOfDirectory(atPath: parent) else {

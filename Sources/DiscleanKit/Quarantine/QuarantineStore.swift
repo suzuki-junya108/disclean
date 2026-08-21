@@ -43,7 +43,35 @@ public struct QuarantineStore: Sendable {
     }
 
     public func loadIndex() -> QuarantineIndex {
-        (try? JSONIO.read(QuarantineIndex.self, at: indexPath)) ?? QuarantineIndex()
+        let index = (try? JSONIO.read(QuarantineIndex.self, at: indexPath)) ?? QuarantineIndex()
+        return healed(index)
+    }
+
+    /// 古い版が 0 バイトと記録した項目を、実体を測り直して直す。
+    /// 記録が壊れていると、隔離庫も履歴も実際より小さく見え続ける。
+    private func healed(_ index: QuarantineIndex) -> QuarantineIndex {
+        var healedIndex = index
+        var changed = false
+        for (runOffset, run) in index.runs.enumerated() {
+            var entries = run.entries
+            for (entryOffset, entry) in entries.enumerated() where entry.bytes == 0 {
+                let path = root + "/" + run.runId + "/" + entry.quarantineRelativePath
+                let measured = DirectoryMeter.measure(path: path).bytes
+                guard measured > 0 else { continue }
+                entries[entryOffset] = QuarantineEntry(
+                    ruleId: entry.ruleId, originalPath: entry.originalPath,
+                    quarantineRelativePath: entry.quarantineRelativePath, bytes: measured,
+                    isDirectory: entry.isDirectory, movedAt: entry.movedAt)
+                changed = true
+            }
+            if changed {
+                healedIndex.runs[runOffset] = QuarantineRun(
+                    runId: run.runId, createdAt: run.createdAt, expiresAt: run.expiresAt,
+                    entries: entries)
+            }
+        }
+        if changed { try? saveIndex(healedIndex) }
+        return healedIndex
     }
 
     public func saveIndex(_ index: QuarantineIndex) throws {

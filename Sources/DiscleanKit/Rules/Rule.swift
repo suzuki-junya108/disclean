@@ -44,6 +44,30 @@ public struct CommandSpec: Codable, Sendable, Equatable {
     }
 }
 
+/// 対象の場所を、ツール自身に聞いて決める指定。
+///
+/// キャッシュの置き場所はツールと環境で変わる（`~/.cache/uv` / `~/Library/Caches/Homebrew` …）。
+/// 決め打ちにすると環境ごとに外れるため、ツールに聞いた場所を使う。
+public struct PathsFrom: Codable, Sendable, Equatable {
+    /// 場所を答えるコマンド（例 `uv cache dir`）。標準出力の 1 行目をパスとして扱う。
+    public let command: CommandSpec
+    /// 答えたパスの下の、実際に中身が入っている場所（例 npm なら `_cacache`）。
+    public let subpaths: [String]
+
+    public init(command: CommandSpec, subpaths: [String] = []) {
+        self.command = command
+        self.subpaths = subpaths
+    }
+
+    private enum CodingKeys: String, CodingKey { case command, subpaths }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        command = try c.decode(CommandSpec.self, forKey: .command)
+        subpaths = try c.decodeIfPresent([String].self, forKey: .subpaths) ?? []
+    }
+}
+
 /// クリーンアップ対象 1 件の定義。同梱 JSON・更新カタログ・ユーザー JSON すべてこの形。
 public struct Rule: Codable, Sendable, Equatable {
     public let id: String
@@ -52,6 +76,8 @@ public struct Rule: Codable, Sendable, Equatable {
     public let tier: Tier
     public let kind: RuleKind
     public let paths: [String]?
+    /// 対象の場所をツールに聞いて決める（`paths` の代わり）。
+    public let pathsFrom: PathsFrom?
     public let command: CommandSpec?
     public let sizeProbe: CommandSpec?
     public let detect: CommandSpec?
@@ -75,7 +101,7 @@ public struct Rule: Codable, Sendable, Equatable {
     public static let maxTimeoutSeconds = 900
 
     private enum CodingKeys: String, CodingKey {
-        case id, title, titleJa, tier, kind, paths, command, sizeProbe, detect
+        case id, title, titleJa, tier, kind, paths, pathsFrom, command, sizeProbe, detect
         case minAgeDays, requiresQuitApps, whatIsLost, whatIsLostJa, manualSteps
         case enabled, timeoutSeconds, minMacOS, maxMacOS, verifiedOn, measure
     }
@@ -88,6 +114,7 @@ public struct Rule: Codable, Sendable, Equatable {
         tier = try c.decode(Tier.self, forKey: .tier)
         kind = try c.decode(RuleKind.self, forKey: .kind)
         paths = try c.decodeIfPresent([String].self, forKey: .paths)
+        pathsFrom = try c.decodeIfPresent(PathsFrom.self, forKey: .pathsFrom)
         command = try c.decodeIfPresent(CommandSpec.self, forKey: .command)
         sizeProbe = try c.decodeIfPresent(CommandSpec.self, forKey: .sizeProbe)
         detect = try c.decodeIfPresent(CommandSpec.self, forKey: .detect)
@@ -114,6 +141,7 @@ public struct Rule: Codable, Sendable, Equatable {
         tier: Tier,
         kind: RuleKind,
         paths: [String]? = nil,
+        pathsFrom: PathsFrom? = nil,
         command: CommandSpec? = nil,
         sizeProbe: CommandSpec? = nil,
         detect: CommandSpec? = nil,
@@ -135,6 +163,7 @@ public struct Rule: Codable, Sendable, Equatable {
         self.tier = tier
         self.kind = kind
         self.paths = paths
+        self.pathsFrom = pathsFrom
         self.command = command
         self.sizeProbe = sizeProbe
         self.detect = detect

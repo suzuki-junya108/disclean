@@ -246,6 +246,31 @@ struct CompletionSummaryView: View {
                     .font(Tokens.bodyBold(13))
                     .foregroundStyle(Surface(scheme: scheme).text)
             }
+            if let moved = outcome?.quarantined, !moved.isEmpty, !model.purgedLastRun {
+                let bytes = moved.reduce(Int64(0)) { $0 + $1.bytes }
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("空き容量は、まだ増えていません")
+                        .font(Tokens.bodyBold(14))
+                    Text(
+                        "隔離庫は同じディスクの中にあります。\(model.config.quarantineTtlDays) 日たてば自動で空きますが、"
+                            + "いま空けることもできます（戻せなくなります）。"
+                    )
+                    .font(Tokens.body(12))
+                    .fixedSize(horizontal: false, vertical: true)
+                    Button("いま完全に削除して " + Format.bytes(bytes) + " を空ける") {
+                        model.purgeLastRun()
+                    }
+                    .buttonStyle(CandyButtonStyle(fill: Tokens.tomato))
+                }
+                .foregroundStyle(Surface(scheme: scheme).text)
+            }
+
+            if model.purgedLastRun {
+                Text("完全に削除しました。空き容量に反映されています。")
+                    .font(Tokens.bodyBold(14))
+                    .foregroundStyle(Surface(scheme: scheme).text)
+            }
+
             HStack(spacing: 12) {
                 Button("隔離庫を見る") { model.section = .quarantine }
                     .buttonStyle(CandyButtonStyle(fill: Tokens.sky))

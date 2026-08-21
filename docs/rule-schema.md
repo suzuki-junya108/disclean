@@ -23,7 +23,8 @@
 | `titleJa` | string | | 日本語の表示名（省略時は `title`） |
 | `tier` | `"A"` \| `"B"` \| `"C"` | ✔ | リスク階層。A=既定選択 / B=要確認 / C=表示のみ |
 | `kind` | `"directory"` \| `"command"` \| `"report"` | ✔ | 処理方式 |
-| `paths` | string[] | `directory` では必須 | 対象パス。`~` 展開可 |
+| `paths` | string[] | `directory` では必須（`pathsFrom` があれば不要） | 対象パス。`~` 展開可 |
+| `pathsFrom` | PathsFrom | | 対象の場所を**ツール自身に聞いて**決める。`{"command": CommandSpec, "subpaths": [String]}` |
 | `command` | CommandSpec | `command` では必須 | 実行する外部コマンド |
 | `sizeProbe` | CommandSpec | | 対象量の推定に使うコマンド |
 | `detect` | CommandSpec | | ツールの有無を判定するコマンド |
@@ -41,6 +42,39 @@
 
 `CommandSpec` は `{"executable": string, "arguments": string[], "expectSuccess": bool}` です。
 `executable` は絶対パスか PATH 上の名前。**シェルは経由しません**（`/bin/sh -c` に渡しません）。
+
+### PathsFrom — 場所をツールに聞く
+
+キャッシュの置き場所はツールと環境で変わります（`~/.cache/uv` / `~/Library/Caches/Homebrew` / `~/.npm/_cacache` …）。
+決め打ちにすると環境ごとに外れるため、ツールに聞いた場所を対象にします。
+
+```json
+"pathsFrom": {
+  "command": { "executable": "npm", "arguments": ["config", "get", "cache"] },
+  "subpaths": ["_cacache"]
+}
+```
+
+標準出力の 1 行目をパスとして扱い、`subpaths` があればその下を対象にします。
+
+**ツールの答えは無条件には信じません。** 返ってきたパスにも、同梱ルールとまったく同じ検証
+（ホーム配下・深さ 2 以上・システム領域でない・除外に入っていない）を通します。通らなければ
+`skipped(reason: "forbidden-root")` として対象から外します。
+
+### なぜ外部ツールに任せず、自分で移すのか
+
+`uv cache prune` や `npm cache clean` のようなコマンドは、**ツールごとに「何を消すか」が違います**。
+実測では、3.1GB ある uv のキャッシュに対して `uv cache prune` が消したのは 0 バイトでした
+（prune は「どの環境からも参照されていない分」だけを消すため）。一方、一覧にはキャッシュ全体の
+大きさを出していたので、見せた量と実際に減る量が大きく食い違っていました。
+
+そこで v0.2.0 から、これらのキャッシュは **ディスクリン自身が隔離庫へ移します**。
+
+- 見せた量と動かす量が必ず一致する
+- **7 日間は元に戻せる**（外部コマンドは取り消せない）
+- ツールごとの `prune` / `clean` の違いに左右されない
+
+ツールは、次に使うときにキャッシュを作り直します。
 
 ### MeasureSpec — 外部ツールに任せる項目の量を測る
 

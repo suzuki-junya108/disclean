@@ -2,7 +2,7 @@ import Foundation
 
 /// 本体のバージョン。リリースタグ (`v<version>`) と一致させる。
 public enum DiscleanVersion {
-    public static let current = "0.1.5"
+    public static let current = "0.2.0"
 }
 
 /// 全 CLI サブコマンド共通の終了コード規約（要件 §4.1）。

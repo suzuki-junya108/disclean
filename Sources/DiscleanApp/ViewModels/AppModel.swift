@@ -50,6 +50,7 @@ final class AppModel {
     var showConfirmSheet = false
     var showUpdateSheet = false
     var scanProgressLabel = ""
+    var purgedLastRun = false
 
     private var audit: AuditLog
 
@@ -103,6 +104,7 @@ final class AppModel {
     func apply() async {
         guard let catalog, let scanResult else { return }
         phase = .applying
+        purgedLastRun = false
         do {
             let plan = try Planner().plan(
                 from: scanResult, tiers: [], select: Array(selection), deselect: [])
@@ -137,6 +139,13 @@ final class AppModel {
         } catch {
             errorMessage = "\(error)"
         }
+    }
+
+    /// 直前の実行分を、いま完全に削除して空き容量にする。
+    func purgeLastRun() {
+        guard let runId = applyOutcome?.runId else { return }
+        purge(runId: runId)
+        purgedLastRun = true
     }
 
     func purge(runId: String) {

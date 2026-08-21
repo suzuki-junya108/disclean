@@ -90,7 +90,7 @@
 - **Preconditions**: 有効カタログが構築済み（F-01）
 - **Main flow**:
   1. プロセス起動直後に `setiopolicy_np(IOPOL_TYPE_VFS_MATERIALIZE_DATALESS_FILES, IOPOL_SCOPE_PROCESS, IOPOL_MATERIALIZE_DATALESS_FILES_OFF)` を発行し、クラウド未ダウンロードファイルの実体化を抑止する
-  2. Tier A / B の各ルールについて、対象パスの存在と前提条件（対象アプリが未起動か、外部ツールが検出できるか）を評価する
+  2. Tier A / B の各ルールについて、対象パスを解決し（`pathsFrom` があればツールに聞く）、存在と前提条件（対象アプリが未起動か、外部ツールが検出できるか）を評価する。**ツールが答えたパスにも F-01 と同じ禁止パス検証を必ず通す**（通らなければ `skipped(reason: "forbidden-root")`）
   3. 各パスを最大 `DISCLEAN_CONCURRENCY` 並列で列挙し、`lstat` の `st_blocks * 512`（実割当サイズ）を合算する。
      **実行時と同じ条件で数える**こと: `minAgeDays` があれば条件を満たす項目だけを、`requiresQuitApps` の
      アプリが起動中ならそのルール自体を `skipped` にする（表示した量と実際に移る量を一致させるため）。`st_flags & SF_DATALESS`（0x40000000）が立つ項目は中身を開かず、サイズ 0 かつ `dataless: true` として記録する

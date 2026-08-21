@@ -113,10 +113,15 @@ public struct RuleCatalogLoader: Sendable {
         if rule.tier == .c && (rule.manualSteps ?? "").isEmpty { return "tier C rules require manualSteps" }
         switch rule.kind {
         case .directory:
-            guard let paths = rule.paths, !paths.isEmpty else { return "directory rules require paths" }
-            for path in paths {
-                if let violation = guardian.validateRulePath(path) {
-                    return "forbidden path \"\(path)\" (\(violation.rawValue))"
+            // 場所はツールに聞く場合もある。その場合は解決したパスを実行直前に検証する。
+            if rule.pathsFrom == nil {
+                guard let paths = rule.paths, !paths.isEmpty else {
+                    return "directory rules require paths or pathsFrom"
+                }
+                for path in paths {
+                    if let violation = guardian.validateRulePath(path) {
+                        return "forbidden path \"\(path)\" (\(violation.rawValue))"
+                    }
                 }
             }
         case .command:

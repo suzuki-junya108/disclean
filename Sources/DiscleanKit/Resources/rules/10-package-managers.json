@@ -4,212 +4,80 @@
     "title": "npm cache",
     "titleJa": "npm のキャッシュ",
     "tier": "A",
-    "kind": "command",
-    "detect": {
-      "executable": "npm",
-      "arguments": [
-        "--version"
-      ]
-    },
-    "command": {
-      "executable": "npm",
-      "arguments": [
-        "cache",
-        "clean",
-        "--force"
-      ]
-    },
-    "sizeProbe": {
-      "executable": "npm",
-      "arguments": [
-        "cache",
-        "ls"
-      ]
+    "kind": "directory",
+    "detect": { "executable": "npm", "arguments": ["--version"] },
+    "pathsFrom": {
+      "command": { "executable": "npm", "arguments": ["config", "get", "cache"] },
+      "subpaths": ["_cacache"]
     },
     "whatIsLost": "Downloaded packages are re-fetched on the next install.",
     "whatIsLostJa": "次のインストール時に再ダウンロードされます。",
-    "timeoutSeconds": 60,
     "minMacOS": "14.0",
-    "measure": {
-      "kind": "commandPath",
-      "command": {
-        "executable": "npm",
-        "arguments": [
-          "config",
-          "get",
-          "cache"
-        ]
-      }
-    }
+    "verifiedOn": "25F84"
   },
   {
     "id": "pnpm-store",
     "title": "pnpm store",
     "titleJa": "pnpm のストア",
     "tier": "A",
-    "kind": "command",
-    "detect": {
-      "executable": "pnpm",
-      "arguments": [
-        "--version"
-      ]
-    },
-    "command": {
-      "executable": "pnpm",
-      "arguments": [
-        "store",
-        "prune"
-      ]
-    },
-    "whatIsLost": "Unreferenced packages in the store; re-fetched when needed.",
-    "whatIsLostJa": "どのプロジェクトからも参照されていないパッケージ。必要になれば再取得されます。",
-    "timeoutSeconds": 120,
+    "kind": "directory",
+    "detect": { "executable": "pnpm", "arguments": ["--version"] },
+    "pathsFrom": { "command": { "executable": "pnpm", "arguments": ["store", "path"] } },
+    "whatIsLost": "Cached packages; re-fetched when needed.",
+    "whatIsLostJa": "取得済みのパッケージ。必要になれば再取得されます。",
     "minMacOS": "14.0",
-    "measure": {
-      "kind": "commandPath",
-      "command": {
-        "executable": "pnpm",
-        "arguments": [
-          "store",
-          "path"
-        ]
-      }
-    }
+    "verifiedOn": "25F84"
   },
   {
     "id": "yarn-cache",
     "title": "Yarn cache",
     "titleJa": "Yarn のキャッシュ",
     "tier": "A",
-    "kind": "command",
-    "detect": {
-      "executable": "yarn",
-      "arguments": [
-        "--version"
-      ]
-    },
-    "command": {
-      "executable": "yarn",
-      "arguments": [
-        "cache",
-        "clean"
-      ]
-    },
+    "kind": "directory",
+    "detect": { "executable": "yarn", "arguments": ["--version"] },
+    "pathsFrom": { "command": { "executable": "yarn", "arguments": ["cache", "dir"] } },
     "whatIsLost": "Downloaded packages are re-fetched on the next install.",
     "whatIsLostJa": "次のインストール時に再ダウンロードされます。",
-    "timeoutSeconds": 120,
     "minMacOS": "14.0",
-    "measure": {
-      "kind": "commandPath",
-      "command": {
-        "executable": "yarn",
-        "arguments": [
-          "cache",
-          "dir"
-        ]
-      }
-    }
+    "verifiedOn": "25F84"
   },
   {
     "id": "brew-cleanup",
     "title": "Homebrew cache",
     "titleJa": "Homebrew のキャッシュ",
     "tier": "A",
-    "kind": "command",
-    "detect": {
-      "executable": "brew",
-      "arguments": [
-        "--version"
-      ]
-    },
-    "command": {
-      "executable": "brew",
-      "arguments": [
-        "cleanup",
-        "--prune=all",
-        "-s"
-      ]
-    },
+    "kind": "directory",
+    "detect": { "executable": "brew", "arguments": ["--version"] },
+    "pathsFrom": { "command": { "executable": "brew", "arguments": ["--cache"] } },
     "whatIsLost": "Downloaded bottles and outdated versions; re-downloadable.",
     "whatIsLostJa": "ダウンロード済みのボトルと古い版。必要になれば再ダウンロードされます。",
-    "timeoutSeconds": 300,
     "minMacOS": "14.0",
-    "measure": {
-      "kind": "commandPath",
-      "command": {
-        "executable": "brew",
-        "arguments": [
-          "--cache"
-        ]
-      }
-    }
+    "verifiedOn": "25F84"
   },
   {
     "id": "uv-cache",
     "title": "uv cache",
     "titleJa": "uv のキャッシュ",
     "tier": "A",
-    "kind": "command",
-    "detect": {
-      "executable": "uv",
-      "arguments": [
-        "--version"
-      ]
-    },
-    "command": {
-      "executable": "uv",
-      "arguments": [
-        "cache",
-        "prune"
-      ]
-    },
+    "kind": "directory",
+    "detect": { "executable": "uv", "arguments": ["--version"] },
+    "pathsFrom": { "command": { "executable": "uv", "arguments": ["cache", "dir"] } },
     "whatIsLost": "Cached wheels; re-fetched when needed.",
     "whatIsLostJa": "キャッシュ済みのホイール。必要になれば再取得されます。",
-    "timeoutSeconds": 120,
     "minMacOS": "14.0",
-    "measure": {
-      "kind": "commandPath",
-      "command": {
-        "executable": "uv",
-        "arguments": [
-          "cache",
-          "dir"
-        ]
-      }
-    }
+    "verifiedOn": "25F84"
   },
   {
     "id": "pip-cache",
     "title": "pip cache",
     "titleJa": "pip のキャッシュ",
     "tier": "A",
-    "kind": "command",
-    "detect": {
-      "executable": "pip3",
-      "arguments": [
-        "--version"
-      ]
-    },
-    "command": {
-      "executable": "pip3",
-      "arguments": [
-        "cache",
-        "purge"
-      ]
-    },
+    "kind": "directory",
+    "detect": { "executable": "pip3", "arguments": ["--version"] },
+    "pathsFrom": { "command": { "executable": "pip3", "arguments": ["cache", "dir"] } },
     "whatIsLost": "Cached wheels; re-fetched when needed.",
     "whatIsLostJa": "キャッシュ済みのホイール。必要になれば再取得されます。",
-    "timeoutSeconds": 60,
     "minMacOS": "14.0",
-    "measure": {
-      "kind": "commandPath",
-      "command": {
-        "executable": "pip3",
-        "arguments": [
-          "cache",
-          "dir"
-        ]
-      }
-    }
+    "verifiedOn": "25F84"
   }
 ]

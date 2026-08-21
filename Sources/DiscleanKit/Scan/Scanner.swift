@@ -192,9 +192,25 @@ public struct Scanner: Sendable {
         var blocked = false
         var cacheUpdates: [CacheUpdate] = []
 
-        for rawPath in rule.paths ?? [] {
+        // 対象の場所は、実行時とまったく同じ手順で決める。
+        let resolved = RulePaths.resolve(rule, home: input.env.home, guardian: input.guardian)
+        if !resolved.rejected.isEmpty {
+            return MeasuredItem(
+                item: makeItem(
+                    rule: rule, japanese: japanese, measurement: PathMeasurement(),
+                    state: .skipped, reason: "forbidden-root"),
+                cacheUpdates: [])
+        }
+        if resolved.toolUnavailable {
+            return MeasuredItem(
+                item: makeItem(
+                    rule: rule, japanese: japanese, measurement: PathMeasurement(),
+                    state: .skipped, reason: "tool-not-found"),
+                cacheUpdates: [])
+        }
+
+        for path in resolved.paths {
             if isCancelled() { break }
-            let path = PathGuard.normalize(Expand.tilde(rawPath, home: input.env.home))
             var st = stat()
             guard lstat(path, &st) == 0 else {
                 if errno == EPERM || errno == EACCES { blocked = true }
