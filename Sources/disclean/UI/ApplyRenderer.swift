@@ -6,8 +6,23 @@ struct ConfirmPrompt {
     let out: Output
 
     func confirm(plan: Plan, context: Context) -> Bool {
+        let movable = plan.selected.filter(\.undoable)
+        let external = plan.selected.filter { !$0.undoable }
+
         out.print()
-        out.print(out.styled(out.japanese ? "これから隔離庫へ移します:" : "About to move into quarantine:", .bold))
+        out.print(out.styled(out.japanese ? "これから片づけます:" : "About to clean up:", .bold))
+        if !movable.isEmpty {
+            out.print(
+                out.japanese
+                    ? "  隔離庫へ移すもの \(movable.count) 件（戻せます）"
+                    : "  moved to quarantine: \(movable.count) items (undoable)")
+        }
+        if !external.isEmpty {
+            out.print(
+                out.japanese
+                    ? "  外部ツールに任せるもの \(external.count) 件（戻せません）"
+                    : "  handed to external tools: \(external.count) items (NOT undoable)")
+        }
         for item in plan.selected {
             let undo =
                 item.undoable
@@ -50,18 +65,42 @@ struct ApplyRenderer {
         if dryRun {
             out.print(out.styled(out.japanese ? "[dry-run] 実際には移動していません" : "[dry-run] nothing moved", .yellow))
         }
+        let quarantinedBytes = outcome.quarantined.reduce(Int64(0)) { $0 + $1.bytes }
+        let commandBytes = outcome.commandsRun.reduce(Int64(0)) { $0 + ($1.reclaimedBytes ?? 0) }
+        let approx = outcome.hasUnmeasuredCommand ? (out.japanese ? " 以上" : " or more") : ""
+
         out.print(
             out.styled(
                 out.japanese
-                    ? "隔離しました: \(outcome.quarantined.count) 件 / \(Output.bytes(outcome.reclaimedBytes))"
-                    : "quarantined: \(outcome.quarantined.count) items / \(Output.bytes(outcome.reclaimedBytes))",
+                    ? "片づけました: \(Output.bytes(outcome.reclaimedBytes))\(approx)"
+                    : "reclaimed: \(Output.bytes(outcome.reclaimedBytes))\(approx)",
                 .green))
+
+        if !outcome.quarantined.isEmpty {
+            out.print(
+                out.japanese
+                    ? "  隔離庫へ移動: \(outcome.quarantined.count) 件 / \(Output.bytes(quarantinedBytes))"
+                    : "  moved to quarantine: \(outcome.quarantined.count) items / \(Output.bytes(quarantinedBytes))")
+        }
+
         if !outcome.commandsRun.isEmpty {
             out.print(
                 out.japanese
-                    ? "外部ツールを実行: \(outcome.commandsRun.map(\.ruleId).joined(separator: ", "))"
-                    : "ran tools: \(outcome.commandsRun.map(\.ruleId).joined(separator: ", "))")
+                    ? "  外部ツールが解放: \(Output.bytes(commandBytes))（取り消せません）"
+                    : "  freed by external tools: \(Output.bytes(commandBytes)) (not undoable)")
+            for command in outcome.commandsRun {
+                let amount = Output.bytes(command.reclaimedBytes, japanese: out.japanese)
+                out.print(out.styled("    \(command.ruleId): \(amount)", .dim))
+            }
         }
+
+        if outcome.quarantined.isEmpty && outcome.commandsRun.isEmpty && !dryRun {
+            out.print(
+                out.japanese
+                    ? "動かせるものがありませんでした。対象が空か、条件に合いませんでした。"
+                    : "nothing to move: targets were empty or did not meet the conditions.")
+        }
+
         if !outcome.skipped.isEmpty {
             out.print(
                 out.styled(

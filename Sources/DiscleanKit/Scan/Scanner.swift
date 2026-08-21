@@ -23,6 +23,8 @@ public struct ScanItem: Codable, Sendable, Equatable {
     public let manualSteps: String?
     public let kind: RuleKind
     public let undoable: Bool
+    /// 量が測れているか。false のときは「不明」であって「0 バイト」ではない。
+    public let sizeKnown: Bool
 }
 
 /// スキャン全体の結果。
@@ -127,12 +129,17 @@ public struct Scanner: Sendable {
 
         // command 型: ツールの有無だけを確かめる。回収量は実行してみるまで分からない。
         if rule.kind == .command {
-            return MeasuredItem(item: measureCommandRule(rule, japanese: japanese), cacheUpdates: [])
+            return MeasuredItem(
+                item: measureCommandRule(
+                    rule, env: input.env, japanese: japanese, isCancelled: isCancelled),
+                cacheUpdates: [])
         }
         return measureDirectoryRule(input, isCancelled: isCancelled)
     }
 
-    private static func measureCommandRule(_ rule: Rule, japanese: Bool) -> ScanItem {
+    private static func measureCommandRule(
+        _ rule: Rule, env: DiscleanEnvironment, japanese: Bool, isCancelled: @Sendable () -> Bool
+    ) -> ScanItem {
         if let detect = rule.detect {
             let result = CommandRunner.run(detect, timeoutSeconds: 5)
             guard result.succeeded else {
@@ -142,8 +149,23 @@ public struct Scanner: Sendable {
                     state: .skipped, reason: reason)
             }
         }
-        return makeItem(
-            rule: rule, japanese: japanese, measurement: PathMeasurement(), state: .ready, reason: nil)
+
+        // 実行前に量を測る。測れないルールだけが「実行してみるまで不明」になる。
+        guard let spec = rule.measure,
+            let bytes = CommandSizeProbe.measure(spec, home: env.home, isCancelled: isCancelled)
+        else {
+            return makeItem(
+                rule: rule, japanese: japanese, measurement: PathMeasurement(),
+                state: .ready, reason: nil, sizeKnown: false)
+        }
+        var measurement = PathMeasurement()
+        measurement.bytes = bytes
+        // 空なら実行する意味がない。理由を付けて外す。
+        if bytes == 0 {
+            return makeItem(
+                rule: rule, japanese: japanese, measurement: measurement, state: .skipped, reason: "empty")
+        }
+        return makeItem(rule: rule, japanese: japanese, measurement: measurement, state: .ready, reason: nil)
     }
 
     private static func measureDirectoryRule(
@@ -201,14 +223,15 @@ public struct Scanner: Sendable {
     }
 
     private static func makeItem(
-        rule: Rule, japanese: Bool, measurement: PathMeasurement, state: ItemState, reason: String?
+        rule: Rule, japanese: Bool, measurement: PathMeasurement, state: ItemState, reason: String?,
+        sizeKnown: Bool = true
     ) -> ScanItem {
         ScanItem(
             ruleId: rule.id, tier: rule.tier, title: rule.displayTitle(japanese: japanese),
             bytes: measurement.bytes, fileCount: measurement.fileCount, paths: measurement.paths,
             state: state, reason: reason, dataless: measurement.dataless, cacheHit: measurement.cacheHit,
             whatIsLost: rule.displayWhatIsLost(japanese: japanese), manualSteps: rule.manualSteps,
-            kind: rule.kind, undoable: rule.kind == .directory)
+            kind: rule.kind, undoable: rule.kind == .directory, sizeKnown: sizeKnown)
     }
 }
 

@@ -37,9 +37,25 @@
 | `minMacOS` | string | | この OS 以上でのみ有効（例 `"14.0"`） |
 | `maxMacOS` | string | | この OS 以下でのみ有効（例 `"26.99"`） |
 | `verifiedOn` | string | | 最後に実機確認した OS ビルド（例 `"25F84"`） |
+| `measure` | MeasureSpec | | `command` 型の対象量の測り方。**これが無いと実行前に量を出せない** |
 
 `CommandSpec` は `{"executable": string, "arguments": string[], "expectSuccess": bool}` です。
 `executable` は絶対パスか PATH 上の名前。**シェルは経由しません**（`/bin/sh -c` に渡しません）。
+
+### MeasureSpec — 外部ツールに任せる項目の量を測る
+
+`command` 型は「実行してみるまで分からない」になりがちですが、それでは利用者が実行前に判断できません。
+`measure` を書くと、**実行前の見積もり**と**実行後の実測（前後の差）**の両方に同じ方法が使われます。
+
+| kind | 意味 | 例 |
+|---|---|---|
+| `paths` | 決め打ちのパスを測る | `{"kind":"paths","paths":["~/Library/Caches/foo"]}` |
+| `commandPath` | コマンドの標準出力をパスとして扱い、そのディレクトリを測る | `{"kind":"commandPath","command":{"executable":"brew","arguments":["--cache"]}}` |
+| `dockerReclaimable` | `docker system df` の「回収可能」量を読む | `{"kind":"dockerReclaimable","command":{"executable":"docker","arguments":["system","df","--format","{{json .}}"]}}` |
+| `simctlUnavailable` | 対応ランタイムが無いシミュレータのデバイスだけを測る | `{"kind":"simctlUnavailable","command":{"executable":"/usr/bin/xcrun","arguments":["simctl","list","devices","--json"]}}` |
+
+- 測った結果が **0 バイトなら、そのルールは `skipped(reason: "empty")` になり実行されません**（空のキャッシュを掃除しに行かない）。
+- `measure` を持たないルールは「不明」として表示され、**0 バイトとは区別されます**（合計には「＋ 実行後に判明する N 件」と添えます）。
 
 ## 受け付けられない定義（読み込み時に拒否されます）
 

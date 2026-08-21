@@ -9,9 +9,21 @@ struct ConfirmSheet: View {
     var body: some View {
         let expires = Date().addingTimeInterval(TimeInterval(model.config.quarantineTtlDays) * 86_400)
         VStack(alignment: .leading, spacing: 16) {
-            Text("これから隔離庫へ移します")
+            Text("これから片づけます")
                 .font(Tokens.display(28))
                 .foregroundStyle(Surface(scheme: scheme).text)
+
+            HStack(spacing: 16) {
+                let movable = model.selectedItems.filter(\.undoable)
+                let external = model.selectedItems.filter { !$0.undoable }
+                if !movable.isEmpty {
+                    Text("隔離庫へ移す \(movable.count) 件（戻せます）").font(Tokens.body(12))
+                }
+                if !external.isEmpty {
+                    Text("外部ツールに任せる \(external.count) 件（戻せません）").font(Tokens.body(12))
+                }
+            }
+            .foregroundStyle(Surface(scheme: scheme).text)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
@@ -24,7 +36,12 @@ struct ConfirmSheet: View {
                                 Text(ScanItemFormat.size(item))
                                     .font(Tokens.data(13))
                             }
-                            Text(item.whatIsLost).font(Tokens.body(12))
+                            Text(
+                                (item.undoable
+                                    ? "隔離庫へ移します。" : "外部ツールが消します（戻せません）。")
+                                    + item.whatIsLost
+                            )
+                            .font(Tokens.body(12))
                         }
                         .foregroundStyle(Surface(scheme: scheme).text)
                     }
@@ -44,7 +61,7 @@ struct ConfirmSheet: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("合計 " + ByteCountFormatter.string(fromByteCount: model.selectedBytes, countStyle: .file))
+                Text("合計 " + Format.bytes(model.selectedBytes))
                     .font(Tokens.data(15))
                 Text("隔離庫 \(model.env.quarantineDir)").font(Tokens.body(12))
                 Text("失効 \(expires.formatted(date: .abbreviated, time: .shortened))").font(Tokens.body(12))
@@ -151,7 +168,7 @@ struct QuarantineView: View {
                         HardCard(fill: Tokens.paper) {
                             HStack(alignment: .top, spacing: 16) {
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(ByteCountFormatter.string(fromByteCount: run.totalBytes, countStyle: .file))
+                                    Text(Format.bytes(run.totalBytes))
                                         .font(Tokens.data(22))
                                     Text("\(run.entries.count) 件 / \(run.runId)")
                                         .font(Tokens.data(11))
@@ -200,7 +217,7 @@ struct HistoryView: View {
             Text("履歴")
                 .font(Tokens.display(44))
                 .foregroundStyle(surface.text)
-            Text("これまでに片づけた量 " + ByteCountFormatter.string(fromByteCount: reclaimed, countStyle: .file))
+            Text("これまでに片づけた量 " + Format.bytes(reclaimed))
                 .font(Tokens.data(14))
                 .foregroundStyle(surface.text)
             Table(rows) {
@@ -211,7 +228,7 @@ struct HistoryView: View {
                 TableColumn("ルール") { row in Text(row.record.ruleId).font(Tokens.body(12)) }
                 TableColumn("結果") { row in Text(row.record.result.rawValue).font(Tokens.body(12)) }
                 TableColumn("量") { row in
-                    Text(ByteCountFormatter.string(fromByteCount: row.record.bytes, countStyle: .file))
+                    Text(Format.bytes(row.record.bytes))
                         .font(Tokens.data(11))
                 }
             }

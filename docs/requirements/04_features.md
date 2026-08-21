@@ -410,10 +410,11 @@
 - **Actor**: CLI / GUI プロセス自身
 - **Preconditions**: ルールの `detect` コマンドが成功している（ツールが存在する）
 - **Main flow**:
-  1. 実行前に `sizeProbe` コマンド（例 `xcrun simctl list devices --json`）で対象量を推定し、スキャン結果として提示する
+  1. 実行前に `measure`（§5.1 の `MeasureSpec`）で対象量を測り、スキャン結果として提示する。測れないルールだけを「実行後に判明」として区別する。測った結果が 0 バイトなら `skipped(reason: "empty")` とし、実行しない
   2. 実行は `Process` に**絶対パスの実行ファイルと引数配列**を与えて行う。シェル（`/bin/sh -c`）は経由しない
   3. ルールごとの `timeoutSeconds`（既定 180、最大 900）を超えたら `SIGTERM` → 5 秒後に `SIGKILL` を送る
-  4. 終了コードと stdout/stderr の先頭 4KiB を監査ログに記録する
+  4. 実行後に同じ `measure` で測り直し、前後の差を「実際に空けた量」として報告する（測れない場合は nil とし、0 と混同しない）
+  5. 終了コードと stdout/stderr の先頭 4KiB、および解放できた量を監査ログに記録する
 - **Alternate flows**:
   - 対象デーモンが起動していない（例: `docker info` が失敗） → `skipped(reason: "daemon-not-running")`
   - タイムアウト → `failed(reason: "timeout")` とし、最終 exit を 4 にする

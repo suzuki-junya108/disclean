@@ -208,6 +208,84 @@ struct LifecycleTests {
         for file in files { #expect(FileManager.default.fileExists(atPath: file)) }
     }
 
+    @Test("外部ツールが空けた量を、実行の前後を測って報告する")
+    func commandRuleReportsReclaimedBytes() async throws {
+        let sandbox = try Sandbox()
+        let cache = sandbox.home + "/fakecache"
+        try FileManager.default.createDirectory(atPath: cache, withIntermediateDirectories: true)
+        for i in 0..<3 {
+            try Data(repeating: 0x41, count: 2 * 1024 * 1024)
+                .write(to: URL(fileURLWithPath: cache + "/f\(i).bin"))
+        }
+        let rule: [String: Any] = [
+            "id": "measured-cache", "title": "measured", "tier": "A", "kind": "command",
+            "command": ["executable": "/bin/rm", "arguments": ["-rf", cache]],
+            "measure": ["kind": "paths", "paths": [cache]],
+            "whatIsLost": "cache",
+        ]
+        try JSONSerialization.data(withJSONObject: [rule])
+            .write(to: URL(fileURLWithPath: sandbox.env.rulesOverrideDir + "/00-measured.json"))
+
+        // 実行前に量が分かること
+        let result = await Scanner(env: sandbox.env, config: sandbox.config)
+            .scan(catalog: sandbox.catalog(), ruleIds: ["measured-cache"])
+        let item = try #require(result.items.first { $0.ruleId == "measured-cache" })
+        #expect(item.state == .ready)
+        #expect(item.sizeKnown)
+        #expect(item.bytes >= 6 * 1024 * 1024)
+
+        // 実行後に「実際に空けた量」が出ること
+        let plan = try Planner().plan(from: result, tiers: [.a])
+        let outcome = try sandbox.executor().apply(plan: plan, catalog: sandbox.catalog(), dryRun: false)
+        let command = try #require(outcome.commandsRun.first)
+        #expect(command.reclaimedBytes ?? 0 >= 6 * 1024 * 1024)
+        #expect(outcome.reclaimedBytes >= 6 * 1024 * 1024)
+        #expect(!outcome.hasUnmeasuredCommand)
+        #expect(!FileManager.default.fileExists(atPath: cache))
+    }
+
+    @Test("測る方法がないルールは「不明」として扱い、0 バイトと混同しない")
+    func unmeasuredCommandRuleIsUnknown() async throws {
+        let sandbox = try Sandbox()
+        let rule: [String: Any] = [
+            "id": "unmeasured", "title": "unmeasured", "tier": "A", "kind": "command",
+            "command": ["executable": "/bin/echo", "arguments": ["done"]],
+            "whatIsLost": "nothing",
+        ]
+        try JSONSerialization.data(withJSONObject: [rule])
+            .write(to: URL(fileURLWithPath: sandbox.env.rulesOverrideDir + "/00-unmeasured.json"))
+
+        let result = await Scanner(env: sandbox.env, config: sandbox.config)
+            .scan(catalog: sandbox.catalog(), ruleIds: ["unmeasured"])
+        let item = try #require(result.items.first { $0.ruleId == "unmeasured" })
+        #expect(item.state == .ready)
+        #expect(!item.sizeKnown)
+
+        let plan = try Planner().plan(from: result, tiers: [.a])
+        let outcome = try sandbox.executor().apply(plan: plan, catalog: sandbox.catalog(), dryRun: false)
+        #expect(outcome.commandsRun.first?.reclaimedBytes == nil)
+        #expect(outcome.hasUnmeasuredCommand)
+    }
+
+    @Test("対象が空の外部ツールは、実行せずスキップする")
+    func emptyCommandRuleIsSkipped() async throws {
+        let sandbox = try Sandbox()
+        let rule: [String: Any] = [
+            "id": "empty-cache", "title": "empty", "tier": "A", "kind": "command",
+            "command": ["executable": "/bin/echo", "arguments": ["nothing"]],
+            "measure": ["kind": "paths", "paths": [sandbox.home + "/does-not-exist"]],
+            "whatIsLost": "nothing",
+        ]
+        try JSONSerialization.data(withJSONObject: [rule])
+            .write(to: URL(fileURLWithPath: sandbox.env.rulesOverrideDir + "/00-empty.json"))
+
+        let result = await Scanner(env: sandbox.env, config: sandbox.config)
+            .scan(catalog: sandbox.catalog(), ruleIds: ["empty-cache"])
+        let item = try #require(result.items.first { $0.ruleId == "empty-cache" })
+        #expect(item.state == .skipped)
+        #expect(item.reason == "empty")
+    }
+
     @Test("Tier C は plan で選べない")
     func tierCCannotBeSelected() async throws {
         let sandbox = try Sandbox()

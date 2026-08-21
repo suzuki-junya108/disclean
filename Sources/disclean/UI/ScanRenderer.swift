@@ -28,9 +28,9 @@ struct ScanRenderer {
                 let size: String
                 if item.state == .blocked {
                     size = out.japanese ? "測れません" : "unmeasurable"
-                } else if item.kind == .command {
-                    // 外部ツールに任せる項目は、実行してみるまで回収量が分からない。
-                    size = out.japanese ? "実行時に判明" : "size unknown"
+                } else if !item.sizeKnown {
+                    // 測る方法を持たないルールだけが「実行後に判明」になる。
+                    size = out.japanese ? "実行後に判明" : "known after running"
                 } else {
                     size = Output.bytes(item.bytes)
                 }
@@ -51,9 +51,18 @@ struct ScanRenderer {
         out.print()
         out.divider()
         let total = Output.bytes(result.totalBytes)
-        out.print(
-            out.styled(
-                out.japanese ? "合計 \(total)（\(ready.count) 件）" : "total \(total) (\(ready.count) items)", .bold))
+        let unknown = ready.filter { !$0.sizeKnown }.count
+        var totalLine =
+            out.japanese
+            ? "合計 \(total)（\(ready.count) 件）"
+            : "total \(total) (\(ready.count) items)"
+        if unknown > 0 {
+            totalLine +=
+                out.japanese
+                ? " ＋ 実行後に判明する \(unknown) 件"
+                : " + \(unknown) item(s) measured after running"
+        }
+        out.print(out.styled(totalLine, .bold))
         renderCapacity(result.capacity)
         out.print(
             out.styled(

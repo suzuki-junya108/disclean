@@ -5,8 +5,12 @@
     "titleJa": "Xcode の中間生成物 (DerivedData)",
     "tier": "A",
     "kind": "directory",
-    "paths": ["~/Library/Developer/Xcode/DerivedData"],
-    "requiresQuitApps": ["com.apple.dt.Xcode"],
+    "paths": [
+      "~/Library/Developer/Xcode/DerivedData"
+    ],
+    "requiresQuitApps": [
+      "com.apple.dt.Xcode"
+    ],
     "whatIsLost": "Build products and indexes; the next build regenerates them (slower once).",
     "whatIsLostJa": "ビルド結果と索引。次のビルドで作り直されます（その 1 回だけ遅くなります）。",
     "minMacOS": "14.0"
@@ -17,7 +21,9 @@
     "titleJa": "シミュレータのキャッシュ",
     "tier": "A",
     "kind": "directory",
-    "paths": ["~/Library/Developer/CoreSimulator/Caches"],
+    "paths": [
+      "~/Library/Developer/CoreSimulator/Caches"
+    ],
     "whatIsLost": "Simulator runtime caches; regenerated on next use.",
     "whatIsLostJa": "シミュレータのキャッシュ。次に使うときに作り直されます。",
     "minMacOS": "14.0"
@@ -28,13 +34,46 @@
     "titleJa": "使えなくなったシミュレータ",
     "tier": "A",
     "kind": "command",
-    "detect": { "executable": "/usr/bin/xcrun", "arguments": ["simctl", "help"] },
-    "command": { "executable": "/usr/bin/xcrun", "arguments": ["simctl", "delete", "unavailable"] },
-    "sizeProbe": { "executable": "/usr/bin/xcrun", "arguments": ["simctl", "list", "devices", "--json"] },
+    "detect": {
+      "executable": "/usr/bin/xcrun",
+      "arguments": [
+        "simctl",
+        "help"
+      ]
+    },
+    "command": {
+      "executable": "/usr/bin/xcrun",
+      "arguments": [
+        "simctl",
+        "delete",
+        "unavailable"
+      ]
+    },
+    "sizeProbe": {
+      "executable": "/usr/bin/xcrun",
+      "arguments": [
+        "simctl",
+        "list",
+        "devices",
+        "--json"
+      ]
+    },
     "whatIsLost": "Devices whose runtime the installed Xcode no longer supports.",
     "whatIsLostJa": "今の Xcode が対応していないランタイムのデバイス。復元できません。",
     "timeoutSeconds": 300,
-    "minMacOS": "14.0"
+    "minMacOS": "14.0",
+    "measure": {
+      "kind": "simctlUnavailable",
+      "command": {
+        "executable": "/usr/bin/xcrun",
+        "arguments": [
+          "simctl",
+          "list",
+          "devices",
+          "--json"
+        ]
+      }
+    }
   },
   {
     "id": "swiftpm-cache",
@@ -42,7 +81,9 @@
     "titleJa": "SwiftPM のキャッシュ",
     "tier": "A",
     "kind": "directory",
-    "paths": ["~/Library/Caches/org.swift.swiftpm"],
+    "paths": [
+      "~/Library/Caches/org.swift.swiftpm"
+    ],
     "whatIsLost": "Cloned package checkouts; re-fetched on the next resolve.",
     "whatIsLostJa": "取得済みパッケージの控え。次の解決時に再取得されます。",
     "minMacOS": "14.0"
@@ -53,12 +94,36 @@
     "titleJa": "Docker の未使用データ",
     "tier": "B",
     "kind": "command",
-    "detect": { "executable": "docker", "arguments": ["info"] },
-    "command": { "executable": "docker", "arguments": ["system", "prune", "-f"] },
+    "detect": {
+      "executable": "docker",
+      "arguments": [
+        "info"
+      ]
+    },
+    "command": {
+      "executable": "docker",
+      "arguments": [
+        "system",
+        "prune",
+        "-f"
+      ]
+    },
     "whatIsLost": "Stopped containers and dangling images. Named volumes are NOT touched.",
     "whatIsLostJa": "停止済みコンテナと未使用イメージ。名前付きボリュームには触れません。取り消せません。",
     "timeoutSeconds": 600,
-    "minMacOS": "14.0"
+    "minMacOS": "14.0",
+    "measure": {
+      "kind": "dockerReclaimable",
+      "command": {
+        "executable": "docker",
+        "arguments": [
+          "system",
+          "df",
+          "--format",
+          "{{json .}}"
+        ]
+      }
+    }
   },
   {
     "id": "docker-builder-prune",
@@ -66,11 +131,35 @@
     "titleJa": "Docker のビルドキャッシュ",
     "tier": "B",
     "kind": "command",
-    "detect": { "executable": "docker", "arguments": ["info"] },
-    "command": { "executable": "docker", "arguments": ["builder", "prune", "-f"] },
+    "detect": {
+      "executable": "docker",
+      "arguments": [
+        "info"
+      ]
+    },
+    "command": {
+      "executable": "docker",
+      "arguments": [
+        "builder",
+        "prune",
+        "-f"
+      ]
+    },
     "whatIsLost": "Build layer cache; the next build takes longer once.",
     "whatIsLostJa": "ビルドの中間層。次のビルドが 1 回だけ遅くなります。取り消せません。",
     "timeoutSeconds": 600,
-    "minMacOS": "14.0"
+    "minMacOS": "14.0",
+    "measure": {
+      "kind": "dockerReclaimable",
+      "command": {
+        "executable": "docker",
+        "arguments": [
+          "system",
+          "df",
+          "--format",
+          "{{json .}}"
+        ]
+      }
+    }
   }
 ]

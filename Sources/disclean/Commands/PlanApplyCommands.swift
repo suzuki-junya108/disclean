@@ -146,7 +146,12 @@ struct ApplyCommand: AsyncParsableCommand {
                 },
                 "skipped": outcome.skipped.map { ["ruleId": $0.ruleId, "path": $0.path, "reason": $0.reason] },
                 "failed": outcome.failed.map { ["ruleId": $0.ruleId, "path": $0.path, "error": $0.error] },
-                "commands": outcome.commandsRun.map { ["ruleId": $0.ruleId, "exitCode": Int($0.exitCode)] },
+                "commands": outcome.commandsRun.map {
+                    [
+                        "ruleId": $0.ruleId, "exitCode": Int($0.exitCode),
+                        "reclaimedBytes": jsonOrNull($0.reclaimedBytes),
+                    ]
+                },
                 "totals": ["reclaimedBytes": outcome.reclaimedBytes, "itemCount": outcome.quarantined.count],
                 "capacity": ["freeSpaceDeltaBytes": delta],
                 "expiresAt": jsonOrNull(outcome.expiresAt.map(JSONIO.string(from:))),

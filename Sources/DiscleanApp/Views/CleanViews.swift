@@ -68,7 +68,7 @@ struct ResultListView: View {
                         Text("えらんだ量")
                             .font(Tokens.data(11))
                             .foregroundStyle(Tokens.ink)
-                        Text(ByteCountFormatter.string(fromByteCount: model.selectedBytes, countStyle: .file))
+                        Text(Format.bytes(model.selectedBytes))
                             .font(Tokens.weightedData(26, bytes: model.selectedBytes))
                             .foregroundStyle(Tokens.ink)
                         Text("\(model.selectedItems.count) 件")
@@ -96,7 +96,7 @@ struct ResultListView: View {
                 .font(Tokens.display(44))
                 .foregroundStyle(Surface(scheme: scheme).text)
             if let capacity = model.scanResult?.capacity, let strict = capacity.strictBytes {
-                Text("空き容量 " + ByteCountFormatter.string(fromByteCount: strict, countStyle: .file))
+                Text("空き容量 " + Format.bytes(strict))
                     .font(Tokens.data(12))
                     .foregroundStyle(Surface(scheme: scheme).text)
             }
@@ -177,17 +177,46 @@ struct CompletionSummaryView: View {
             HardCard(fill: Tokens.lime) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(
-                        ByteCountFormatter.string(
-                            fromByteCount: outcome?.reclaimedBytes ?? 0, countStyle: .file)
+                        Format.bytes(outcome?.reclaimedBytes ?? 0)
+                            + (outcome?.hasUnmeasuredCommand == true ? " 以上" : "")
                     )
                     .font(Tokens.weightedData(32, bytes: outcome?.reclaimedBytes ?? 0))
                     .foregroundStyle(Tokens.ink)
-                    Text("\(outcome?.quarantined.count ?? 0) 件を隔離庫へ移しました")
+                    Text("片づけました")
                         .font(Tokens.bodyBold())
                         .foregroundStyle(Tokens.ink)
-                    Text("\(model.config.quarantineTtlDays) 日以内なら、そのまま元の場所に戻せます。実際に空きが増えるのは失効後です。")
-                        .font(Tokens.body(12))
+
+                    if let moved = outcome?.quarantined, !moved.isEmpty {
+                        Text(
+                            "隔離庫へ移動 \(moved.count) 件 / "
+                                + Format.bytes(moved.reduce(Int64(0)) { $0 + $1.bytes })
+                        )
+                        .font(Tokens.body(13))
                         .foregroundStyle(Tokens.ink)
+                        Text("\(model.config.quarantineTtlDays) 日以内なら、そのまま元の場所に戻せます。実際に空きが増えるのは失効後です。")
+                            .font(Tokens.body(12))
+                            .foregroundStyle(Tokens.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    if let commands = outcome?.commandsRun, !commands.isEmpty {
+                        let freed = commands.reduce(Int64(0)) { $0 + ($1.reclaimedBytes ?? 0) }
+                        Text("外部ツールが解放 " + Format.bytes(freed) + "（取り消せません）")
+                            .font(Tokens.body(13))
+                            .foregroundStyle(Tokens.ink)
+                        ForEach(Array(commands.enumerated()), id: \.offset) { _, command in
+                            Text("・\(command.ruleId)  " + Format.bytes(command.reclaimedBytes))
+                                .font(Tokens.body(12))
+                                .foregroundStyle(Tokens.ink)
+                        }
+                    }
+
+                    if outcome?.quarantined.isEmpty == true && outcome?.commandsRun.isEmpty == true {
+                        Text("動かせるものがありませんでした。対象は空だったか、条件に合いませんでした。")
+                            .font(Tokens.body(12))
+                            .foregroundStyle(Tokens.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 .padding(20)
             }

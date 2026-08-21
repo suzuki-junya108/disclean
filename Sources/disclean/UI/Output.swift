@@ -33,12 +33,19 @@ struct Output: Sendable {
     }
 
     /// 1000 進のバイト表記（JSON には常に整数バイトを出す）。
+    /// ByteCountFormatter は 0 を "Zero KB" と書くため、必ずここを通す。
     static func bytes(_ value: Int64) -> String {
-        if value == 0 { return "0 B" }
+        if value <= 0 { return "0 B" }
         let formatter = ByteCountFormatter()
         formatter.countStyle = .file
         formatter.allowedUnits = [.useAll]
         return formatter.string(fromByteCount: value)
+    }
+
+    /// 量が測れていない場合を "0 B" と混同させない。
+    static func bytes(_ value: Int64?, japanese: Bool) -> String {
+        guard let value else { return japanese ? "実行後に判明" : "known after running" }
+        return bytes(value)
     }
 
     static func date(_ value: Date) -> String {
@@ -93,6 +100,7 @@ enum JSONOut {
             "dataless": item.dataless,
             "cacheHit": item.cacheHit,
             "undoable": item.undoable,
+            "sizeKnown": item.sizeKnown,
             "whatIsLost": item.whatIsLost,
         ]
         if let reason = item.reason { dict["reason"] = reason }

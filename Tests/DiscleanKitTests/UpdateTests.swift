@@ -227,3 +227,79 @@ struct CatalogUpdateDiffTests {
         #expect(CatalogDiffer.diff(current: on, next: off).shrinking.contains { $0.change == .ruleRemoved })
     }
 }
+
+@Suite("CommandSizeProbe: 外部ツールの対象量を測る")
+struct CommandSizeProbeTests {
+    @Test("paths 指定のディレクトリを測る")
+    func measurePaths() throws {
+        let dir = NSTemporaryDirectory() + "disclean-probe-" + UUID().uuidString
+        try FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+        try Data(repeating: 0x41, count: 3 * 1024 * 1024).write(to: URL(fileURLWithPath: dir + "/a.bin"))
+        defer { try? FileManager.default.removeItem(atPath: dir) }
+
+        let spec = MeasureSpec(kind: .paths, paths: [dir])
+        let bytes = try #require(CommandSizeProbe.measure(spec, home: NSHomeDirectory()))
+        #expect(bytes >= 3 * 1024 * 1024)
+    }
+
+    @Test("存在しないパスは 0 バイトと分かる（不明ではない）")
+    func measureMissingPath() throws {
+        let spec = MeasureSpec(kind: .paths, paths: [NSTemporaryDirectory() + "disclean-none-" + UUID().uuidString])
+        #expect(CommandSizeProbe.measure(spec, home: NSHomeDirectory()) == 0)
+    }
+
+    @Test("コマンドの出力をパスとして測る")
+    func measureCommandPath() throws {
+        let dir = NSTemporaryDirectory() + "disclean-probe-" + UUID().uuidString
+        try FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+        try Data(repeating: 0x42, count: 1024 * 1024).write(to: URL(fileURLWithPath: dir + "/b.bin"))
+        defer { try? FileManager.default.removeItem(atPath: dir) }
+
+        let spec = MeasureSpec(
+            kind: .commandPath, command: CommandSpec(executable: "/bin/echo", arguments: [dir]))
+        let bytes = try #require(CommandSizeProbe.measure(spec, home: NSHomeDirectory()))
+        #expect(bytes >= 1024 * 1024)
+    }
+
+    @Test("パスを返さないコマンドは「不明」にする（0 と区別する）")
+    func measureCommandPathNotAPath() {
+        let spec = MeasureSpec(
+            kind: .commandPath, command: CommandSpec(executable: "/bin/echo", arguments: ["not-a-path"]))
+        #expect(CommandSizeProbe.measure(spec, home: NSHomeDirectory()) == nil)
+    }
+
+    @Test("docker の回収可能量を読む")
+    func dockerReclaimable() throws {
+        let output = """
+            {"Type":"Images","Size":"2.5GB","Reclaimable":"1.2GB (48%)"}
+            {"Type":"Containers","Size":"0B","Reclaimable":"0B (0%)"}
+            {"Type":"Build Cache","Size":"800MB","Reclaimable":"800MB (100%)"}
+            """
+        let bytes = try #require(CommandSizeProbe.dockerReclaimable(output))
+        #expect(bytes == Int64(2_000_000_000))
+        #expect(CommandSizeProbe.dockerReclaimable("not json") == nil)
+    }
+
+    @Test(
+        "人が読むサイズ表記をバイトにする",
+        arguments: [
+            ("1.5GB (50%)", Int64(1_500_000_000)),
+            ("800MB", Int64(800_000_000)),
+            ("0B (0%)", Int64(0)),
+            ("2KiB", Int64(2_048)),
+        ])
+    func humanSize(text: String, expected: Int64) {
+        #expect(CommandSizeProbe.parseHumanSize(text) == expected)
+    }
+
+    @Test("simctl の一覧から、使えないデバイスだけを拾う")
+    func simctlUnavailable() {
+        let json = """
+            {"devices":{"iOS-18-0":[
+              {"udid":"AAA","isAvailable":true,"dataPath":"/tmp/sim/AAA/data"},
+              {"udid":"BBB","isAvailable":false,"dataPath":"/tmp/sim/BBB/data"}]}}
+            """
+        let paths = CommandSizeProbe.unavailableSimulatorPaths(json, home: "/Users/x")
+        #expect(paths == ["/tmp/sim/BBB"])
+    }
+}

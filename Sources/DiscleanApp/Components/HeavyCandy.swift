@@ -222,8 +222,19 @@ struct LeverView: View {
 enum ScanItemFormat {
     static func size(_ item: ScanItem) -> String {
         if item.state == .blocked { return "測れません" }
-        if item.kind == .command { return "実行時に判明" }
-        if item.bytes == 0 { return "0 B" }
-        return ByteCountFormatter.string(fromByteCount: item.bytes, countStyle: .file)
+        if !item.sizeKnown { return "実行後に判明" }
+        return Format.bytes(item.bytes)
+    }
+}
+
+/// 量の表記はここに集約する。`ByteCountFormatter` は 0 を "Zero KB" と書くため直接使わない。
+enum Format {
+    static func bytes(_ value: Int64) -> String {
+        value <= 0 ? "0 B" : ByteCountFormatter.string(fromByteCount: value, countStyle: .file)
+    }
+
+    static func bytes(_ value: Int64?) -> String {
+        guard let value else { return "測っていません" }
+        return bytes(value)
     }
 }

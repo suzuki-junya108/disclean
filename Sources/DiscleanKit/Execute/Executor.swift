@@ -29,7 +29,13 @@ public struct ApplyOutcome: Sendable {
     public var runId: String = ""
     public var expiresAt: Date?
 
-    public var reclaimedBytes: Int64 { quarantined.reduce(0) { $0 + $1.bytes } }
+    /// 隔離した量と、外部ツールが実際に空けた量の合計。
+    public var reclaimedBytes: Int64 {
+        quarantined.reduce(0) { $0 + $1.bytes } + commandsRun.reduce(0) { $0 + ($1.reclaimedBytes ?? 0) }
+    }
+
+    /// 量を測れなかった外部ツールがあるか（合計を「以上」と書くべきか）。
+    public var hasUnmeasuredCommand: Bool { commandsRun.contains { $0.reclaimedBytes == nil } }
 }
 
 /// すべての破壊的操作が通る唯一の経路。入口で必ず `PathGuard` を適用する。
@@ -218,10 +224,17 @@ public struct Executor: Sendable {
             }
         }
         if dryRun {
-            outcome.commandsRun.append(CommandOutcome(ruleId: rule.id, exitCode: 0, reason: "dry-run"))
+            outcome.commandsRun.append(
+                CommandOutcome(ruleId: rule.id, exitCode: 0, reason: "dry-run", reclaimedBytes: nil))
             return
         }
+
+        // 実行の前後を同じ方法で測り、その差を「実際に空けた量」として報告する。
+        let before = rule.measure.flatMap { CommandSizeProbe.measure($0, home: env.home) }
         let result = CommandRunner.run(spec, timeoutSeconds: rule.timeoutSeconds)
+        let after = rule.measure.flatMap { CommandSizeProbe.measure($0, home: env.home) }
+        var reclaimed: Int64?
+        if let before, let after { reclaimed = max(0, before - after) }
         let head = String((result.standardOutput + result.standardError).prefix(CommandRunner.outputHeadLimit))
         if result.timedOut {
             outcome.failed.append(.init(ruleId: rule.id, path: spec.executable, error: "timeout"))
@@ -240,7 +253,8 @@ public struct Executor: Sendable {
                     now: now))
         } else {
             outcome.commandsRun.append(
-                CommandOutcome(ruleId: rule.id, exitCode: result.exitCode, reason: nil))
+                CommandOutcome(
+                    ruleId: rule.id, exitCode: result.exitCode, reason: nil, reclaimedBytes: reclaimed))
             try audit.append(
                 record(
                     action: .commandRun, rule: rule, runId: plan.runId, result: .ok,
@@ -330,6 +344,8 @@ public struct CommandOutcome: Sendable {
     public let ruleId: String
     public let exitCode: Int32
     public let reason: String?
+    /// 実行の前後を測った差。測れなかった場合は nil（0 と区別する）。
+    public let reclaimedBytes: Int64?
 }
 
 /// 復元した項目 1 件。

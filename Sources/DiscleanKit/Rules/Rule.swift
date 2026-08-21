@@ -68,6 +68,8 @@ public struct Rule: Codable, Sendable, Equatable {
     public let maxMacOS: String?
     /// 最後に実機確認した OS ビルド（例 "25F84"）。
     public let verifiedOn: String?
+    /// `command` 型の対象量を測る方法。実行前の見積もりと、実行後の実測に同じものを使う。
+    public let measure: MeasureSpec?
 
     public static let defaultTimeoutSeconds = 180
     public static let maxTimeoutSeconds = 900
@@ -75,7 +77,7 @@ public struct Rule: Codable, Sendable, Equatable {
     private enum CodingKeys: String, CodingKey {
         case id, title, titleJa, tier, kind, paths, command, sizeProbe, detect
         case minAgeDays, requiresQuitApps, whatIsLost, whatIsLostJa, manualSteps
-        case enabled, timeoutSeconds, minMacOS, maxMacOS, verifiedOn
+        case enabled, timeoutSeconds, minMacOS, maxMacOS, verifiedOn, measure
     }
 
     public init(from decoder: Decoder) throws {
@@ -101,6 +103,7 @@ public struct Rule: Codable, Sendable, Equatable {
         minMacOS = try c.decodeIfPresent(String.self, forKey: .minMacOS)
         maxMacOS = try c.decodeIfPresent(String.self, forKey: .maxMacOS)
         verifiedOn = try c.decodeIfPresent(String.self, forKey: .verifiedOn)
+        measure = try c.decodeIfPresent(MeasureSpec.self, forKey: .measure)
     }
 
     // swiftlint:disable:next function_default_parameter_at_end
@@ -123,7 +126,8 @@ public struct Rule: Codable, Sendable, Equatable {
         timeoutSeconds: Int = Rule.defaultTimeoutSeconds,
         minMacOS: String? = nil,
         maxMacOS: String? = nil,
-        verifiedOn: String? = nil
+        verifiedOn: String? = nil,
+        measure: MeasureSpec? = nil
     ) {
         self.id = id
         self.title = title
@@ -144,6 +148,7 @@ public struct Rule: Codable, Sendable, Equatable {
         self.minMacOS = minMacOS
         self.maxMacOS = maxMacOS
         self.verifiedOn = verifiedOn
+        self.measure = measure
     }
 
     /// 表示用のタイトル（ロケールに応じて日本語と英語を選ぶ）。
