@@ -194,7 +194,7 @@ public struct Scanner: Sendable {
 
         // 対象の場所は、実行時とまったく同じ手順で決める。
         let resolved = RulePaths.resolve(rule, home: input.env.home, guardian: input.guardian)
-        if !resolved.rejected.isEmpty {
+        if !resolved.rejected.isEmpty && resolved.paths.isEmpty {
             return MeasuredItem(
                 item: makeItem(
                     rule: rule, japanese: japanese, measurement: PathMeasurement(),

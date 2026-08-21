@@ -114,14 +114,13 @@ public struct RuleCatalogLoader: Sendable {
         switch rule.kind {
         case .directory:
             // 場所はツールに聞く場合もある。その場合は解決したパスを実行直前に検証する。
-            if rule.pathsFrom == nil {
-                guard let paths = rule.paths, !paths.isEmpty else {
-                    return "directory rules require paths or pathsFrom"
-                }
-                for path in paths {
-                    if let violation = guardian.validateRulePath(path) {
-                        return "forbidden path \"\(path)\" (\(violation.rawValue))"
-                    }
+            if rule.pathsFrom == nil, (rule.paths ?? []).isEmpty {
+                return "directory rules require paths or pathsFrom"
+            }
+            // `pathsFrom` と併記された既定の場所も、代替として使われるため必ず検証する。
+            for path in rule.paths ?? [] {
+                if let violation = guardian.validateRulePath(path) {
+                    return "forbidden path \"\(path)\" (\(violation.rawValue))"
                 }
             }
         case .command:

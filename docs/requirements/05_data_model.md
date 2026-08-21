@@ -10,7 +10,7 @@
 | `Rule` | クリーンアップ対象 1 件の定義。同梱 JSON とユーザー JSON の両方でこの形 | `id: String`（kebab-case, 一意）, `title: String`, `titleJa: String`, `tier: Tier`, `kind: RuleKind`, `paths: [String]?`（`~` 展開可、`directory` 型で必須）, `command: CommandSpec?`（`command` 型で必須）, `sizeProbe: CommandSpec?`, `detect: CommandSpec?`, `minAgeDays: Int?`, `requiresQuitApps: [String]?`（バンドル ID）, `whatIsLost: String`, `whatIsLostJa: String`, `manualSteps: String?`（Tier C で必須）, `enabled: Bool`（既定 true）, `timeoutSeconds: Int`（既定 180、最大 900）, `minMacOS: String?`（例 `"14.0"`。未指定は下限なし）, `maxMacOS: String?`（例 `"26.99"`。未指定は上限なし）, `verifiedOn: String?`（このルールを最後に実機確認した OS ビルド。例 `"25F84"`） |
 | `Tier` | リスク階層 | `A`（既定選択）/ `B`（要確認・既定未選択）/ `C`（提示のみ・選択不可） |
 | `RuleKind` | 処理方式 | `directory`（隔離庫へ移動、undo 可）/ `command`（外部コマンド実行、undo 不可）/ `report`（計測と表示のみ） |
-| `PathsFrom` | 対象の場所をツールに聞く指定 | `command: CommandSpec`（場所を答えるコマンド）, `subpaths: [String]`（その下の実際の格納場所） |
+| `PathsFrom` | 対象の場所をツールに聞く指定 | `command: CommandSpec`（場所を答えるコマンド）, `subpaths: [String]`（その下の実際の格納場所）。同じルールの `paths` は、ツールが答えられないときの控えとして使う |
 | `MeasureSpec` | `command` 型の対象量の測り方 | `kind: paths \| commandPath \| dockerReclaimable \| simctlUnavailable`, `paths: [String]?`, `command: CommandSpec?` |
 | `CommandSpec` | 外部コマンド 1 件 | `executable: String`（絶対パスまたは PATH 探索名）, `arguments: [String]`, `expectSuccess: Bool`（既定 true） |
 | `ScanItem` | スキャン結果 1 件 | `ruleId: String`, `tier: Tier`, `title: String`, `bytes: Int64`（実割当サイズ合計）, `fileCount: Int`, `paths: [String]`, `state: ItemState`, `reason: String?`, `dataless: Bool`, `cacheHit: Bool`, `sizeKnown: Bool`（false は「不明」であり 0 バイトではない） |
