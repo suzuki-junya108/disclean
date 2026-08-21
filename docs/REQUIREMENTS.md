@@ -73,6 +73,8 @@
 | S-29 | site/index.html#faq | LP よくある質問 | 設定 | S-28, S-30 | 6問（復元可否 / sudo / 送信データと更新の通信 / 更新の届き方と止め方 / 空き容量 / アンインストール）。開閉は details/summary |
 | S-30 | site/index.html#footer | LP フッタ | エラー状態 | S-24 | GitHub リンク, ライセンス, 旧 mac_cleanup.sh からの移行, JS 無効時の代替表示 |
 | S-31 | Sources/disclean/UI/UpdateView.swift | 更新の状態と差分 (update) | 確認 | S-03, (終了) | 適用中の catalogVersion, 配信中の版数と発行日, 差分 3 分類（拡大 / 縮小 / 中立）, **新たに削除対象になるパスと実サイズ**（最上部）, 本体の新版とインストール方法別の案内, `yes` 入力要求, 無効化の方法 |
+| S-33 | Sources/DiscleanApp/Views/InspectSheet.swift | なかみ（GUI 詳細） | 確認 | S-13, S-19 | 対象名, 戻せる/戻せないバッジ, 「これは何？」「このあとどうなる？」の 2 枚, いま見ている場所（`~` 表記）, 合計サイズとファイル数, 種類の内訳帯と各種類の 1 文説明, ファイル一覧（大きい順・種類チップ・サイズ・最終更新・量の帯）, フォルダを開く/もどる, Finder で見る, 省略件数 |
+| S-34 | Sources/disclean/Commands/InspectCommand.swift | なかみ (inspect) | メイン | S-03, S-19 | 対象の場所, 実行後の扱い（隔離庫へ移す/外部ツールが消す）, なくなるもの, 合計サイズとファイル数, 中身の一覧（サイズ・種類・名前・ファイル数・最終更新）, 省略件数, `--json` |
 | S-32 | Sources/DiscleanApp/Views/UpdateSheet.swift | GUI 更新シート | 確認 | S-14, S-21 | 差分一覧（拡大差分を最上部・装飾なし）, 「承認するまで削除対象は増えません」の明示, 承認 / 後で / この更新を無視, 本体の新版の案内, 設定へのリンク |
 
 ## 6.5 ローカル起動前提情報 (Local Startup Prerequisites)

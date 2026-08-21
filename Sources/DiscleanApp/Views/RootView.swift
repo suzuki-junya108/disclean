@@ -30,12 +30,26 @@ struct RootView: View {
             }
         }
         .background(surface.background)
-        .task { await model.scan() }
+        .task {
+            await model.scan()
+            #if UI_PREVIEW
+                model.applyPreviewScenario()
+            #endif
+        }
         .sheet(isPresented: Binding(get: { model.showConfirmSheet }, set: { model.showConfirmSheet = $0 })) {
             ConfirmSheet(model: model)
         }
         .sheet(isPresented: Binding(get: { model.showUpdateSheet }, set: { model.showUpdateSheet = $0 })) {
             UpdateSheet(model: model)
+        }
+        .sheet(
+            isPresented: Binding(
+                get: { model.inspectSession != nil },
+                set: { if !$0 { model.inspectSession = nil } })
+        ) {
+            if let session = model.inspectSession {
+                InspectSheet(model: model, session: session)
+            }
         }
     }
 

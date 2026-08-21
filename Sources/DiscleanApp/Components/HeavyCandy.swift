@@ -72,7 +72,9 @@ struct ChunkView: View {
     @Environment(\.colorScheme) private var scheme
     let item: ScanItem
     let selected: Bool
+    let home: String
     let onToggle: () -> Void
+    let onInspect: () -> Void
 
     private var fill: Color {
         if item.state == .blocked { return Surface(scheme: scheme).card }
@@ -114,6 +116,22 @@ struct ChunkView: View {
                     .font(Tokens.body(12))
                     .foregroundStyle(Tokens.ink)
                     .fixedSize(horizontal: false, vertical: true)
+                // どこにあるものなのかを、選ぶ前に見せる。
+                if let first = item.paths.first {
+                    Text(
+                        ScanItemFormat.shortPath(first, home: home)
+                            + (item.paths.count > 1 ? " ほか \(item.paths.count - 1) か所" : "")
+                    )
+                    .font(Tokens.data(11))
+                    .foregroundStyle(Tokens.ink)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                }
+                if item.state != .blocked {
+                    Button("なかを見る", action: onInspect)
+                        .buttonStyle(CandyButtonStyle(fill: Tokens.paper))
+                        .padding(.top, 2)
+                }
                 if item.state == .blocked {
                     Text("フルディスクアクセスが要ります")
                         .font(Tokens.body(12))
@@ -229,6 +247,24 @@ struct LeverView: View {
 
 /// 表示用の整形。CLI と同じ考え方で、外部ツール任せの項目は数値を約束しない。
 enum ScanItemFormat {
+    /// ホームの下は `~` に畳む。フルパスは「なかみ」で見せる。
+    /// `/tmp` と `/private/tmp` のように表記が違うだけの場合も畳めるよう、
+    /// 比較する前に両方のリンクを解決する。
+    /// - Parameter home: `DiscleanEnvironment` が解決したホーム。
+    ///   `NSHomeDirectory()` は HOME 環境変数を見ないことがあるため使わない。
+    static func shortPath(_ path: String, home rawHome: String) -> String {
+        let home = canonical(rawHome)
+        let target = canonical(path)
+        guard target.hasPrefix(home) else { return path }
+        return "~" + target.dropFirst(home.count)
+    }
+
+    /// `/private/tmp` と `/tmp` のように、同じ場所の別表記をそろえる。
+    /// 既に移動したあとのパスは実体が無く、`resolvingSymlinksInPath` では揃わない。
+    private static func canonical(_ path: String) -> String {
+        path.hasPrefix("/private/") ? String(path.dropFirst("/private".count)) : path
+    }
+
     static func size(_ item: ScanItem) -> String {
         if item.state == .blocked { return "測れません" }
         if !item.sizeKnown { return "実行後に判明" }

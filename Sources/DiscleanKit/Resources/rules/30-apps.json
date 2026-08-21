@@ -5,10 +5,12 @@
     "titleJa": "アプリのキャッシュ",
     "tier": "B",
     "kind": "directory",
-    "paths": ["~/Library/Caches"],
+    "paths": [
+      "~/Library/Caches"
+    ],
     "minAgeDays": 3,
     "whatIsLost": "Per-app caches. Most apps rebuild them; a few re-download assets.",
-    "whatIsLostJa": "アプリごとの一時データ。多くは自動で作り直されますが、再ダウンロードが必要なものもあります。",
+    "whatIsLostJa": "アプリが速く動くために貯めている一時データです。多くは自動で作り直されますが、中には取り直しに通信が要るものもあります。",
     "minMacOS": "14.0"
   },
   {
@@ -17,10 +19,12 @@
     "titleJa": "アプリのログ",
     "tier": "B",
     "kind": "directory",
-    "paths": ["~/Library/Logs"],
+    "paths": [
+      "~/Library/Logs"
+    ],
     "minAgeDays": 7,
     "whatIsLost": "Diagnostic logs. Useful only when investigating a past crash.",
-    "whatIsLostJa": "診断用のログ。過去の不具合を調べるとき以外は使いません。",
+    "whatIsLostJa": "アプリの動作記録です。あとから不具合を調べるとき以外は使いません。",
     "minMacOS": "14.0"
   },
   {
@@ -29,10 +33,14 @@
     "titleJa": "Google Chrome のキャッシュ",
     "tier": "B",
     "kind": "directory",
-    "paths": ["~/Library/Caches/Google/Chrome"],
-    "requiresQuitApps": ["com.google.Chrome"],
+    "paths": [
+      "~/Library/Caches/Google/Chrome"
+    ],
+    "requiresQuitApps": [
+      "com.google.Chrome"
+    ],
     "whatIsLost": "Cached web assets. Sites reload them; logins are kept.",
-    "whatIsLostJa": "ウェブの一時データ。サイトは読み直されます。ログイン状態は保たれます。",
+    "whatIsLostJa": "Chrome が表示を速くするために貯めたウェブの一時データです。ログイン状態やブックマークは消えません（サイトの読み込みが初回だけ遅くなります）。",
     "minMacOS": "14.0"
   },
   {
@@ -41,10 +49,14 @@
     "titleJa": "Spotify のキャッシュ",
     "tier": "B",
     "kind": "directory",
-    "paths": ["~/Library/Application Support/Spotify/PersistentCache"],
-    "requiresQuitApps": ["com.spotify.client"],
+    "paths": [
+      "~/Library/Application Support/Spotify/PersistentCache"
+    ],
+    "requiresQuitApps": [
+      "com.spotify.client"
+    ],
     "whatIsLost": "Streamed audio cache; re-downloaded on next play.",
-    "whatIsLostJa": "再生済み音源の一時データ。次の再生時に取り直されます。",
+    "whatIsLostJa": "聴いた曲を一時的に保存したものです。次に再生するときに取り直します。",
     "minMacOS": "14.0"
   },
   {
@@ -53,9 +65,11 @@
     "titleJa": "Adobe のメディアキャッシュ",
     "tier": "B",
     "kind": "directory",
-    "paths": ["~/Library/Application Support/Adobe/Common/Media Cache Files"],
+    "paths": [
+      "~/Library/Application Support/Adobe/Common/Media Cache Files"
+    ],
     "whatIsLost": "Rendered previews; regenerated when a project is reopened.",
-    "whatIsLostJa": "プレビュー用の中間ファイル。プロジェクトを開き直すと作り直されます。",
+    "whatIsLostJa": "動画編集のプレビュー用に作った中間ファイルです。プロジェクトを開き直すと作り直されます。",
     "minMacOS": "14.0"
   }
 ]

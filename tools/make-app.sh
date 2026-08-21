@@ -1,6 +1,8 @@
 #!/bin/bash
 # Disclean.app を組み立てる。SwiftPM の実行ファイルにバンドル構造を被せる方式。
-# 使い方: tools/make-app.sh [--universal] [--sign <identity>]
+# 使い方: tools/make-app.sh [--universal] [--sign <identity>] [--preview]
+#   --preview は画面確認用のビルド（起動時に DISCLEAN_PREVIEW の画面を開く）。
+#   配布物には使わない。
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -12,6 +14,7 @@ UNIVERSAL=0
 while [ $# -gt 0 ]; do
     case "$1" in
         --universal) UNIVERSAL=1; shift ;;
+        --preview) BUILD_ARGS+=(-Xswiftc -DUI_PREVIEW); shift ;;
         --sign) SIGN_IDENTITY="$2"; shift 2 ;;
         *) echo "unknown option: $1" >&2; exit 2 ;;
     esac

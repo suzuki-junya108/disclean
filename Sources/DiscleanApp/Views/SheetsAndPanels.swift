@@ -42,6 +42,15 @@ struct ConfirmSheet: View {
                                     + item.whatIsLost
                             )
                             .font(Tokens.body(12))
+                            ForEach(item.paths, id: \.self) { path in
+                                Text(ScanItemFormat.shortPath(path, home: model.env.home))
+                                    .font(Tokens.data(11))
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+                            }
+                            if item.fileCount > 0 {
+                                Text("\(item.fileCount) ファイル").font(Tokens.body(11))
+                            }
                         }
                         .foregroundStyle(Surface(scheme: scheme).text)
                     }
@@ -157,8 +166,12 @@ struct QuarantineView: View {
             Text("隔離庫")
                 .font(Tokens.display(44))
                 .foregroundStyle(surface.text)
+            Text("片づけたものは消さずに、この Mac の中の別の場所へ移してあります。中身はそのままです。")
+                .font(Tokens.body(13))
+                .foregroundStyle(surface.text)
+                .fixedSize(horizontal: false, vertical: true)
             if model.quarantineRuns.isEmpty {
-                Text("隔離中の項目はありません。")
+                Text("いま預かっているものはありません。")
                     .font(Tokens.body())
                     .foregroundStyle(surface.text)
             }
@@ -166,24 +179,50 @@ struct QuarantineView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     ForEach(model.quarantineRuns, id: \.runId) { run in
                         HardCard(fill: Tokens.paper) {
-                            HStack(alignment: .top, spacing: 16) {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(Format.bytes(run.totalBytes))
-                                        .font(Tokens.data(22))
-                                    Text("\(run.entries.count) 件 / \(run.runId)")
-                                        .font(Tokens.data(11))
-                                    Text(
-                                        "失効まで \(daysLeft(run)) 日（\(run.expiresAt.formatted(date: .abbreviated, time: .shortened))）"
-                                    )
-                                    .font(Tokens.body(12))
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack(alignment: .top, spacing: 16) {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(Format.bytes(run.totalBytes))
+                                            .font(Tokens.weightedData(22, bytes: run.totalBytes))
+                                        Text(
+                                            "\(run.createdAt.formatted(date: .abbreviated, time: .shortened)) に片づけた \(run.entries.count) 件"
+                                        )
+                                        .font(Tokens.body(12))
+                                        Text(expiryLine(run))
+                                            .font(Tokens.body(12))
+                                        Text(run.runId)
+                                            .font(Tokens.data(10))
+                                    }
+                                    .foregroundStyle(Tokens.ink)
+                                    Spacer()
+                                    VStack(spacing: 8) {
+                                        Button("なかを見る") { model.inspect(run: run) }
+                                            .buttonStyle(CandyButtonStyle(fill: Tokens.lime))
+                                        Button("元に戻す") { model.undo(runId: run.runId) }
+                                            .buttonStyle(CandyButtonStyle(fill: Tokens.grape, textColor: Tokens.paper))
+                                        Button("いま完全に削除") { model.purge(runId: run.runId) }
+                                            .buttonStyle(CandyButtonStyle(fill: Tokens.tomato))
+                                    }
                                 }
-                                .foregroundStyle(Tokens.ink)
-                                Spacer()
-                                VStack(spacing: 8) {
-                                    Button("元に戻す") { model.undo(runId: run.runId) }
-                                        .buttonStyle(CandyButtonStyle(fill: Tokens.grape, textColor: Tokens.paper))
-                                    Button("いま完全に削除") { model.purge(runId: run.runId) }
-                                        .buttonStyle(CandyButtonStyle(fill: Tokens.tomato))
+                                // 何が預けられているのかを、開かなくても分かるようにする。
+                                VStack(alignment: .leading, spacing: 4) {
+                                    ForEach(run.entries.prefix(4), id: \.quarantineRelativePath) { entry in
+                                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                            Text(Format.bytes(entry.bytes))
+                                                .font(Tokens.data(11))
+                                                .frame(width: 72, alignment: .leading)
+                                            Text(ScanItemFormat.shortPath(entry.originalPath, home: model.env.home))
+                                                .font(Tokens.body(12))
+                                                .lineLimit(1)
+                                                .truncationMode(.middle)
+                                        }
+                                        .foregroundStyle(Tokens.ink)
+                                    }
+                                    if run.entries.count > 4 {
+                                        Text("ほか \(run.entries.count - 4) 件（「なかを見る」で全部見えます）")
+                                            .font(Tokens.body(11))
+                                            .foregroundStyle(Tokens.ink)
+                                    }
                                 }
                             }
                             .padding(16)
@@ -197,6 +236,11 @@ struct QuarantineView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .onAppear { model.refreshQuarantine() }
+    }
+
+    private func expiryLine(_ run: QuarantineRun) -> String {
+        let when = run.expiresAt.formatted(date: .abbreviated, time: .shortened)
+        return "あと \(daysLeft(run)) 日で自動的に完全削除されます（\(when)）"
     }
 
     /// 「あと何日戻せるか」は切り上げる（6 日と 23 時間を「6 日」と見せない）。

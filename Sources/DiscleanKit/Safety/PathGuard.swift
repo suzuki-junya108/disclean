@@ -72,6 +72,20 @@ public struct PathGuard: Sendable {
         return nil
     }
 
+    /// 読み取り目的で「中を見てよい場所か」。消してよいかとは別の判断で、
+    /// 浅さは問わない代わりに、ホーム配下（除外を除く）と隔離庫だけを許す。
+    /// 見せる操作でも、この道具が扱わない場所を覗ける入口は作らない。
+    public func canInspect(_ rawPath: String, quarantineDir: String) -> Bool {
+        let expanded = PathGuard.resolve(Expand.tilde(rawPath, home: home))
+        if PathGuard.isUnder(expanded, PathGuard.resolve(quarantineDir)) { return true }
+        guard PathGuard.isUnder(expanded, home) else { return false }
+        for excluded in excludedPaths
+        where PathGuard.isUnder(expanded, PathGuard.resolve(Expand.tilde(excluded, home: home))) {
+            return false
+        }
+        return true
+    }
+
     /// 実行直前の検証。`lstat` でリンクを判定し、実体の状態まで見る。
     /// - Parameter newestModification: ディレクトリの場合、その中で最後に更新された時刻。
     ///   渡さなければ入れ物自身の更新時刻で判定する。

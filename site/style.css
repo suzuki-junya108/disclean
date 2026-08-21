@@ -629,3 +629,54 @@ td.num { text-align: right; white-space: nowrap; }
   .sticker { transform: none; }
   .topbar__links { font-size: 11px; gap: 10px; }
 }
+
+/* ── なかみ（S-33 / F-20 と同じ見せ方を LP でも） ───────────────────── */
+.peek {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.peek__row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px 14px;
+  align-items: center;
+  padding: 14px 16px;
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 6px 6px 0 var(--ink);
+}
+
+.peek__kind {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.peek__kind--folder  { background: var(--sky); }
+.peek__kind--archive { background: var(--lime); }
+.peek__kind--blob    { background: var(--bubblegum); }
+.peek__kind--log     { background: var(--paper); }
+
+.peek__name { font-weight: 700; overflow-wrap: anywhere; }
+.peek__size { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.peek__note {
+  grid-column: 1 / -1;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.peek__cli { margin-top: 18px; }
+
+@media (max-width: 600px) {
+  .peek__row { grid-template-columns: auto 1fr; }
+  .peek__size { grid-column: 2; justify-self: end; }
+}

@@ -22,6 +22,7 @@ GUI は [Releases](https://github.com/suzuki-junya108/disclean/releases) の `.d
 ```bash
 disclean doctor     # 環境を確認する（権限・外部ツール・保存先・OS の変化）
 disclean scan       # 何がどれだけ空けられるかを読み取りだけで調べる
+disclean inspect uv-cache   # その中に何が入っているかをファイル単位で見る
 disclean apply      # 選んだものを隔離庫へ移す（Tier A が既定選択）
 disclean undo --last  # 直前の実行を取り消す
 disclean purge      # 隔離庫から完全に削除する（戻せなくなります）
@@ -31,6 +32,19 @@ disclean update     # 掃除ルールの更新を確認・適用する
 ```
 
 すべてのサブコマンドに `--json` があります（`schemaVersion` 付きの 1 オブジェクトを stdout に出します）。
+
+### 何が消えるのかを、消す前に見る
+
+`inspect` は読み取りだけで、中身を大きい順に並べます。ファイルの種類（圧縮ファイル・ログ・
+キャッシュの実体など）と、それが無くなると何が起きるかも添えます。
+
+```bash
+disclean inspect uv-cache                 # 片づける対象の中身
+disclean inspect --path ~/.cache/uv/wheels  # 1 段下を見る（ホーム配下と隔離庫のみ）
+disclean inspect --run 01J...              # 隔離庫に入れたものの中身
+```
+
+GUI では、各項目と隔離庫の「なかを見る」から同じものが開きます。
 
 ### リスク階層（Tier）
 
@@ -43,7 +57,8 @@ disclean update     # 掃除ルールの更新を確認・適用する
 ### 取り消せるもの / 取り消せないもの
 
 - ディレクトリを隔離庫へ移す種類（Xcode の DerivedData 等）は `disclean undo` で戻せます。
-- 外部ツールに任せる種類（`brew cleanup` / `npm cache clean` 等）は**取り消せません**。実行前の確認画面で明示します。
+- パッケージマネージャのキャッシュ（npm / pnpm / Yarn / Homebrew / uv / pip）も隔離庫を通るため戻せます。
+- 外部ツールに任せる種類（Docker / シミュレータ）は**取り消せません**。実行前の確認画面で明示します。
 
 ## 掃除ルールの更新について
 

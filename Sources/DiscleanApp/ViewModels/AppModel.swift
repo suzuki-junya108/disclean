@@ -53,6 +53,8 @@ final class AppModel {
     var purgedLastRun = false
     /// 直前の実行を隔離庫から戻した。完全削除の案内はもう出さない。
     var lastRunUndone = false
+    /// 「なかみ」画面。開いている間だけ入る。
+    var inspectSession: InspectSession?
 
     private var audit: AuditLog
 
@@ -215,6 +217,86 @@ final class AppModel {
         let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")
         if let url { NSWorkspace.shared.open(url) }
     }
+
+    // MARK: - なかみを見る
+
+    /// これから片づける項目の中身を見る。
+    func inspect(item: ScanItem) {
+        let fate: String
+        if item.undoable {
+            fate =
+                "実行すると、この中身がまるごと隔離庫へ移ります。"
+                + "\(config.quarantineTtlDays) 日以内なら、そのまま元の場所に戻せます。"
+        } else {
+            fate = "実行すると、外部ツールがこの中身を消します。こちらは元に戻せません。"
+        }
+        let session = InspectSession(
+            title: item.title,
+            whatItIs: item.whatIsLost,
+            fate: fate,
+            undoable: item.undoable,
+            roots: item.paths.map {
+                InspectSession.Root(path: $0, label: $0, note: nil, bytes: nil, fileCount: nil)
+            })
+        session.start()
+        inspectSession = session
+    }
+
+    /// 隔離庫に入っているものの中身を見る。
+    func inspect(run: QuarantineRun) {
+        let days = max(0, Int(ceil(run.expiresAt.timeIntervalSinceNow / 86_400)))
+        let session = InspectSession(
+            title: "隔離庫にあるもの",
+            whatItIs: "片づけたものは消さずに、この Mac の中の別の場所へ移してあります。中身はそのままです。",
+            fate: "あと \(days) 日で自動的に完全削除されます。それまでは「元に戻す」で元の場所へ戻せます。",
+            undoable: true,
+            runId: run.runId,
+            roots: run.entries.map { entry in
+                InspectSession.Root(
+                    path: env.quarantineDir + "/" + run.runId + "/" + entry.quarantineRelativePath,
+                    label: entry.originalPath,
+                    note: ruleTitle(entry.ruleId),
+                    isDirectory: entry.isDirectory,
+                    bytes: entry.bytes,
+                    fileCount: nil)
+            })
+        session.start()
+        inspectSession = session
+    }
+
+    /// ルール ID ではなく、人が読む名前を出す。
+    private func ruleTitle(_ ruleId: String) -> String {
+        catalog?.rules.first { $0.id == ruleId }?.titleJa ?? ruleId
+    }
+
+    func revealInFinder(path: String) {
+        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
+    }
+
+    #if UI_PREVIEW
+        /// 画面確認用。`DISCLEAN_PREVIEW` で指定された画面を起動直後に開く。
+        /// このコードは `--preview` ビルドにしか含まれない（配布物には入らない）。
+        func applyPreviewScenario() {
+            guard let scenario = ProcessInfo.processInfo.environment["DISCLEAN_PREVIEW"] else { return }
+            if scenario == "quarantine" {
+                section = .quarantine
+                refreshQuarantine()
+            } else if scenario == "inspect-run" {
+                section = .quarantine
+                refreshQuarantine()
+                if let run = quarantineRuns.first { inspect(run: run) }
+            } else if scenario == "done" {
+                Task { await apply() }
+            } else if scenario == "confirm" {
+                showConfirmSheet = true
+            } else if scenario.hasPrefix("inspect-rule:") {
+                let ruleId = String(scenario.dropFirst("inspect-rule:".count))
+                if let item = scanResult?.items.first(where: { $0.ruleId == ruleId }) {
+                    inspect(item: item)
+                }
+            }
+        }
+    #endif
 
     func openQuarantineInFinder() {
         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: env.quarantineDir)])

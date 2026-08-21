@@ -46,13 +46,18 @@ struct ResultListView: View {
                                     Text(sectionTitle(tier))
                                         .font(Tokens.display(28))
                                         .foregroundStyle(surface.text)
+                                    Text(sectionNote(tier))
+                                        .font(Tokens.body(13))
+                                        .foregroundStyle(surface.text)
+                                        .fixedSize(horizontal: false, vertical: true)
                                     ForEach(numbered(items), id: \.item.ruleId) { entry in
                                         ChunkView(
                                             item: entry.item,
-                                            selected: model.selection.contains(entry.item.ruleId)
-                                        ) {
-                                            toggle(entry.item)
-                                        }
+                                            selected: model.selection.contains(entry.item.ruleId),
+                                            home: model.env.home,
+                                            onToggle: { toggle(entry.item) },
+                                            onInspect: { model.inspect(item: entry.item) }
+                                        )
                                         .plopIn(index: entry.index)
                                     }
                                 }
@@ -122,6 +127,15 @@ struct ResultListView: View {
         case .a: "ふつうに消せるもの"
         case .b: "中身を見てから消すもの"
         case .c: "見るだけ（消しません）"
+        }
+    }
+
+    /// 見出しだけでは伝わらない「なぜこの分け方なのか」を 1 行で足す。
+    private func sectionNote(_ tier: Tier) -> String {
+        switch tier {
+        case .a: "作り直せるものだけです。消しても、次に使うときに自動で用意し直されます。"
+        case .b: "人によっては、まだ要るものが混じります。「なかを見る」で確かめてから選んでください。"
+        case .c: "ディスクリンは触りません。大きいものの置き場所を知らせるだけです。"
         }
     }
 
@@ -202,6 +216,26 @@ struct CompletionSummaryView: View {
                         )
                         .font(Tokens.body(13))
                         .foregroundStyle(Tokens.ink)
+                        // 「何が動いたのか」をその場で見せる。あとで隔離庫を開かなくても分かるように。
+                        VStack(alignment: .leading, spacing: 3) {
+                            ForEach(moved.prefix(6), id: \.quarantinePath) { entry in
+                                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                    Text(Format.bytes(entry.bytes))
+                                        .font(Tokens.data(11))
+                                        .frame(width: 72, alignment: .leading)
+                                    Text(ScanItemFormat.shortPath(entry.originalPath, home: model.env.home))
+                                        .font(Tokens.body(12))
+                                        .lineLimit(1)
+                                        .truncationMode(.middle)
+                                }
+                                .foregroundStyle(Tokens.ink)
+                            }
+                            if moved.count > 6 {
+                                Text("ほか \(moved.count - 6) 件")
+                                    .font(Tokens.body(11))
+                                    .foregroundStyle(Tokens.ink)
+                            }
+                        }
                         Text("\(model.config.quarantineTtlDays) 日以内なら、そのまま元の場所に戻せます。実際に空きが増えるのは失効後です。")
                             .font(Tokens.body(12))
                             .foregroundStyle(Tokens.ink)
