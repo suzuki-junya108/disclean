@@ -22,8 +22,11 @@ struct RootView: View {
                         PermissionGuideView(model: model)
                     }
                     detail
+                        .transition(.scale(scale: 0.98).combined(with: .opacity))
                 }
                 .padding(24)
+                .animation(Motion.gummy, value: model.section)
+                .animation(Motion.gummy, value: model.phase)
             }
         }
         .background(surface.background)
@@ -142,5 +145,11 @@ struct CandyButtonStyle: ButtonStyle {
                     Capsule().strokeBorder(surface.keyline, lineWidth: Tokens.keylineWidth)
                 }
             )
+            // 押している間つぶれ、離すと揺れて戻る
+            .scaleEffect(
+                x: configuration.isPressed ? 0.96 : 1,
+                y: configuration.isPressed ? 1.05 : 1
+            )
+            .animation(Motion.squishy, value: configuration.isPressed)
     }
 }

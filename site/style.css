@@ -18,6 +18,9 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+  /* 増やした揺れも含め、動きは一切出さない（design-system D-06） */
+  .chunk, .pebble, .wall .brick, .jar, .brand__mark,
+  .is-jelly, .is-wobbling, .is-shuddering { animation: none !important; }
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
@@ -110,6 +113,55 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
 .head { max-width: 62ch; margin-bottom: clamp(28px, 4vw, 48px); }
 .lede { margin: 0; max-width: 60ch; }
 
+/* ---------- 動きの語彙（ウニョウニョ） ----------
+   「ギガバイトには重さがある」を動きでも言う。塊は硬い箱ではなく、
+   押せば潰れ、離せば行き過ぎて揺れて止まる、重いグミとして振る舞う。
+   これらはすべて transform だけを動かす（再描画を起こさない）。 */
+
+@keyframes jelly {
+  0%   { transform: scale(1, 1); }
+  22%  { transform: scale(1.08, 0.9); }
+  44%  { transform: scale(0.94, 1.07); }
+  62%  { transform: scale(1.04, 0.96); }
+  80%  { transform: scale(0.985, 1.02); }
+  100% { transform: scale(1, 1); }
+}
+
+@keyframes wobble {
+  0%   { transform: rotate(0deg) skewX(0deg); }
+  20%  { transform: rotate(-1.6deg) skewX(2deg); }
+  40%  { transform: rotate(1.2deg) skewX(-1.4deg); }
+  60%  { transform: rotate(-0.7deg) skewX(0.8deg); }
+  80%  { transform: rotate(0.3deg) skewX(-0.3deg); }
+  100% { transform: rotate(0deg) skewX(0deg); }
+}
+
+@keyframes plop {
+  0%   { transform: translateY(-46px) scale(0.86, 1.18); }
+  55%  { transform: translateY(0) scale(1.14, 0.82); }
+  72%  { transform: translateY(-6px) scale(0.96, 1.06); }
+  86%  { transform: translateY(0) scale(1.03, 0.97); }
+  100% { transform: translateY(0) scale(1, 1); }
+}
+
+@keyframes shudder {
+  0%, 100% { transform: translateX(0) scaleY(1); }
+  15% { transform: translateX(-3px) scaleY(0.985); }
+  35% { transform: translateX(3px) scaleY(1.01); }
+  55% { transform: translateX(-2px) scaleY(0.995); }
+  78% { transform: translateX(1px) scaleY(1.002); }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.012, 0.988); }
+}
+
+/* 押した瞬間に潰れ、離すと揺れて戻る */
+.is-jelly { animation: jelly var(--wobble-ms) var(--gummy) both; }
+.is-wobbling { animation: wobble var(--wobble-ms) ease-out both; }
+.is-shuddering { animation: shudder 420ms ease-out both; }
+
 /* ---------- 部品: チップ・ボタン ---------- */
 
 .chip {
@@ -145,7 +197,11 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
   transition: transform var(--hover-ms) ease, box-shadow var(--hover-ms) ease;
 }
 .btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
-.btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+.btn:active {
+  transform: translate(2px, 2px) scale(0.95, 1.06);
+  box-shadow: 1px 1px 0 var(--ink);
+  transition-duration: 60ms;
+}
 .btn--grape { background: var(--grape); color: var(--paper); }
 .btn--paper { background: var(--paper); color: var(--ink); }
 .btn--lg { font-size: 17px; padding: 17px 28px; }
@@ -270,7 +326,11 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
 .chunk[data-tier="B"] { background: var(--sunbeam); }
 .chunk[data-tier="C"] { background: var(--sky); cursor: default; }
 .chunk[aria-pressed="true"] { border-width: 5px; box-shadow: 8px 8px 0 var(--ink); }
-.chunk:not([disabled]):hover { transform: translate(-2px, -2px); }
+.chunk:not([disabled]):hover { transform: translate(-2px, -2px) scale(1.012, 0.988); }
+.chunk:not([disabled]):active { transform: translate(1px, 1px) scale(0.97, 1.04); transition-duration: 60ms; }
+/* 塊は読み込み時に下から順に積み上がる。以降は常時動かさない
+   （押す的が動き続けると、狙いづらく、目も休まらない）。 */
+.tower .chunk { animation: plop 520ms var(--gummy) both; animation-delay: calc(var(--i, 0) * 70ms); }
 .chunk__row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .chunk__gb { font-size: clamp(20px, 2.6vw, 30px); line-height: 1; }
 .chunk__gb small { font-size: 0.46em; margin-left: 3px; }
@@ -305,6 +365,9 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
   touch-action: none;
 }
 .lever__grip:active { cursor: grabbing; }
+/* 引いた量に応じて握りが縦に伸びる。JS が --pull を 0〜1 で入れる */
+.lever__grip { transform-origin: center top; }
+.lever__track::before { transform-origin: center top; transform: scaleY(calc(1 + var(--pull, 0) * 0.06)); }
 .lever__label { font-size: 10px; text-align: center; max-width: 116px; line-height: 1.4; }
 
 .jar {
@@ -316,6 +379,8 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
   color: var(--ink);
 }
 .jar__head { display: flex; justify-content: space-between; gap: 10px; font-size: var(--t-label); }
+.jar { animation: breathe 6s ease-in-out infinite; }
+.brand__mark { animation: breathe 5s ease-in-out infinite; }
 .jar__neck { height: 10px; margin: 8px auto 0; width: 46%; border: var(--key) solid var(--ink); border-bottom: 0; border-radius: 8px 8px 0 0; }
 .jar__body {
   min-height: 96px;
@@ -333,8 +398,11 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
   border: var(--key) solid var(--ink); border-radius: var(--r-pill);
   box-shadow: 3px 3px 0 var(--ink);
   padding: 7px 12px; cursor: pointer;
-  animation: drop var(--drop-ms) var(--spring) both;
+  animation: plop var(--drop-ms) var(--gummy) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
 }
+.pebble:hover { transform: scale(1.06, 0.94); }
+.pebble:active { transform: scale(0.9, 1.1); }
 .pebble[data-tier="B"] { background: var(--sunbeam); }
 .pebble:hover { background: var(--grape); color: var(--paper); }
 
@@ -396,6 +464,8 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
 .brick--b { background: var(--sunbeam); }
 .brick--c { background: var(--sky); }
 .brick--empty { background: transparent; border-style: dashed; }
+/* 壁は、見えたときに下から順に積み上がる */
+.wall.is-visible .brick { animation: plop 460ms var(--gummy) both; animation-delay: calc(var(--i, 0) * 9ms); }
 
 .weigh__key { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 20px; }
 .key { display: inline-flex; align-items: center; gap: 7px; }
@@ -424,7 +494,8 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
 .sticker:nth-child(2) { transform: rotate(1.5deg); }
 .sticker:nth-child(3) { transform: rotate(-1deg); }
 .sticker:nth-child(4) { transform: rotate(2deg); }
-.sticker:hover { transform: rotate(0deg) translate(-2px, -2px); }
+.sticker:hover { transform: rotate(0deg) translate(-2px, -2px) scale(1.015, 0.985); }
+.sticker { transition: transform var(--wobble-ms) var(--gummy); }
 .sticker__step {
   display: inline-block; font-size: var(--t-label);
   border: var(--key) solid var(--ink); border-radius: var(--r-pill);
@@ -521,6 +592,9 @@ td.num { text-align: right; white-space: nowrap; }
   background: var(--lime);
 }
 .faq details[open] summary::before { content: "－"; background: var(--sunbeam); }
+.faq summary::before { transition: transform var(--wobble-ms) var(--gummy); }
+.faq summary:hover::before { transform: scale(1.14, 0.86); }
+.faq details[open] .faq__body { animation: jelly 520ms var(--gummy) both; }
 .faq__body { padding: 0 0 16px; }
 .faq__body p { margin: 0; font-size: 14px; }
 

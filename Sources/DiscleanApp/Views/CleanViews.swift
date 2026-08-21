@@ -46,13 +46,14 @@ struct ResultListView: View {
                                     Text(sectionTitle(tier))
                                         .font(Tokens.display(28))
                                         .foregroundStyle(surface.text)
-                                    ForEach(items, id: \.ruleId) { item in
+                                    ForEach(numbered(items), id: \.item.ruleId) { entry in
                                         ChunkView(
-                                            item: item,
-                                            selected: model.selection.contains(item.ruleId)
+                                            item: entry.item,
+                                            selected: model.selection.contains(entry.item.ruleId)
                                         ) {
-                                            toggle(item)
+                                            toggle(entry.item)
                                         }
+                                        .plopIn(index: entry.index)
                                     }
                                 }
                             }
@@ -71,6 +72,9 @@ struct ResultListView: View {
                         Text(Format.bytes(model.selectedBytes))
                             .font(Tokens.weightedData(26, bytes: model.selectedBytes))
                             .foregroundStyle(Tokens.ink)
+                            .contentTransition(.numericText())
+                            .jelly(on: model.selectedBytes, strength: 0.1)
+                            .animation(Motion.gummy, value: model.selectedBytes)
                         Text("\(model.selectedItems.count) 件")
                             .font(Tokens.body(12))
                             .foregroundStyle(Tokens.ink)
@@ -106,6 +110,11 @@ struct ResultListView: View {
                     .foregroundStyle(Surface(scheme: scheme).text)
             }
         }
+    }
+
+    /// 積み上がる順（下から何番目か）を持たせる。
+    private func numbered(_ items: [ScanItem]) -> [(index: Int, item: ScanItem)] {
+        items.enumerated().map { (index: $0.offset, item: $0.element) }
     }
 
     private func sectionTitle(_ tier: Tier) -> String {

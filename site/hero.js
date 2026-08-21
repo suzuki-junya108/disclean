@@ -35,14 +35,17 @@
 
   function render() {
     tower.textContent = "";
+    var index = -1;
     ITEMS.forEach(function (item) {
       if (state[item.id] === "jar") return;
+      index += 1;
       var b = document.createElement("button");
       b.type = "button";
       b.className = "chunk";
       b.dataset.tier = item.tier;
       b.dataset.id = item.id;
       b.style.minHeight = height(item.gb) + "px";
+      b.style.setProperty("--i", String(index));
       if (item.tier === "C") {
         b.disabled = true;
         b.setAttribute("aria-disabled", "true");
@@ -64,6 +67,8 @@
         b.addEventListener("click", function () {
           state[item.id] = state[item.id] === "on" ? "off" : "on";
           render();
+          // 選び直した塊だけを揺らす。押した手応えを返す。
+          jiggle(tower.querySelector('[data-id="' + item.id + '"]'));
           say(item.name + "を" + (state[item.id] === "on" ? "選びました" : "外しました"));
         });
       }
@@ -79,16 +84,20 @@
     var total = inJar.reduce(function (a, i) { return a + i.gb; }, 0);
     jarCount.textContent = inJar.length === 0 ? "からっぽ" : inJar.length + "件 / " + total.toFixed(1) + " GB";
     setMeter(total);
-    inJar.forEach(function (item) {
+    inJar.forEach(function (item, index) {
       var b = document.createElement("button");
       b.type = "button";
       b.className = "pebble";
+      b.style.setProperty("--i", String(index));
       b.dataset.tier = item.tier;
       b.textContent = item.gb + " GB";
       b.setAttribute("aria-label", item.name + " を元に戻す（" + item.gb + " ギガバイト）");
       b.addEventListener("click", function () {
         state[item.id] = "on";
         render();
+        // 戻した塊が、タワーの中で跳ねる
+        jiggle(tower.querySelector('[data-id="' + item.id + '"]'));
+        animateOnce(document.querySelector(".jar"), "is-wobbling");
         say(item.name + "を元に戻しました");
       });
       jarBody.appendChild(b);
@@ -96,6 +105,21 @@
   }
 
   function say(msg) { if (status) status.textContent = msg; }
+
+  /* 要素を 1 回だけ揺らす。アニメーションは付け直さないと再生されないため、
+     クラスを外して強制的に再計算してから付け直す。 */
+  function animateOnce(el, className) {
+    if (!el || reduce.matches) return;
+    el.classList.remove(className);
+    void el.offsetWidth;
+    el.classList.add(className);
+    el.addEventListener("animationend", function handler() {
+      el.classList.remove(className);
+      el.removeEventListener("animationend", handler);
+    });
+  }
+
+  function jiggle(el) { animateOnce(el, "is-jelly"); }
 
   /* 数字そのものを重くする: 量が増えるほど字面を広げる（Martian Mono の wdth 軸）。 */
   function setMeter(gb) {
@@ -110,6 +134,9 @@
     if (picked.length === 0) { say("選ばれているものがありません"); return; }
     picked.forEach(function (i) { state[i.id] = "jar"; });
     render();
+    // 落ちた衝撃を、置き場と瓶の両方に伝える
+    animateOnce(document.querySelector(".frame"), "is-shuddering");
+    animateOnce(document.querySelector(".jar"), "is-wobbling");
     var total = picked.reduce(function (a, i) { return a + i.gb; }, 0);
     say(picked.length + "件 " + total.toFixed(1) + " ギガバイトを瓶に入れました。7日以内なら掴んで戻せます");
   }
@@ -118,7 +145,12 @@
   var dragging = false, startY = 0, offset = 0;
   var maxPull = 150;
 
-  function setGrip(px) { grip.style.transform = "translateY(" + px + "px)"; }
+  function setGrip(px) {
+    var pull = Math.min(1, px / PULL_THRESHOLD);
+    // 引くほど握りが縦に伸びる（ゴムを引く手応え）
+    grip.style.transform = "translateY(" + px + "px) scale(" + (1 - pull * 0.06) + "," + (1 + pull * 0.1) + ")";
+    if (track) track.style.setProperty("--pull", pull.toFixed(3));
+  }
 
   function down(e) {
     if (reduce.matches) return;
@@ -177,6 +209,30 @@
     }
   }
   reduce.addEventListener ? reduce.addEventListener("change", applyMotionMode) : reduce.addListener(applyMotionMode);
+
+  /* ブロックの壁は、画面に入ったときに下から順に積み上がる。
+     読み込み時にまとめて動かすと、スクロールして来たときには終わっている。 */
+  (function revealWalls() {
+    var walls = document.querySelectorAll(".wall");
+    if (!walls.length) return;
+    walls.forEach(function (wall) {
+      wall.querySelectorAll(".brick").forEach(function (brick, index) {
+        brick.style.setProperty("--i", String(index));
+      });
+    });
+    if (reduce.matches || !("IntersectionObserver" in window)) {
+      walls.forEach(function (wall) { wall.classList.add("is-visible"); });
+      return;
+    }
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-visible");
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.2 });
+    walls.forEach(function (wall) { observer.observe(wall); });
+  })();
 
   ITEMS.forEach(function (i) { state[i.id] = i.tier === "A" ? "on" : "off"; });
   applyMotionMode();

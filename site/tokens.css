@@ -41,10 +41,12 @@
   --t-label: 12px;
   --t-caption: 12px;
 
-  /* motion */
+  /* motion — 塊はキャンディなので、押されれば潰れ、離せば揺れて戻る */
   --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --gummy: cubic-bezier(0.22, 1.4, 0.36, 1);   /* 行き過ぎてから戻る、粘りのある曲線 */
   --drop-ms: 420ms;
   --hover-ms: 120ms;
+  --wobble-ms: 700ms;
 
   color-scheme: light dark;
 }

@@ -138,6 +138,9 @@ struct ChunkView: View {
                             dash: item.state == .blocked ? [8, 6] : []))
             }
         )
+        .jelly(on: selected)
+        .gummyPress(strength: item.state == .blocked || item.tier == .c ? 0 : 0.035)
+        .animation(Motion.gummy, value: selected)
         .accessibilityElement(children: .combine)
         .accessibilityValue(
             "\(sizeText)、\(item.tier == .c ? "見るだけ" : "Tier " + item.tier.rawValue)、"
@@ -180,6 +183,12 @@ struct LeverView: View {
                             .strokeBorder(surface.keyline, lineWidth: Tokens.keylineWidth)
                     }
                 )
+                // 引くほど握りが縦に伸びる（ゴムを引く手応え）
+                .scaleEffect(
+                    x: 1 - min(1, drag / Tokens.leverThrow) * 0.06,
+                    y: 1 + min(1, drag / Tokens.leverThrow) * 0.1,
+                    anchor: .top
+                )
                 .offset(y: drag)
                 .contentShape(Rectangle())
                 .gesture(
@@ -191,7 +200,7 @@ struct LeverView: View {
                         .onEnded { _ in
                             guard enabled, !reduceMotion else { return }
                             if drag >= Tokens.leverThrow { onFire() }
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { drag = 0 }
+                            withAnimation(Motion.gummy) { drag = 0 }
                         }
                 )
                 // reduce-motion のときだけ単一クリックで確認シートへ進む（§6 / D-06）。
