@@ -29,6 +29,7 @@ public enum CommandRunner {
         process.standardError = errPipe
         process.standardInput = FileHandle.nullDevice
 
+        let terminationBox = TerminationBox()
         do {
             // 起動と親側の書き込み端の close を不可分に行う。
             // 並行に spawn すると、別の子プロセスがこちらのパイプの書き込み端を継承してしまい、
@@ -66,23 +67,22 @@ public enum CommandRunner {
             }
         }
 
-        let deadline = Date().addingTimeInterval(TimeInterval(timeoutSeconds))
+        // 終了はセマフォで待つ。ポーリングすると、並列に走るスキャン全体からスレッドを奪う。
+        let finished = DispatchSemaphore(value: 0)
+        terminationBox.attach(to: process) { finished.signal() }
+
         var timedOut = false
-        while process.isRunning {
-            if Date() >= deadline {
-                timedOut = true
-                process.terminate()
-                // TERM で終わらなければ 5 秒後に KILL する。
-                let killDeadline = Date().addingTimeInterval(5)
-                while process.isRunning && Date() < killDeadline {
-                    Thread.sleep(forTimeInterval: 0.05)
-                }
-                if process.isRunning { kill(process.processIdentifier, SIGKILL) }
-                break
+        if finished.wait(timeout: .now() + .seconds(timeoutSeconds)) == .timedOut {
+            timedOut = true
+            process.terminate()
+            // TERM で終わらなければ 5 秒後に KILL する。
+            if finished.wait(timeout: .now() + .seconds(5)) == .timedOut {
+                kill(process.processIdentifier, SIGKILL)
+                _ = finished.wait(timeout: .now() + .seconds(5))
             }
-            Thread.sleep(forTimeInterval: 0.02)
         }
         process.waitUntilExit()
+
         // 読み出しにも上限を置く。ここで無限には待たない（出力は諦めても、実行結果は返す）。
         // 読み出しスレッドは EOF で自然に終わるため、こちらから fd を閉じて競合させない。
         _ = readGroup.wait(timeout: .now() + .seconds(timeoutSeconds + 5))
@@ -132,5 +132,25 @@ private final class OutputBox: @unchecked Sendable {
         lock.lock()
         storage = newValue
         lock.unlock()
+    }
+}
+
+/// `terminationHandler` の設定と発火を 1 か所に閉じる。
+/// run() より後に設定しても取りこぼさないよう、既に終了していればその場で通知する。
+private final class TerminationBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var notified = false
+
+    func attach(to process: Process, _ onExit: @escaping @Sendable () -> Void) {
+        let fire: @Sendable () -> Void = { [weak self] in
+            guard let self else { return }
+            self.lock.lock()
+            let alreadyNotified = self.notified
+            self.notified = true
+            self.lock.unlock()
+            if !alreadyNotified { onExit() }
+        }
+        process.terminationHandler = { _ in fire() }
+        if !process.isRunning { fire() }
     }
 }
