@@ -38,6 +38,14 @@ fonts.gstatic.com" "$externals"
 assert_contains "JS なしでも見出しが読める" "そのギガバイト" "$(cat "$HTML")"
 assert_contains "JS なしでも導入手順が読める" "1 行で入ります" "$(cat "$HTML")"
 
+# --- ダウンロードリンクに版数を直書きしない（リリースのたびに 404 になるため）
+versioned="$(grep -oE 'releases/latest/download/[^"]+' "$HTML" | grep -E '[0-9]+\.[0-9]+\.[0-9]+' || true)"
+if [ -z "$versioned" ]; then
+    ok "latest/download のリンクに版数が入っていない"
+else
+    ng "版数入りのリンクがある（次のリリースで 404 になります）: $versioned"
+fi
+
 # --- 配信物
 for f in CNAME robots.txt sitemap.xml og.png tokens.css style.css hero.js; do
     if [ -f "$SITE/$f" ]; then ok "$f がある"; else ng "$f がない"; fi

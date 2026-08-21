@@ -31,5 +31,10 @@ if ! HOME="$SB" DISCLEAN_STATE_DIR="$SB/state" DISCLEAN_CONFIG_DIR="$SB/config" 
 fi
 rm -rf "$SMOKE" "$SB"
 
+# 版に依存しない名前の複製も置く。LP や外部の案内は latest/download/<固定名> を指すため、
+# これが無いとリリースのたびにダウンロードリンクが 404 になる（実際に壊れた）。
+cp "$TARBALL" "dist/disclean-macos-universal.tar.gz"
+
 echo "==> $TARBALL"
 shasum -a 256 "$TARBALL"
+echo "==> dist/disclean-macos-universal.tar.gz（固定名の複製）"

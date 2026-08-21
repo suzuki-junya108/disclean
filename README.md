@@ -107,6 +107,7 @@ swift test                        # 単体・結合テスト
 acceptance/run-all.sh       # 受入テスト（CLI の実バイナリを使う）
 tools/make-app.sh                 # Disclean.app を組み立てる
 tools/make-dist.sh                # 配布用 tar.gz を作る（展開して動くかを毎回検証する）
+tools/check-download-links.sh     # 公開後のダウンロードリンクが本当に取得できるか確かめる
 swiftlint lint --strict           # 0 violations が条件
 xcrun swift-format lint --recursive --strict Sources Tests
 ```
