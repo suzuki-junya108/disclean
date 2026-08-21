@@ -26,19 +26,28 @@ step "GitHub Pages にカスタムドメインを設定する"
 gh api -X PUT "repos/$REPO/pages" -f "cname=$DOMAIN" -F "https_enforced=false" >/dev/null
 gh api "repos/$REPO/pages" --jq '{cname, status, https_certificate: .https_certificate.state}'
 
-step "証明書の発行を待つ（最大 15 分）"
-for _ in $(seq 1 90); do
+# Cloudflare のプロキシ有効時は、GitHub は独自の証明書を発行しない（訪問者には
+# Cloudflare の証明書が見える）。その場合この待ち時間は空振りする。
+step "証明書の発行を待つ（プロキシ有効なら発行されない。最大 2 分で切り上げる）"
+for _ in $(seq 1 12); do
     state="$(gh api "repos/$REPO/pages" --jq '.https_certificate.state' 2>/dev/null || echo unknown)"
     [ "$state" = "approved" ] && break
     sleep 10
 done
 echo "certificate: ${state:-unknown}"
 
-step "HTTPS を強制する"
-gh api -X PUT "repos/$REPO/pages" -F "https_enforced=true" >/dev/null || \
-    echo "（証明書がまだのため後で再実行してください: gh api -X PUT repos/$REPO/pages -F https_enforced=true）"
+if [ "${state:-}" = "approved" ]; then
+    step "HTTPS を強制する"
+    gh api -X PUT "repos/$REPO/pages" -F "https_enforced=true" >/dev/null
+else
+    step "HTTPS の強制は行わない"
+    echo "GitHub 側に証明書がありません（Cloudflare のプロキシ経由のため）。"
+    echo "HTTP → HTTPS の転送が要る場合は、Cloudflare の SSL/TLS → Edge Certificates →"
+    echo "「Always Use HTTPS」を有効にしてください（GitHub 側で強制するとループの恐れがあります）。"
+fi
 
 step "配信を確認する"
-curl -sI "https://$DOMAIN/" | head -3
+# Cloudflare が古い 404 をキャッシュしていることがあるため、クエリを付けて実体を見る。
+curl -sI "https://$DOMAIN/?cachebust=$$" | head -3
 curl -s "https://$DOMAIN/" | grep -o '<title>.*</title>' | head -1
 curl -sI "https://$DOMAIN/og.png" | head -1
