@@ -150,22 +150,23 @@ public struct Executor: Sendable {
             for child in children {
                 if isCancelled() { break }
                 let source = parent + "/" + child
+                var st = stat()
+                lstat(source, &st)
+                let isDirectory = (st.st_mode & S_IFMT) == S_IFDIR
+                // ディレクトリの lstat が返すのは入れ物自身の大きさと更新時刻だけ。
+                // 量も「最近使われたか」も、中身を見ないとスキャン結果と食い違う。
+                let measured =
+                    isDirectory ? DirectoryMeter.measure(path: source, isCancelled: isCancelled) : nil
+                let bytes = measured?.bytes ?? Int64(st.st_blocks) * 512
+
                 if let violation = guardian.validateForRemoval(
                     path: source, minAgeDays: rule.minAgeDays, now: now,
-                    sameVolumeAs: dryRun ? nil : runDirectory)
+                    sameVolumeAs: dryRun ? nil : runDirectory,
+                    newestModification: measured?.newestModification)
                 {
                     outcome.skipped.append(.init(ruleId: rule.id, path: source, reason: violation.rawValue))
                     continue
                 }
-                var st = stat()
-                lstat(source, &st)
-                let isDirectory = (st.st_mode & S_IFMT) == S_IFDIR
-                // ディレクトリの lstat が返すのは、その入れ物自身の大きさだけ。
-                // 中身を含めた実際の量を数えないと、報告がスキャン結果と食い違う。
-                let bytes =
-                    isDirectory
-                    ? DirectoryMeter.measure(path: source, isCancelled: isCancelled).bytes
-                    : Int64(st.st_blocks) * 512
 
                 if dryRun {
                     outcome.quarantined.append(

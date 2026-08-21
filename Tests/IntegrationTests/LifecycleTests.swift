@@ -379,3 +379,61 @@ struct LifecycleTests {
         #expect(!plan.selected.contains { $0.ruleId == "fixture-b" })
     }
 }
+
+@Suite("最近使ったばかりのものを、空と取り違えない")
+struct RecencyReasonTests {
+    @Test("中身が新しいだけのときは「新しすぎます」と報告する")
+    func recentContentsAreNotReportedAsEmpty() async throws {
+        let sandbox = try Sandbox()
+        let target = sandbox.home + "/Library/Caches/busy"
+        try FileManager.default.createDirectory(
+            atPath: target + "/app", withIntermediateDirectories: true)
+        try Data(repeating: 0x41, count: 2 * 1024 * 1024)
+            .write(to: URL(fileURLWithPath: target + "/app/now.bin"))
+        try sandbox.installDirectoryRule("busy", path: target, minAgeDays: 3)
+
+        let result = await Scanner(env: sandbox.env, config: sandbox.config)
+            .scan(catalog: sandbox.catalog(), ruleIds: ["busy"])
+        let item = try #require(result.items.first { $0.ruleId == "busy" })
+        #expect(item.state == .skipped)
+        #expect(item.reason == "too-recent")
+    }
+
+    @Test("本当に空のときだけ「空でした」と報告する")
+    func trulyEmptyIsReportedAsEmpty() async throws {
+        let sandbox = try Sandbox()
+        let target = sandbox.home + "/Library/Caches/vacant"
+        try FileManager.default.createDirectory(atPath: target, withIntermediateDirectories: true)
+        try sandbox.installDirectoryRule("vacant", path: target, minAgeDays: 3)
+
+        let result = await Scanner(env: sandbox.env, config: sandbox.config)
+            .scan(catalog: sandbox.catalog(), ruleIds: ["vacant"])
+        let item = try #require(result.items.first { $0.ruleId == "vacant" })
+        #expect(item.reason == "empty")
+    }
+
+    @Test("入れ物に触っただけでは「最近使った」と見なさない")
+    func touchingTheFolderDoesNotCountAsUse() async throws {
+        let sandbox = try Sandbox()
+        let target = sandbox.home + "/Library/Caches/stale"
+        let inner = target + "/app"
+        try FileManager.default.createDirectory(atPath: inner, withIntermediateDirectories: true)
+        let file = inner + "/old.bin"
+        try Data(repeating: 0x41, count: 2 * 1024 * 1024).write(to: URL(fileURLWithPath: file))
+        let old = Date().addingTimeInterval(-40 * 86_400)
+        try FileManager.default.setAttributes([.modificationDate: old], ofItemAtPath: file)
+        // 入れ物だけ「いま」触られた状態にする
+        try FileManager.default.setAttributes([.modificationDate: Date()], ofItemAtPath: inner)
+        try sandbox.installDirectoryRule("stale", path: target, minAgeDays: 3)
+
+        let result = await Scanner(env: sandbox.env, config: sandbox.config)
+            .scan(catalog: sandbox.catalog(), ruleIds: ["stale"])
+        let item = try #require(result.items.first { $0.ruleId == "stale" })
+        #expect(item.state == .ready)
+        #expect(item.bytes >= 2 * 1024 * 1024)
+
+        let plan = try Planner().plan(from: result, tiers: [.a])
+        let outcome = try sandbox.executor().apply(plan: plan, catalog: sandbox.catalog(), dryRun: false)
+        #expect(outcome.reclaimedBytes == item.bytes)
+    }
+}

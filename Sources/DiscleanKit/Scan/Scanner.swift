@@ -207,10 +207,11 @@ public struct Scanner: Sendable {
             if let minAgeDays = rule.minAgeDays {
                 let aged = measureAged(
                     path: path, minAgeDays: minAgeDays, now: Date(), isCancelled: isCancelled)
-                measurement.bytes += aged.bytes
-                measurement.fileCount += aged.fileCount
-                measurement.dataless = measurement.dataless || aged.dataless
-                blocked = blocked || aged.blocked
+                measurement.bytes += aged.eligible.bytes
+                measurement.fileCount += aged.eligible.fileCount
+                measurement.withheldBytes += aged.withheldBytes
+                measurement.dataless = measurement.dataless || aged.eligible.dataless
+                blocked = blocked || aged.eligible.blocked
                 continue
             }
 
@@ -239,29 +240,35 @@ public struct Scanner: Sendable {
 
     /// 直下の項目のうち、最終更新から `minAgeDays` 以上たったものだけを測る。
     /// 実行時（Executor）の判定と同じ基準にして、表示と実際の差をなくす。
+    /// 直下の項目のうち、最後に使われてから `minAgeDays` 以上たったものだけを測る。
+    /// 実行時（Executor）の判定と同じ基準にして、表示と実際の差をなくす。
     private static func measureAged(
         path: String, minAgeDays: Int, now: Date, isCancelled: @Sendable () -> Bool
-    ) -> DirectoryMeasurement {
+    ) -> (eligible: DirectoryMeasurement, withheldBytes: Int64) {
         var total = DirectoryMeasurement.zero
+        var withheld: Int64 = 0
         guard let children = try? FileManager.default.contentsOfDirectory(atPath: path) else {
             var st = stat()
             if lstat(path, &st) != 0, errno == EPERM || errno == EACCES { total.blocked = true }
-            return total
+            return (total, 0)
         }
         for child in children {
             if isCancelled() { break }
             let childPath = path + "/" + child
-            var st = stat()
-            guard lstat(childPath, &st) == 0 else { continue }
-            let modified = Date(timeIntervalSince1970: TimeInterval(st.st_mtimespec.tv_sec))
-            guard now.timeIntervalSince(modified) / 86_400 >= Double(minAgeDays) else { continue }
             let measured = DirectoryMeter.measure(path: childPath, isCancelled: isCancelled)
+            // 「最近使われたか」は中身で判断する。入れ物の更新時刻だけを見ると、
+            // 中にファイルを 1 つ足しただけで全体が「新しい」と誤判定される。
+            let lastUsed = measured.newestModification ?? Date.distantPast
+            guard now.timeIntervalSince(lastUsed) / 86_400 >= Double(minAgeDays) else {
+                withheld += measured.bytes
+                continue
+            }
             total.bytes += measured.bytes
             total.fileCount += measured.fileCount
             total.dataless = total.dataless || measured.dataless
             total.blocked = total.blocked || measured.blocked
         }
-        return total
+        return (total, withheld)
     }
 
     /// `requiresQuitApps` のアプリが起動しているか。
@@ -276,6 +283,9 @@ public struct Scanner: Sendable {
         rule: Rule, measurement: PathMeasurement, blocked: Bool
     ) -> (state: ItemState, reason: String?) {
         if measurement.paths.isEmpty { return (.skipped, "not-found") }
+        // 測れた中身が条件で全部外れたなら、それが主な理由。読めない部分があっても
+        // 「権限がありません」より「最近使ったばかり」の方が、利用者には正確で行動しやすい。
+        if measurement.bytes == 0 && measurement.withheldBytes > 0 { return (.skipped, "too-recent") }
         if blocked && measurement.bytes == 0 { return (.blocked, "permission-denied") }
         if rule.kind == .directory && measurement.bytes == 0 { return (.skipped, "empty") }
         // Tier C は提示のみ。選べないため ready にしない。
@@ -303,6 +313,8 @@ private struct PathMeasurement: Sendable {
     var paths: [String] = []
     var dataless = false
     var cacheHit = false
+    /// 「最近使われた」ため今回は対象にしなかった量。0 と「条件で外した」を区別するために持つ。
+    var withheldBytes: Int64 = 0
 }
 
 /// 1 ルールを測るための入力一式。

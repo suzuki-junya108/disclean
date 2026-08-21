@@ -73,11 +73,14 @@ public struct PathGuard: Sendable {
     }
 
     /// 実行直前の検証。`lstat` でリンクを判定し、実体の状態まで見る。
+    /// - Parameter newestModification: ディレクトリの場合、その中で最後に更新された時刻。
+    ///   渡さなければ入れ物自身の更新時刻で判定する。
     public func validateForRemoval(
         path: String,
         minAgeDays: Int?,
         now: Date = Date(),
-        sameVolumeAs quarantineDir: String? = nil
+        sameVolumeAs quarantineDir: String? = nil,
+        newestModification: Date? = nil
     ) -> GuardViolation? {
         let expanded = PathGuard.normalize(Expand.tilde(path, home: home))
 
@@ -91,10 +94,11 @@ public struct PathGuard: Sendable {
         if let violation = validateRulePath(resolved) { return violation }
         if let violation = validateRulePath(expanded) { return violation }
 
-        // SG-09: 更新が新しすぎるものは触らない。
+        // SG-09: 最近使われたものは触らない。
         if let minAgeDays {
-            let mtime = Date(timeIntervalSince1970: TimeInterval(st.st_mtimespec.tv_sec))
-            let ageDays = now.timeIntervalSince(mtime) / 86_400
+            let lastUsed =
+                newestModification ?? Date(timeIntervalSince1970: TimeInterval(st.st_mtimespec.tv_sec))
+            let ageDays = now.timeIntervalSince(lastUsed) / 86_400
             if ageDays < Double(minAgeDays) { return .tooRecent }
         }
 

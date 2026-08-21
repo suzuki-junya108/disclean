@@ -116,3 +116,44 @@ struct TempHome {
         ])
     }
 }
+
+@Suite("最近使われたかの判定")
+struct RecencyTests {
+    /// 入れ物の更新時刻は新しいが、中身は古いフォルダ。
+    @Test("中身が古ければ、入れ物の更新時刻が新しくても対象になる")
+    func staleContentsAreEligible() throws {
+        let tmp = try TempHome()
+        let dir = tmp.home + "/Library/Caches/app"
+        try FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+        let file = dir + "/old.bin"
+        try Data(repeating: 0x41, count: 1024).write(to: URL(fileURLWithPath: file))
+        let old = Date().addingTimeInterval(-40 * 86_400)
+        try FileManager.default.setAttributes([.modificationDate: old], ofItemAtPath: file)
+        // 入れ物自身は「いま」触られた状態にする
+        try FileManager.default.setAttributes([.modificationDate: Date()], ofItemAtPath: dir)
+
+        let measured = DirectoryMeter.measure(path: dir)
+        let guardian = PathGuard(
+            home: tmp.home, stateDir: tmp.home + "/state", configDir: tmp.home + "/config",
+            excludedPaths: [])
+        #expect(
+            guardian.validateForRemoval(
+                path: dir, minAgeDays: 3, newestModification: measured.newestModification) == nil)
+    }
+
+    @Test("中身が新しければ対象にしない")
+    func freshContentsAreSkipped() throws {
+        let tmp = try TempHome()
+        let dir = tmp.home + "/Library/Caches/app2"
+        try FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+        try Data(repeating: 0x41, count: 1024).write(to: URL(fileURLWithPath: dir + "/new.bin"))
+
+        let measured = DirectoryMeter.measure(path: dir)
+        let guardian = PathGuard(
+            home: tmp.home, stateDir: tmp.home + "/state", configDir: tmp.home + "/config",
+            excludedPaths: [])
+        #expect(
+            guardian.validateForRemoval(
+                path: dir, minAgeDays: 3, newestModification: measured.newestModification) == .tooRecent)
+    }
+}

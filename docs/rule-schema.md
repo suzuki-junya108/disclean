@@ -27,7 +27,7 @@
 | `command` | CommandSpec | `command` では必須 | 実行する外部コマンド |
 | `sizeProbe` | CommandSpec | | 対象量の推定に使うコマンド |
 | `detect` | CommandSpec | | ツールの有無を判定するコマンド |
-| `minAgeDays` | int | | 最終更新からこの日数を過ぎたものだけを対象にする |
+| `minAgeDays` | int | | **最後に使われてから**この日数を過ぎたものだけを対象にする。判定はフォルダの中身（ファイルの更新時刻の最大）で行い、入れ物自身の更新時刻は見ない |
 | `requiresQuitApps` | string[] | | このバンドル ID のアプリが起動中ならスキップする |
 | `whatIsLost` | string | ✔ | 失うものを 1 文で（英語） |
 | `whatIsLostJa` | string | | 同上（日本語。省略時は `whatIsLost`） |
