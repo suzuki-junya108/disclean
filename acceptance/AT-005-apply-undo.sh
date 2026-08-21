@@ -42,4 +42,32 @@ JSON
 out="$("$DISCLEAN_BIN" rules list --json | jq '[.rules[] | select(.id=="shallow-test")] | length')"
 assert_eq "too-shallow rule is rejected by the catalog" "0" "$out"
 
+# --- 表示した量と、実際に移した量が一致すること（入れ子のディレクトリ）
+NESTED="$HOME/Library/Caches/nested"
+mkdir -p "$NESTED/a/sub" "$NESTED/b/sub"
+dd if=/dev/zero of="$NESTED/a/sub/data.bin" bs=1m count=6 2>/dev/null
+dd if=/dev/zero of="$NESTED/b/sub/data.bin" bs=1m count=6 2>/dev/null
+cat > "$DISCLEAN_CONFIG_DIR/rules.d/02-nested.json" <<JSON
+[{"id":"nested","title":"nested","tier":"A","kind":"directory","paths":["$NESTED"],"whatIsLost":"x"}]
+JSON
+shown="$("$DISCLEAN_BIN" scan --rule nested --json | jq '.totals.bytes')"
+moved="$("$DISCLEAN_BIN" apply --rule nested --yes --json | jq '.totals.reclaimedBytes')"
+assert_eq "表示した量と移した量が一致する" "$shown" "$moved"
+assert_eq "入れ子でも 0 にならない" "true" "$([ "$moved" -ge 12582912 ] && echo true || echo false)"
+
+# --- 条件つきルールは、絞った後の量を見せること
+AGED="$HOME/Library/Caches/aged"
+mkdir -p "$AGED/old" "$AGED/new"
+dd if=/dev/zero of="$AGED/old/a.bin" bs=1m count=8 2>/dev/null
+dd if=/dev/zero of="$AGED/new/b.bin" bs=1m count=8 2>/dev/null
+touch -t 202501010000 "$AGED/old/a.bin" "$AGED/old"
+cat > "$DISCLEAN_CONFIG_DIR/rules.d/03-aged.json" <<JSON
+[{"id":"aged","title":"aged","tier":"A","kind":"directory","paths":["$AGED"],
+  "minAgeDays":3,"whatIsLost":"x"}]
+JSON
+shown="$("$DISCLEAN_BIN" scan --rule aged --json | jq '.totals.bytes')"
+moved="$("$DISCLEAN_BIN" apply --rule aged --yes --json | jq '.totals.reclaimedBytes')"
+assert_eq "条件つきでも表示と実際が一致する" "$shown" "$moved"
+assert_eq "新しいものは残る" "1" "$(ls "$AGED/new" | wc -l | tr -d ' ')"
+
 finish AT-005

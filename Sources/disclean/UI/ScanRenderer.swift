@@ -63,6 +63,20 @@ struct ScanRenderer {
                 : " + \(unknown) item(s) measured after running"
         }
         out.print(out.styled(totalLine, .bold))
+
+        // 「候補に出ていないもの」を黙って消さない。理由ごとに件数を添える。
+        let setAside = result.items.filter { $0.state == .skipped && $0.tier != .c }
+        if !setAside.isEmpty {
+            let grouped = Dictionary(grouping: setAside, by: { $0.reason ?? "unknown" })
+            let summary =
+                grouped
+                .sorted { $0.value.count > $1.value.count }
+                .map { "\(SkipReason.describe($0.key, japanese: out.japanese)) \($0.value.count) 件" }
+                .joined(separator: " / ")
+            out.print(
+                out.styled(
+                    (out.japanese ? "対象外: " : "not listed: ") + summary, .dim))
+        }
         renderCapacity(result.capacity)
         out.print(
             out.styled(

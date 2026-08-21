@@ -51,6 +51,17 @@ struct Sandbox {
         return paths
     }
 
+    /// directory 型のユーザールールを 1 件置く。
+    func installDirectoryRule(_ id: String, path: String, minAgeDays: Int? = nil) throws {
+        var rule: [String: Any] = [
+            "id": id, "title": id, "tier": "A", "kind": "directory",
+            "paths": [path], "whatIsLost": "test data",
+        ]
+        if let minAgeDays { rule["minAgeDays"] = minAgeDays }
+        try JSONSerialization.data(withJSONObject: [rule])
+            .write(to: URL(fileURLWithPath: env.rulesOverrideDir + "/00-\(id).json"))
+    }
+
     func catalog() -> RuleCatalog {
         RuleCatalogLoader(env: env, config: config).load()
     }
@@ -284,6 +295,57 @@ struct LifecycleTests {
         let item = try #require(result.items.first { $0.ruleId == "empty-cache" })
         #expect(item.state == .skipped)
         #expect(item.reason == "empty")
+    }
+
+    @Test("入れ子のディレクトリでも、表示した量と実際に移す量が一致する")
+    func nestedDirectoryReportsFullSize() async throws {
+        let sandbox = try Sandbox()
+        let target = sandbox.home + "/Library/Caches/nested"
+        for name in ["a", "b", "c"] {
+            let dir = target + "/\(name)/sub"
+            try FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+            try Data(repeating: 0x41, count: 4 * 1024 * 1024)
+                .write(to: URL(fileURLWithPath: dir + "/data.bin"))
+        }
+        try sandbox.installDirectoryRule("nested", path: target)
+
+        let result = await Scanner(env: sandbox.env, config: sandbox.config)
+            .scan(catalog: sandbox.catalog(), ruleIds: ["nested"])
+        let shown = result.totalBytes
+        #expect(shown >= 12 * 1024 * 1024)
+
+        let plan = try Planner().plan(from: result, tiers: [.a])
+        let outcome = try sandbox.executor().apply(plan: plan, catalog: sandbox.catalog(), dryRun: false)
+        // ディレクトリの中身を数え落とすと、ここが桁違いに小さくなる。
+        #expect(outcome.reclaimedBytes == shown)
+    }
+
+    @Test("最終更新で絞るルールは、絞った後の量だけを見せる")
+    func minAgeDaysIsReflectedInTheEstimate() async throws {
+        let sandbox = try Sandbox()
+        let target = sandbox.home + "/Library/Caches/aged"
+        for name in ["old", "new"] {
+            let dir = target + "/\(name)"
+            try FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+            try Data(repeating: 0x41, count: 3 * 1024 * 1024)
+                .write(to: URL(fileURLWithPath: dir + "/data.bin"))
+        }
+        let old = Date().addingTimeInterval(-30 * 86_400)
+        for path in [target + "/old/data.bin", target + "/old"] {
+            try FileManager.default.setAttributes([.modificationDate: old], ofItemAtPath: path)
+        }
+        try sandbox.installDirectoryRule("aged", path: target, minAgeDays: 3)
+
+        let result = await Scanner(env: sandbox.env, config: sandbox.config)
+            .scan(catalog: sandbox.catalog(), ruleIds: ["aged"])
+        let shown = result.totalBytes
+        #expect(shown >= 3 * 1024 * 1024)
+        #expect(shown < 6 * 1024 * 1024)  // 新しい方を数えていないこと
+
+        let plan = try Planner().plan(from: result, tiers: [.a])
+        let outcome = try sandbox.executor().apply(plan: plan, catalog: sandbox.catalog(), dryRun: false)
+        #expect(outcome.reclaimedBytes == shown)
+        #expect(outcome.skipped.contains { $0.reason == "too-recent" })
     }
 
     @Test("Tier C は plan で選べない")

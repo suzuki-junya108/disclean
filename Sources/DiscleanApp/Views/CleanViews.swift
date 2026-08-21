@@ -221,16 +221,16 @@ struct CompletionSummaryView: View {
                 .padding(20)
             }
             if let skipped = outcome?.skipped, !skipped.isEmpty {
+                let grouped = Dictionary(grouping: skipped, by: \.reason)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("スキップ \(skipped.count) 件")
+                    Text("今回は見送り \(skipped.count) 件")
                         .font(Tokens.bodyBold(13))
-                        .foregroundStyle(Surface(scheme: scheme).text)
-                    ForEach(Array(skipped.prefix(8).enumerated()), id: \.offset) { _, skip in
-                        Text("\(skip.ruleId): \(skip.reason)")
+                    ForEach(grouped.sorted { $0.value.count > $1.value.count }, id: \.key) { reason, items in
+                        Text("・\(SkipReason.describe(reason, japanese: true)) \(items.count) 件")
                             .font(Tokens.body(12))
-                            .foregroundStyle(Surface(scheme: scheme).text)
                     }
                 }
+                .foregroundStyle(Surface(scheme: scheme).text)
             }
             if let failed = outcome?.failed, !failed.isEmpty {
                 Text("失敗 \(failed.count) 件（履歴に記録しています）")

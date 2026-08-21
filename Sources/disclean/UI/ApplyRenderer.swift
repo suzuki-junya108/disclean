@@ -102,11 +102,17 @@ struct ApplyRenderer {
         }
 
         if !outcome.skipped.isEmpty {
+            // 理由ごとにまとめる。1 件ずつ並べても、何が起きたかは伝わらない。
+            let grouped = Dictionary(grouping: outcome.skipped, by: \.reason)
             out.print(
                 out.styled(
-                    out.japanese ? "スキップ \(outcome.skipped.count) 件:" : "skipped \(outcome.skipped.count):", .dim))
-            for skip in outcome.skipped.prefix(10) {
-                out.print(out.styled("  \(skip.ruleId): \(skip.reason) \(skip.path)", .dim))
+                    out.japanese
+                        ? "今回は見送り: \(outcome.skipped.count) 件"
+                        : "left as-is: \(outcome.skipped.count) items",
+                    .dim))
+            for (reason, items) in grouped.sorted(by: { $0.value.count > $1.value.count }) {
+                let label = SkipReason.describe(reason, japanese: out.japanese)
+                out.print(out.styled("  \(label): \(items.count) 件", .dim))
             }
         }
         if !outcome.failed.isEmpty {

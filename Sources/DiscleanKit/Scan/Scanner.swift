@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 /// スキャン結果 1 件の状態。
@@ -177,6 +178,16 @@ public struct Scanner: Sendable {
     ) -> MeasuredItem {
         let rule = input.entry.rule
         let japanese = input.env.isJapanese
+
+        // 起動中のアプリのデータは実行時に必ず見送られる。候補として数えない。
+        if let running = runningApp(in: rule.requiresQuitApps ?? []) {
+            return MeasuredItem(
+                item: makeItem(
+                    rule: rule, japanese: japanese, measurement: PathMeasurement(),
+                    state: .skipped, reason: "app-running:\(running)"),
+                cacheUpdates: [])
+        }
+
         var measurement = PathMeasurement()
         var blocked = false
         var cacheUpdates: [CacheUpdate] = []
@@ -190,6 +201,18 @@ public struct Scanner: Sendable {
                 continue
             }
             measurement.paths.append(path)
+
+            // 最終更新からの日数で対象を絞るルールは、絞った後だけを数える。
+            // 全体を数えると、表示より実際に移る量が少なくなる。
+            if let minAgeDays = rule.minAgeDays {
+                let aged = measureAged(
+                    path: path, minAgeDays: minAgeDays, now: Date(), isCancelled: isCancelled)
+                measurement.bytes += aged.bytes
+                measurement.fileCount += aged.fileCount
+                measurement.dataless = measurement.dataless || aged.dataless
+                blocked = blocked || aged.blocked
+                continue
+            }
 
             if let cached = input.cache.lookup(path: path) {
                 measurement.bytes += cached.bytes
@@ -212,6 +235,40 @@ public struct Scanner: Sendable {
                 rule: rule, japanese: japanese, measurement: measurement,
                 state: state.state, reason: state.reason),
             cacheUpdates: cacheUpdates)
+    }
+
+    /// 直下の項目のうち、最終更新から `minAgeDays` 以上たったものだけを測る。
+    /// 実行時（Executor）の判定と同じ基準にして、表示と実際の差をなくす。
+    private static func measureAged(
+        path: String, minAgeDays: Int, now: Date, isCancelled: @Sendable () -> Bool
+    ) -> DirectoryMeasurement {
+        var total = DirectoryMeasurement.zero
+        guard let children = try? FileManager.default.contentsOfDirectory(atPath: path) else {
+            var st = stat()
+            if lstat(path, &st) != 0, errno == EPERM || errno == EACCES { total.blocked = true }
+            return total
+        }
+        for child in children {
+            if isCancelled() { break }
+            let childPath = path + "/" + child
+            var st = stat()
+            guard lstat(childPath, &st) == 0 else { continue }
+            let modified = Date(timeIntervalSince1970: TimeInterval(st.st_mtimespec.tv_sec))
+            guard now.timeIntervalSince(modified) / 86_400 >= Double(minAgeDays) else { continue }
+            let measured = DirectoryMeter.measure(path: childPath, isCancelled: isCancelled)
+            total.bytes += measured.bytes
+            total.fileCount += measured.fileCount
+            total.dataless = total.dataless || measured.dataless
+            total.blocked = total.blocked || measured.blocked
+        }
+        return total
+    }
+
+    /// `requiresQuitApps` のアプリが起動しているか。
+    private static func runningApp(in bundleIds: [String]) -> String? {
+        guard !bundleIds.isEmpty else { return nil }
+        let running = NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier)
+        return bundleIds.first { running.contains($0) }
     }
 
     /// 測定結果から項目の状態を決める。「消せる」以外は必ず理由を持たせる。

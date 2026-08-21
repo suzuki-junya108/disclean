@@ -132,3 +132,30 @@ struct RuleCatalogTests {
         #expect(try #require(SemanticVersion("2.10")) > #require(SemanticVersion("2.9")))
     }
 }
+
+@Suite("スキップ理由の表示")
+struct SkipReasonTests {
+    @Test(
+        "理由コードを日本語にする",
+        arguments: [
+            ("too-recent", "新しすぎます"),
+            ("empty", "空でした"),
+            ("cross-volume", "別のディスクにあります"),
+            ("destination-exists", "戻す先に同じ名前があります"),
+        ])
+    func japanese(code: String, expected: String) {
+        #expect(SkipReason.describe(code, japanese: true) == expected)
+    }
+
+    @Test("アプリ名つきの理由も読める形にする")
+    func appRunning() {
+        let text = SkipReason.describe("app-running:com.apple.dt.Xcode", japanese: true)
+        #expect(text.contains("アプリが起動中"))
+        #expect(text.contains("com.apple.dt.Xcode"))
+    }
+
+    @Test("知らない理由コードはそのまま返す")
+    func unknown() {
+        #expect(SkipReason.describe("brand-new-reason", japanese: true) == "brand-new-reason")
+    }
+}

@@ -91,7 +91,9 @@
 - **Main flow**:
   1. プロセス起動直後に `setiopolicy_np(IOPOL_TYPE_VFS_MATERIALIZE_DATALESS_FILES, IOPOL_SCOPE_PROCESS, IOPOL_MATERIALIZE_DATALESS_FILES_OFF)` を発行し、クラウド未ダウンロードファイルの実体化を抑止する
   2. Tier A / B の各ルールについて、対象パスの存在と前提条件（対象アプリが未起動か、外部ツールが検出できるか）を評価する
-  3. 各パスを最大 `DISCLEAN_CONCURRENCY` 並列で列挙し、`lstat` の `st_blocks * 512`（実割当サイズ）を合算する。`st_flags & SF_DATALESS`（0x40000000）が立つ項目は中身を開かず、サイズ 0 かつ `dataless: true` として記録する
+  3. 各パスを最大 `DISCLEAN_CONCURRENCY` 並列で列挙し、`lstat` の `st_blocks * 512`（実割当サイズ）を合算する。
+     **実行時と同じ条件で数える**こと: `minAgeDays` があれば条件を満たす項目だけを、`requiresQuitApps` の
+     アプリが起動中ならそのルール自体を `skipped` にする（表示した量と実際に移る量を一致させるため）。`st_flags & SF_DATALESS`（0x40000000）が立つ項目は中身を開かず、サイズ 0 かつ `dataless: true` として記録する
   4. ディレクトリ単位の結果を `$DISCLEAN_STATE_DIR/cache/scan-cache.json` に保存する（キー: 絶対パス、値: バイト数・ファイル数・ディレクトリの mtime・計測時刻）
   5. Tier 別にグループ化し、サイズ降順で `ScanResult` を返す
 - **Alternate flows**:
@@ -209,7 +211,8 @@
   1. 対話 TTY かつ `--yes` 未指定なら S-06 の確認プロンプトを表示し、`yes` の入力を要求する
   2. run ID（ULID）を採番し、`$DISCLEAN_STATE_DIR/quarantine/<runID>/` を 0700 で作成する
   3. 各対象パスに対して安全ガード SG-01〜SG-09（下表）を順に適用し、1 つでも違反すれば当該項目を `skipped(reason:)` として次へ進む
-  4. `directory` 型ルールは対象ディレクトリ**の中身**を 1 エントリずつ、`rename(2)` で隔離庫へ移動する（ディレクトリ自体は残す）
+  4. `directory` 型ルールは対象ディレクトリ**の中身**を 1 エントリずつ、`rename(2)` で隔離庫へ移動する（ディレクトリ自体は残す）。
+     移動する項目がディレクトリの場合、**その中身を含めた実サイズ**を記録する（`lstat` の `st_blocks` は入れ物自身の大きさしか返さない）
   5. `command` 型ルールは F-10 の手順で外部コマンドを実行する（隔離庫は経由しない）
   6. 移動のたびに監査ログへ 1 行追記し、`index.json` を更新する
   7. 完了後に F-03 の計測を行い、S-07 のサマリを表示する
