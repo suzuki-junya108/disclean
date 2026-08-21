@@ -45,7 +45,7 @@
 - **A-15**: 「ディスクリン」と `disclean` を、表示名と識別子として使い分ける（§7 Naming）。GitHub アカウントは実在の `suzuki-junya108`（要件初版に書いた `suzuki-junya` は存在しなかったため 2026-08-20 に修正）。2026-08-20 時点で `disclean` は Homebrew core（formula / cask とも）、npm、`github.com/suzuki-junya` のいずれにも存在せず取得可能であることを確認済み。GitHub 全体には無関係の類似名リポジトリが 9 件あるが、tap 名前空間はアカウント単位のため衝突しない。
 - **A-14**: LP の転送量目標（700KB）は 2026-08-20 に Playwright で実測した 679KB に基づく。フォントのサブセット構成が変われば再計測が必要。
 - **A-11**: 「究極にポップ」という要求を、`docs/design-system.md` の HEAVY CANDY（物理的な塊・キャンディ色・黒キーライン・ハードオフセット影・レバーと瓶）として具体化した。この解釈が意図と異なる場合、修正対象は同ドキュメントのトークンとシグネチャー定義であり、機能要件（§4）には影響しない。
-- **A-12**: LP は GitHub Pages の無料枠で配信し、独自ドメインを使わない（`https://suzuki-junya.github.io/disclean/`）。独自ドメインを使う場合は DNS 設定と証明書の手順が追加になる。
+- **A-12**: LP は GitHub Pages の無料枠で配信し、独自ドメイン `disclean.i4u.jp` で公開する（2026-08-21）。Cloudflare の CNAME は**プロキシ有効（オレンジ雲）**で運用しており、訪問者に見える証明書は Cloudflare の Universal SSL（`CN=i4u.jp`、`*.i4u.jp` を含む）。GitHub 側は独自の証明書を発行しないため `https_enforced` は無効のままにする。HTTP → HTTPS の転送が要る場合は Cloudflare の「Always Use HTTPS」で行う（GitHub 側で強制すると、Cloudflare の SSL モードによってはリダイレクトループになる）。`suzuki-junya108.github.io/disclean` も同じ内容を返し続ける。
 - **A-13**: LP のヒーローに表示する実測値は 2026-08-20 の対象マシンの値であり、訪問者の環境を表さない。数値を更新する場合は計測日と機種の表記も同時に更新する。
 - **A-16**: 更新の信頼の起点はバイナリに埋め込んだ Ed25519 公開鍵であり、TLS・GitHub・CDN のいずれも信頼しない前提で設計する。エンドポイント（`DISCLEAN_UPDATE_ENDPOINT`）は差し替え可能だが、署名検証を無効化する手段は提供しない。
 - **A-17**: 利用者は 24 時間に 1 回以上 `disclean` を実行するとは限らない。カタログの到達は「次に実行したとき」であり、緊急の revocation でも即時性は保証されない。即時性が要る事象（重大な誤削除ルール）は、revocation の公開と同時に GitHub Release・LP で告知する。
