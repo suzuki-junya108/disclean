@@ -28,14 +28,15 @@
   <div class="wrap">
     <header class="topbar">
       <div class="brand">
-        <span class="brand__mark" aria-hidden="true"></span>
+        <span class="brand__mark" aria-hidden="true" data-breathe="0.02"></span>
         <span class="brand__names">
           <span class="brand__word">disclean</span>
           <span class="brand__yomi data">ディスクリン</span>
         </span>
       </div>
       <nav class="topbar__links data" aria-label="サイト内">
-        <a href="#numbers">実測</a>
+        <a href="#numbers">目安</a>
+        <a href="#rules">ルール</a>
         <a href="#safety">安全のしくみ</a>
         <a href="#hands-off">触らないもの</a>
         <a href="#install" class="topbar__cta">入れる</a>
@@ -59,20 +60,25 @@
           <span class="chip chip--b">B 確認してから</span>
           <span class="chip chip--c">C 見るだけ</span>
         </p>
+        <div class="picker">
+          <p class="picker__ask">何を使っていますか？</p>
+          <div class="picker__chips" id="profile-chips"></div>
+        </div>
         <p class="hero__actions">
           <a class="btn btn--grape btn--lg" href="#install">入れかたを見る</a>
           <a class="btn btn--paper" href="https://github.com/suzuki-junya108/disclean">GitHub</a>
         </p>
         <p class="caption hero__disclaimer">
-          このデモは実際に動きます。2026-08-20 に MacBook（Apple M4 / 460GB）で測った値を積んであります。
-          <strong>あなたの Mac は読み込んでいません。</strong>
+          このデモは実際に動きます。数字は<strong>よくある目安の幅</strong>で、実測ではありません。
+          <strong>あなたの Mac は読み込んでいません（読めません）。</strong>
+          本当の数字は、入れて <code class="data">disclean scan</code> を 1 回動かせば出ます。
         </p>
       </div>
 
       <div class="stage">
         <div class="stage__meter">
-          <span class="stage__meter-label data">瓶に入れた量</span>
-          <span class="stage__meter-value data" id="meter-value" style="--w:82">0.0<small>GB</small></span>
+          <span class="stage__meter-label data">瓶に入れた量（目安）</span>
+          <span class="stage__meter-value data" id="meter-value" style="--w:82">0〜0<small>GB</small></span>
         </div>
 
         <div class="stage__main">
@@ -99,7 +105,7 @@
             <span class="jar__title data" id="jar-count">からっぽ</span>
           </div>
           <div class="jar__neck" aria-hidden="true"></div>
-          <div class="jar__body" id="jar-body" role="group" aria-label="隔離庫。押すと元に戻せます">
+          <div class="jar__body goo" id="jar-body" role="group" aria-label="隔離庫。押すと元に戻せます">
             <p class="jar__empty caption" id="jar-empty">レバーを引くと、ここに落ちてきます。押せば戻ります。</p>
           </div>
         </div>
@@ -109,140 +115,44 @@
   </div>
 </section>
 
-<!-- ============ 実測値のベルトコンベア ============ -->
+<!-- ============ ルール名のベルトコンベア（rules.js から流し込む） ============ -->
 <div class="ticker" aria-hidden="true">
-  <div class="ticker__rail">
-    <span class="ticker__set">
-      <span class="ticker__item"><b class="data" style="--w:112">71.5GB</b> 使っていない iOS シミュレータ</span>
-      <span class="ticker__dot">●</span>
-      <span class="ticker__item"><b class="data" style="--w:106">26.6GB</b> Docker のイメージとキャッシュ</span>
-      <span class="ticker__dot">●</span>
-      <span class="ticker__item"><b class="data" style="--w:100">10.0GB</b> Colima の仮想ディスク</span>
-      <span class="ticker__dot">●</span>
-      <span class="ticker__item"><b class="data" style="--w:96">9.7GB</b> <code>~/.cache</code></span>
-      <span class="ticker__dot">●</span>
-      <span class="ticker__item"><b class="data" style="--w:90">6.5GB</b> ollama のモデル（触りません）</span>
-      <span class="ticker__dot">●</span>
-    </span>
-    <span class="ticker__set">
-      <span class="ticker__item"><b class="data" style="--w:112">71.5GB</b> 使っていない iOS シミュレータ</span>
-      <span class="ticker__dot">●</span>
-      <span class="ticker__item"><b class="data" style="--w:106">26.6GB</b> Docker のイメージとキャッシュ</span>
-      <span class="ticker__dot">●</span>
-      <span class="ticker__item"><b class="data" style="--w:100">10.0GB</b> Colima の仮想ディスク</span>
-      <span class="ticker__dot">●</span>
-      <span class="ticker__item"><b class="data" style="--w:96">9.7GB</b> <code>~/.cache</code></span>
-      <span class="ticker__dot">●</span>
-      <span class="ticker__item"><b class="data" style="--w:90">6.5GB</b> ollama のモデル（触りません）</span>
-      <span class="ticker__dot">●</span>
-    </span>
-  </div>
+  <div class="ticker__rail" id="ticker-rail"></div>
 </div>
 
-<!-- ============ 実測: 天秤 ============ -->
+<!-- ============ 目安の幅 ============ -->
 <section id="numbers" class="band band--paper">
   <div class="wrap">
     <div class="head">
-      <p class="eyebrow">実測 / 2026-08-20</p>
-      <h2 class="h2">消せるつもりだった 2GB と、<br>本当に埋まっていた 118GB。</h2>
-      <p class="lede">これまで使っていたシェルスクリプトが狙っていた場所を測ったら、ほとんど空でした。容量は、その隣にありました。</p>
+      <p class="eyebrow">目安</p>
+      <h2 class="h2">あなたの構成だと、<br>だいたいこのあたり。</h2>
+      <p class="lede">
+        上で選んだものから、<strong>よくある範囲</strong>を積み直しています。実測ではありません。
+        同じ「Xcode を使う人」でも、端末が 3 台の人と 35 台の人では 10 倍違います。だから幅で出します。
+      </p>
     </div>
 
     <div class="weigh">
       <div class="weigh__side">
-        <p class="weigh__label"><span class="weigh__num data" style="--w:80">2<small>GB</small></span> 旧スクリプトが消しに行っていた場所</p>
-        <div class="wall wall--thin" role="img" aria-label="2 ギガバイト。ブロック 1 個分。">
-          <span class="brick brick--empty"></span>
-        </div>
+        <p class="weigh__label"><span class="weigh__num data" id="est-min">–</span> 少なめの人</p>
+        <div class="wall wall--thin" id="wall-min" role="img" aria-label="少なめの人の目安"></div>
       </div>
 
       <div class="weigh__side">
-        <p class="weigh__label"><span class="weigh__num data" style="--w:112">118<small>GB</small></span> 実際に埋まっていた場所</p>
-        <div class="wall" role="img" aria-label="118 ギガバイト。ブロック 59 個分。内訳は iOS シミュレータ 36 個、Docker と Colima 18 個、~/.cache 5 個。">
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--a"></span>
-          <span class="brick brick--b"></span>
-          <span class="brick brick--b"></span>
-          <span class="brick brick--b"></span>
-          <span class="brick brick--b"></span>
-          <span class="brick brick--b"></span>
-          <span class="brick brick--b"></span>
-          <span class="brick brick--b"></span>
-          <span class="brick brick--b"></span>
-          <span class="brick brick--b"></span>
-          <span class="brick brick--b"></span>
-          <span class="brick brick--b"></span>
-          <span class="brick brick--b"></span>
-          <span class="brick brick--b"></span>
-          <span class="brick brick--b"></span>
-          <span class="brick brick--b"></span>
-          <span class="brick brick--b"></span>
-          <span class="brick brick--b"></span>
-          <span class="brick brick--b"></span>
-          <span class="brick brick--c"></span>
-          <span class="brick brick--c"></span>
-          <span class="brick brick--c"></span>
-          <span class="brick brick--c"></span>
-          <span class="brick brick--c"></span>
-        </div>
+        <p class="weigh__label"><span class="weigh__num data" id="est-max">–</span> 多めの人</p>
+        <div class="wall" id="wall-max" role="img" aria-label="多めの人の目安"></div>
       </div>
 
-      <p class="weigh__key caption">
-        <span class="key"><span class="brick brick--a"></span> iOS シミュレータ 71.5GB</span>
-        <span class="key"><span class="brick brick--b"></span> Docker・Colima 36.6GB</span>
-        <span class="key"><span class="brick brick--c"></span> <code class="data">~/.cache</code> 9.7GB（一部は見るだけ）</span>
-        <span class="key">ブロック 1 個 = 2GB（2026-08-20 実測）</span>
-      </p>
+      <p class="weigh__key caption" id="est-key"></p>
     </div>
 
     <div class="tablewrap">
       <table>
-        <caption>MacBook（Apple M4 / 460GB SSD, macOS 26.5.2）で 2026-08-20 に計測。数値は実割当サイズ。</caption>
+        <caption>選んだものと、ディスクリンがそこで見る場所の数。幅は一般的な目安で、実測値ではありません。</caption>
         <thead>
-          <tr><th scope="col">場所</th><th scope="col">区分</th><th scope="col">旧スクリプト</th><th scope="col">実サイズ</th></tr>
+          <tr><th scope="col">使っているもの</th><th scope="col">ルール</th><th scope="col">主な区分</th><th scope="col">よくある目安</th></tr>
         </thead>
-        <tbody>
-          <tr><td>iOS シミュレータのデバイス</td><td>A</td><td>対象外</td><td class="num data">71.5 GB</td></tr>
-          <tr><td>Docker のイメージ・キャッシュ</td><td>B</td><td>無確認で全消し</td><td class="num data">26.6 GB</td></tr>
-          <tr><td>Colima の仮想ディスク</td><td>B</td><td>対象外</td><td class="num data">10.0 GB</td></tr>
-          <tr><td><code class="data">~/.cache</code>（uv / whisper ほか）</td><td>A / C</td><td>対象外</td><td class="num data">9.7 GB</td></tr>
-          <tr><td><code class="data">~/Library/Caches</code></td><td>A</td><td>丸ごと削除</td><td class="num data">0.1 GB</td></tr>
-          <tr><td><code class="data">~/.Trash</code> / <code class="data">~/Downloads</code></td><td>C</td><td>「削除しました」と表示</td><td class="num data">測定不可</td></tr>
-        </tbody>
+        <tbody id="est-rows"></tbody>
       </table>
     </div>
   </div>
@@ -323,7 +233,27 @@
   </div>
 </section>
 
-<svg class="cut" style="background: var(--lime)" viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 L0 12 L100 12 L100 0 L96 7 L92 1 L88 8 L84 2 L80 9 L76 3 L72 10 L68 4 L64 11 L60 4 L56 10 L52 3 L48 9 L44 2 L40 8 L36 1 L32 7 L28 1 L24 8 L20 0 L16 7 L12 1 L8 8 L4 2 Z" fill="var(--card)"/></svg>
+<svg class="cut" style="background: var(--lime)" viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 L0 12 L100 12 L100 0 L96 7 L92 1 L88 8 L84 2 L80 9 L76 3 L72 10 L68 4 L64 11 L60 4 L56 10 L52 3 L48 9 L44 2 L40 8 L36 1 L32 7 L28 1 L24 8 L20 0 L16 7 L12 1 L8 8 L4 2 Z" fill="var(--bubblegum)"/></svg>
+
+<!-- ============ ルール図鑑（rules.js から生成） ============ -->
+<section id="rules" class="band band--bubble">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">ルール図鑑</p>
+      <h2 class="h2"><span class="data" id="rules-total">–</span> 本ぜんぶ、<br>ここに出してあります。</h2>
+      <p class="lede">
+        ディスクリンが見る場所は、この一覧がすべてです。増えるときは署名付きで配られ、
+        <strong>消す対象が増える変更は、あなたが承認するまで有効になりません</strong>。
+      </p>
+    </div>
+
+    <div class="gallery__filters" id="rules-filters" role="group" aria-label="ルールの絞り込み"></div>
+    <ul class="gallery" id="rules-gallery" aria-live="polite"></ul>
+    <p class="caption" id="rules-note"></p>
+  </div>
+</section>
+
+<svg class="cut" style="background: var(--bubblegum)" viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 L0 12 L100 12 L100 0 L96 7 L92 1 L88 8 L84 2 L80 9 L76 3 L72 10 L68 4 L64 11 L60 4 L56 10 L52 3 L48 9 L44 2 L40 8 L36 1 L32 7 L28 1 L24 8 L20 0 L16 7 L12 1 L8 8 L4 2 Z" fill="var(--card)"/></svg>
 
 <!-- ============ 触らないもの（意図的に装飾を落とす） ============ -->
 <section id="hands-off" class="band band--paper">
@@ -337,15 +267,15 @@
         <span class="caption">Finder から空にしてください。</span>
       </li>
       <li>
-        <span class="plain__row"><span class="plain__name">Xcode のアーカイブ</span><span class="plain__size">実測 0 GB</span></span>
+        <span class="plain__row"><span class="plain__name">Xcode のアーカイブ</span><span class="plain__size">大きさだけ見せます</span></span>
         <span class="caption">配布済みアプリの dSYM が入っています。消すとクラッシュの原因が読めなくなります。</span>
       </li>
       <li>
-        <span class="plain__row"><span class="plain__name">Docker / Colima の名前付きボリューム</span><span class="plain__size">—</span></span>
+        <span class="plain__row"><span class="plain__name">Docker の名前付きボリューム</span><span class="plain__size">—</span></span>
         <span class="caption">データベースの中身が入っていることがあります。ディスクリンの prune はボリュームに触れません。</span>
       </li>
       <li>
-        <span class="plain__row"><span class="plain__name">ollama・Hugging Face・whisper のモデル</span><span class="plain__size">実測 11.4 GB</span></span>
+        <span class="plain__row"><span class="plain__name">ollama・Hugging Face・whisper のモデル</span><span class="plain__size">数十 GB になりがち</span></span>
         <span class="caption">再取得に時間と帯域がかかります。キャッシュという名前でも、消して安いものではありません。</span>
       </li>
       <li>
@@ -431,7 +361,7 @@
   <div class="wrap footer__grid">
     <div>
       <div class="brand brand--dark">
-        <span class="brand__mark" aria-hidden="true"></span>
+        <span class="brand__mark" aria-hidden="true" data-breathe="0.02"></span>
         <span class="brand__names">
           <span class="brand__word">disclean</span>
           <span class="brand__yomi data">ディスクリン</span>
@@ -458,7 +388,10 @@
   </div>
 </footer>
 
+<script src="rules.js" defer></script>
+<script src="goo.js" defer></script>
 <script src="hero.js" defer></script>
+<script src="gallery.js" defer></script>
 <script>
 document.addEventListener("click", function (e) {
   var b = e.target.closest("#copy-btn");

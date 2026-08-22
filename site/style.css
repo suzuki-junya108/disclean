@@ -379,8 +379,6 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
   color: var(--ink);
 }
 .jar__head { display: flex; justify-content: space-between; gap: 10px; font-size: var(--t-label); }
-.jar { animation: breathe 6s ease-in-out infinite; }
-.brand__mark { animation: breathe 5s ease-in-out infinite; }
 .jar__neck { height: 10px; margin: 8px auto 0; width: 46%; border: var(--key) solid var(--ink); border-bottom: 0; border-radius: 8px 8px 0 0; }
 .jar__body {
   min-height: 96px;
@@ -463,6 +461,8 @@ a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: 3px; 
 }
 .brick--b { background: var(--sunbeam); }
 .brick--c { background: var(--sky); }
+.brick--d { background: var(--bubblegum); }
+.brick--e { background: var(--grape); }
 .brick--empty { background: transparent; border-style: dashed; }
 /* 壁は、見えたときに下から順に積み上がる */
 .wall.is-visible .brick { animation: plop 460ms var(--gummy) both; animation-delay: calc(var(--i, 0) * 9ms); }
@@ -679,4 +679,152 @@ td.num { text-align: right; white-space: nowrap; }
 @media (max-width: 600px) {
   .peek__row { grid-template-columns: auto 1fr; }
   .peek__size { grid-column: 2; justify-self: end; }
+}
+
+/* ── ウニョウニョ（goo.js が動かす層） ─────────────────────────────── */
+
+/* 押せるものの当たり判定は動かさない。動かすのは中の飾り層だけ。 */
+.chunk__skin {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* 瓶の中身は溶けて融合する */
+.goo { filter: url(#goo-filter); }
+@supports not (filter: url(#goo-filter)) { .goo { filter: none; } }
+
+.jar__body.goo .pebble {
+  width: calc(var(--size, 60) * 1px);
+  height: calc(var(--size, 60) * 1px);
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 0.72rem;
+  /* 隣と少し重ねる。重なった部分が gooey フィルタで溶けて 1 つの塊になる */
+  margin-inline: -10px;
+  border-width: 0;
+  box-shadow: none;
+}
+.jar__body.goo { align-items: flex-end; gap: 0; padding-bottom: 14px; }
+
+/* 粘るカーソル */
+.goo-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  border-radius: 999px;
+  background: var(--grape);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 90;
+  mix-blend-mode: multiply;
+  transition: opacity 200ms ease-out;
+}
+.goo-cursor.is-on { opacity: 0.5; }
+
+/* 見出しが波打つ */
+.hero__h1.is-waving .glyph {
+  display: inline-block;
+  animation: glyphwave 2.8s ease-in-out infinite;
+  animation-delay: calc(var(--g, 0) * 60ms);
+  font-variation-settings: "wght" 800, "wdth" 100;
+}
+@keyframes glyphwave {
+  0%, 100% { transform: translateY(0) scaleY(1); font-variation-settings: "wght" 800, "wdth" 100; }
+  50%      { transform: translateY(-4px) scaleY(1.06); font-variation-settings: "wght" 800, "wdth" 88; }
+}
+
+/* スクロールでページ全体が少したわむ */
+.band { transform: skewY(var(--scroll-skew, 0deg)); transform-origin: center top; }
+
+/* ── 何を使っていますか（ヒーローのチップ） ──────────────────────── */
+.picker { margin: 18px 0 8px; }
+.picker__ask { margin: 0 0 8px; font-weight: 700; }
+.picker__chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.pchip {
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  padding: 7px 14px;
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 4px 4px 0 var(--ink);
+  transition: box-shadow 120ms ease-out, background 120ms ease-out;
+}
+.pchip[data-on="1"] { background: var(--grape); color: var(--paper); }
+.pchip:active { box-shadow: 1px 1px 0 var(--ink); }
+.pchip:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+
+/* ── ルール図鑑 ──────────────────────────────────────────────── */
+.gallery__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.gchip {
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+}
+.gchip[aria-pressed="true"] { background: var(--lime); box-shadow: 3px 3px 0 var(--ink); }
+.gchip:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+
+.gallery {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.gcard {
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 5px 5px 0 var(--ink);
+  padding: 12px 14px;
+  animation: plop 420ms var(--gummy) both;
+  animation-delay: calc(var(--i, 0) * 18ms);
+}
+.gcard__head { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; flex-wrap: wrap; }
+.gcard__tier {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.gcard[data-tier="A"] .gcard__tier { background: var(--lime); }
+.gcard[data-tier="B"] .gcard__tier { background: var(--sunbeam); }
+.gcard[data-tier="C"] .gcard__tier { background: var(--sky); }
+.gcard__name { font-weight: 700; }
+.gcard__lost { margin: 0 0 8px; font-size: 0.84rem; opacity: 0.9; }
+.gcard__foot { margin: 0; font-size: 0.68rem; opacity: 0.75; overflow-wrap: anywhere; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero__h1.is-waving .glyph { animation: none; }
+  .band { transform: none; }
+  .gcard { animation: none; }
+  .goo { filter: none; }
 }

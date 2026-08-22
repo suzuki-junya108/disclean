@@ -56,4 +56,15 @@ assert_eq "CNAME は独自ドメイン" "disclean.i4u.jp" "$(cat "$SITE/CNAME")"
 assert_contains "通信する旨を書いている" "掃除ルールの更新を取りに行くときだけ" "$(cat "$HTML")"
 assert_contains "止め方を書いている" "disclean update --off" "$(cat "$HTML")"
 
+
+# --- 特定の 1 台の Mac に依存した表示になっていないこと（F-LP）
+assert_eq "no measured-machine claim in the hero" 0 \
+    "$(grep -c 'MacBook（Apple M4' "$SITE/index.html" || true)"
+assert_eq "no hard-coded measured sizes" 0 \
+    "$(grep -cE '71\.5GB|26\.6GB|118<small>|実測 [0-9]' "$SITE/index.html" || true)"
+assert_eq "the rule gallery is generated from the catalog" "true" \
+    "$([ -f "$SITE/rules.js" ] && echo true || echo false)"
+assert_eq "the generated data matches the shipped rules" "$(cat "$SITE/../Sources/DiscleanKit/Resources/rules"/*.json | grep -c '"id"')" \
+    "$(python3 -c "import json,re,pathlib;s=pathlib.Path('$SITE/rules.js').read_text();print(json.loads(s[s.index('{'):-2])['totals']['rules'])")"
+
 finish AT-015
