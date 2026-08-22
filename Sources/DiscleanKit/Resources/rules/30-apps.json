@@ -83,7 +83,10 @@
       "~/Library/Application Support/*/Code Cache",
       "~/Library/Application Support/*/GPUCache",
       "~/Library/Application Support/*/CachedData",
-      "~/Library/Application Support/*/Service Worker/CacheStorage"
+      "~/Library/Application Support/*/Service Worker/CacheStorage",
+      "~/Library/Application Support/*/*/Cache",
+      "~/Library/Application Support/*/*/Code Cache",
+      "~/Library/Application Support/*/*/GPUCache"
     ],
     "minAgeDays": 1,
     "whatIsLost": "Web caches of Electron-based apps (Slack, editors, and so on). Rebuilt on next launch.",
@@ -118,6 +121,216 @@
     ],
     "whatIsLost": "Base images for the sandboxed VM; downloaded again when the feature is used.",
     "whatIsLostJa": "Claude デスクトップが使う仮想マシンの土台です。次に使うときに取り直します（数 GB の通信）。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "edge-cache",
+    "title": "Microsoft Edge cache",
+    "titleJa": "Microsoft Edge のキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Caches/com.microsoft.edgemac"
+    ],
+    "requiresQuitApps": [
+      "com.microsoft.edgemac"
+    ],
+    "whatIsLost": "Cached web assets. Logins and bookmarks are kept.",
+    "whatIsLostJa": "Edge が表示を速くするために貯めたウェブの一時データです。ログイン状態やブックマークは消えません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "brave-cache",
+    "title": "Brave cache",
+    "titleJa": "Brave のキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Caches/com.brave.Browser"
+    ],
+    "requiresQuitApps": [
+      "com.brave.Browser"
+    ],
+    "whatIsLost": "Cached web assets. Logins and bookmarks are kept.",
+    "whatIsLostJa": "Brave が表示を速くするために貯めたウェブの一時データです。ログイン状態やブックマークは消えません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "firefox-cache",
+    "title": "Firefox cache",
+    "titleJa": "Firefox のキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Caches/Firefox/Profiles/*/cache2"
+    ],
+    "requiresQuitApps": [
+      "org.mozilla.firefox"
+    ],
+    "whatIsLost": "Cached web assets. Logins and bookmarks are kept.",
+    "whatIsLostJa": "Firefox が表示を速くするために貯めたウェブの一時データです。ログイン状態やブックマークは消えません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "arc-cache",
+    "title": "Arc cache",
+    "titleJa": "Arc のキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Caches/company.thebrowser.Browser"
+    ],
+    "requiresQuitApps": [
+      "company.thebrowser.Browser"
+    ],
+    "whatIsLost": "Cached web assets. Logins and bookmarks are kept.",
+    "whatIsLostJa": "Arc が表示を速くするために貯めたウェブの一時データです。ログイン状態やブックマークは消えません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "chromium-family-cache",
+    "title": "Other Chromium browser caches",
+    "titleJa": "そのほかの Chromium 系ブラウザのキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Caches/org.chromium.Chromium",
+      "~/Library/Caches/com.vivaldi.Vivaldi",
+      "~/Library/Caches/com.operasoftware.Opera"
+    ],
+    "requiresQuitApps": [
+      "org.chromium.Chromium",
+      "com.vivaldi.Vivaldi",
+      "com.operasoftware.Opera"
+    ],
+    "whatIsLost": "Cached web assets for Chromium, Vivaldi and Opera. Logins and bookmarks are kept.",
+    "whatIsLostJa": "Chromium / Vivaldi / Opera が貯めたウェブの一時データです。ログイン状態やブックマークは消えません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "teams-cache",
+    "title": "Microsoft Teams cache",
+    "titleJa": "Microsoft Teams のキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Application Support/Microsoft/Teams/Cache",
+      "~/Library/Application Support/Microsoft/Teams/Code Cache",
+      "~/Library/Application Support/Microsoft/Teams/gpucache",
+      "~/Library/Application Support/Microsoft/Teams/tmp",
+      "~/Library/Containers/com.microsoft.teams2/Data/Library/Caches"
+    ],
+    "requiresQuitApps": [
+      "com.microsoft.teams",
+      "com.microsoft.teams2"
+    ],
+    "whatIsLost": "Display caches only; chat history and sign-in are untouched.",
+    "whatIsLostJa": "Teams の表示用の一時データです。次の起動時に作り直されます。チャット履歴やログイン状態は消えません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "steam-caches",
+    "title": "Steam caches",
+    "titleJa": "Steam のキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Application Support/Steam/appcache",
+      "~/Library/Application Support/Steam/depotcache",
+      "~/Library/Application Support/Steam/logs",
+      "~/Library/Application Support/Steam/steamapps/shadercache",
+      "~/Library/Application Support/Steam/steamapps/temp"
+    ],
+    "requiresQuitApps": [
+      "com.valvesoftware.steam"
+    ],
+    "whatIsLost": "Steam's temporary data. Installed games and saves are untouched.",
+    "whatIsLostJa": "Steam の一時データです。インストール済みのゲーム本体とセーブデータには触れません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "google-drive-cache",
+    "title": "Google Drive content cache",
+    "titleJa": "Google ドライブの取り置き",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Application Support/Google/DriveFS/*/content_cache"
+    ],
+    "requiresQuitApps": [
+      "com.google.GoogleDrive"
+    ],
+    "whatIsLost": "Locally cached copies of Drive files; downloaded again when opened.",
+    "whatIsLostJa": "クラウドから取ってきたファイルの取り置きです。次に開くときに取り直します（同期していない変更がないときに片づけてください）。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "dropbox-cache",
+    "title": "Dropbox cache",
+    "titleJa": "Dropbox の取り置き",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Dropbox/.dropbox.cache"
+    ],
+    "requiresQuitApps": [
+      "com.getdropbox.dropbox"
+    ],
+    "whatIsLost": "Temporary files Dropbox keeps while syncing.",
+    "whatIsLostJa": "Dropbox が同期のために置いた一時ファイルです。同期が終わっていれば消しても問題ありません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "saved-application-state",
+    "title": "Saved application state",
+    "titleJa": "ウィンドウの復元情報",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Saved Application State"
+    ],
+    "minAgeDays": 7,
+    "whatIsLost": "State used to restore windows on relaunch; apps simply open fresh.",
+    "whatIsLostJa": "アプリを開き直したときに前回の画面を復元するための記録です。消すと次回は新しい画面で開きます。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "diagnostic-reports",
+    "title": "Diagnostic reports",
+    "titleJa": "不具合の記録",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Logs/DiagnosticReports"
+    ],
+    "minAgeDays": 7,
+    "whatIsLost": "Crash reports; only needed to investigate past problems.",
+    "whatIsLostJa": "アプリが落ちたときの記録です。過去の不具合を調べるとき以外は使いません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "jetbrains-logs",
+    "title": "JetBrains logs",
+    "titleJa": "JetBrains のログ",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Logs/JetBrains"
+    ],
+    "whatIsLost": "IDE logs; removing them changes nothing going forward.",
+    "whatIsLostJa": "JetBrains の IDE の動作記録です。消しても、これからの動作には影響しません。",
     "minMacOS": "14.0",
     "verifiedOn": "25F84"
   }

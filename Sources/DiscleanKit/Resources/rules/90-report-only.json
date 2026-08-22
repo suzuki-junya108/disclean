@@ -115,5 +115,51 @@
     "manualSteps": "中を見て、使わないモデルのファイルだけを個別に削除してください。`disclean inspect --path ~/.cache/whisper` で中身を確認できます。",
     "minMacOS": "14.0",
     "verifiedOn": "25F84"
+  },
+  {
+    "id": "ios-device-backups",
+    "title": "iOS device backups",
+    "titleJa": "iPhone / iPad のバックアップ",
+    "tier": "C",
+    "kind": "report",
+    "paths": [
+      "~/Library/Application Support/MobileSync/Backup"
+    ],
+    "whatIsLost": "Device backups. Deleting one means you cannot restore to that point.",
+    "whatIsLostJa": "この Mac に取った端末のバックアップです。消すと、その時点に戻せなくなります。",
+    "manualSteps": "Finder で端末を選び「バックアップを管理」から、不要なものだけを削除してください。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "android-emulator-images",
+    "title": "Android emulator images",
+    "titleJa": "Android エミュレータのイメージ",
+    "tier": "C",
+    "kind": "report",
+    "paths": [
+      "~/Library/Android/sdk/system-images",
+      "~/.android/avd"
+    ],
+    "whatIsLost": "Emulator system images and virtual devices, including their data.",
+    "whatIsLostJa": "エミュレータの OS イメージと、作った仮想端末です。仮想端末の中のデータも一緒に消えます。",
+    "manualSteps": "Android Studio の Device Manager で不要な仮想端末を削除し、SDK Manager で使わない system-image を外してください。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "mail-downloads",
+    "title": "Mail downloads",
+    "titleJa": "メールの添付の控え",
+    "tier": "C",
+    "kind": "report",
+    "paths": [
+      "~/Library/Containers/com.apple.mail/Data/Library/Mail Downloads"
+    ],
+    "whatIsLost": "Copies of attachments you opened. Usually re-downloadable, but check first.",
+    "whatIsLostJa": "メールから開いた添付ファイルの控えです。元のメールが残っていれば取り直せますが、手元にしかないものが混ざることがあります。",
+    "manualSteps": "Finder でこのフォルダを開き、要らないものだけを削除してください。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
   }
 ]

@@ -82,7 +82,8 @@
     "tier": "A",
     "kind": "directory",
     "paths": [
-      "~/Library/Caches/org.swift.swiftpm"
+      "~/Library/Caches/org.swift.swiftpm",
+      "~/.swiftpm/cache"
     ],
     "whatIsLost": "Cloned package checkouts; re-fetched on the next resolve.",
     "whatIsLostJa": "Swift の部品をダウンロードして貯めた控えです。次のビルドで取り直します。",
@@ -237,7 +238,25 @@
     "whatIsLost": "Downloaded modules; re-fetched on the next build.",
     "whatIsLostJa": "Go がダウンロードした部品の控えです。次のビルドで取り直します。",
     "minMacOS": "14.0",
-    "verifiedOn": "25F84"
+    "verifiedOn": "25F84",
+    "detect": {
+      "executable": "go",
+      "arguments": [
+        "version"
+      ]
+    },
+    "pathsFrom": {
+      "command": {
+        "executable": "go",
+        "arguments": [
+          "env",
+          "GOMODCACHE"
+        ]
+      },
+      "subpaths": [
+        "cache/download"
+      ]
+    }
   },
   {
     "id": "bun-install-cache",
@@ -307,6 +326,340 @@
     ],
     "whatIsLost": "Index and build caches for JetBrains IDEs; rebuilt on the next open.",
     "whatIsLostJa": "JetBrains の IDE が作った索引です。次にプロジェクトを開いたときに作り直されます（その 1 回だけ遅くなります）。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "cocoapods-cache",
+    "title": "CocoaPods cache",
+    "titleJa": "CocoaPods のキャッシュ",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Caches/CocoaPods"
+    ],
+    "whatIsLost": "Downloaded pods; re-fetched on the next `pod install`.",
+    "whatIsLostJa": "CocoaPods がダウンロードした部品の控えです。次の `pod install` で取り直します。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "carthage-cache",
+    "title": "Carthage cache",
+    "titleJa": "Carthage のキャッシュ",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Caches/org.carthage.CarthageKit"
+    ],
+    "whatIsLost": "Downloaded dependencies; re-fetched on the next build.",
+    "whatIsLostJa": "Carthage がダウンロードした部品の控えです。次のビルドで取り直します。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "xcode-caches",
+    "title": "Xcode caches",
+    "titleJa": "Xcode のキャッシュ",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Caches/com.apple.dt.Xcode"
+    ],
+    "requiresQuitApps": [
+      "com.apple.dt.Xcode"
+    ],
+    "whatIsLost": "Xcode's own caches; rebuilt as it works.",
+    "whatIsLostJa": "Xcode が作った一時データです。次に使うときに作り直されます。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "xcode-previews",
+    "title": "SwiftUI preview data",
+    "titleJa": "SwiftUI プレビューの作業データ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Developer/Xcode/UserData/Previews"
+    ],
+    "requiresQuitApps": [
+      "com.apple.dt.Xcode"
+    ],
+    "whatIsLost": "Simulator devices created for previews; recreated on the next preview.",
+    "whatIsLostJa": "プレビュー表示のために作られたシミュレータ一式です。次にプレビューを開いたときに作り直されます。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "xcode-device-logs",
+    "title": "Xcode device logs",
+    "titleJa": "Xcode の実機ログ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Developer/Xcode/iOS Device Logs"
+    ],
+    "whatIsLost": "Crash logs pulled from devices; only needed to investigate old crashes.",
+    "whatIsLostJa": "実機から取り込んだクラッシュ記録です。過去の不具合を調べるとき以外は使いません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "coresimulator-logs",
+    "title": "Simulator logs",
+    "titleJa": "シミュレータのログ",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Logs/CoreSimulator"
+    ],
+    "whatIsLost": "Simulator logs; removing them changes nothing going forward.",
+    "whatIsLostJa": "シミュレータの動作記録です。消しても、これからの動作には影響しません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "go-build-cache",
+    "title": "Go build cache",
+    "titleJa": "Go のビルドキャッシュ",
+    "tier": "A",
+    "kind": "directory",
+    "detect": {
+      "executable": "go",
+      "arguments": [
+        "version"
+      ]
+    },
+    "paths": [
+      "~/Library/Caches/go-build"
+    ],
+    "pathsFrom": {
+      "command": {
+        "executable": "go",
+        "arguments": [
+          "env",
+          "GOCACHE"
+        ]
+      }
+    },
+    "whatIsLost": "Go's build cache; rebuilt on the next build.",
+    "whatIsLostJa": "Go がビルドを速くするために貯めた中間結果です。次のビルドで作り直されます。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "maven-repository",
+    "title": "Maven local repository",
+    "titleJa": "Maven のローカルリポジトリ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/.m2/repository"
+    ],
+    "whatIsLost": "Downloaded artifacts; re-fetched on the next build.",
+    "whatIsLostJa": "Maven がダウンロードした部品の置き場です。次のビルドで取り直します（大きいと時間がかかります）。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "scala-build-caches",
+    "title": "Scala build caches",
+    "titleJa": "Scala 系のキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/.ivy2/cache",
+      "~/.sbt/boot",
+      "~/Library/Caches/Coursier"
+    ],
+    "whatIsLost": "Downloaded artifacts for sbt / Ivy / Coursier; re-fetched on the next build.",
+    "whatIsLostJa": "sbt / Ivy / Coursier がダウンロードした部品の控えです。次のビルドで取り直します。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "nuget-packages",
+    "title": "NuGet packages",
+    "titleJa": "NuGet のパッケージ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/.nuget/packages"
+    ],
+    "whatIsLost": "Downloaded .NET packages; re-fetched on the next build.",
+    "whatIsLostJa": ".NET の部品をダウンロードして貯めた控えです。次のビルドで取り直します。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "ruby-gem-caches",
+    "title": "Ruby gem caches",
+    "titleJa": "Ruby の部品キャッシュ",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/.gem/ruby/*/cache",
+      "~/.bundle/cache"
+    ],
+    "whatIsLost": "Downloaded .gem files. Installed gems are untouched.",
+    "whatIsLostJa": "ダウンロードした gem の控えです。入れた gem 本体は消えません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "composer-cache",
+    "title": "Composer cache",
+    "titleJa": "Composer のキャッシュ",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Caches/composer",
+      "~/.composer/cache"
+    ],
+    "whatIsLost": "Downloaded PHP packages; re-fetched on the next install.",
+    "whatIsLostJa": "PHP の部品をダウンロードして貯めた控えです。次のインストールで取り直します。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "python-tool-caches",
+    "title": "Python tool caches",
+    "titleJa": "Python ツールのキャッシュ",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Caches/pypoetry",
+      "~/Library/Caches/pipenv",
+      "~/Library/Caches/pre-commit"
+    ],
+    "whatIsLost": "Caches for Poetry, Pipenv and pre-commit; re-fetched when needed.",
+    "whatIsLostJa": "Poetry / Pipenv / pre-commit がダウンロードして貯めた控えです。次に使うときに取り直します。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "pub-cache",
+    "title": "Dart pub cache",
+    "titleJa": "Dart / Flutter の部品",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/.pub-cache/hosted",
+      "~/.pub-cache/git"
+    ],
+    "whatIsLost": "Downloaded Dart packages; `flutter pub get` fetches them again.",
+    "whatIsLostJa": "Flutter / Dart がダウンロードした部品の置き場です。`flutter pub get` で取り直します。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "android-build-caches",
+    "title": "Android build caches",
+    "titleJa": "Android のビルドキャッシュ",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/.android/cache",
+      "~/.android/build-cache"
+    ],
+    "whatIsLost": "Temporary Android build data; recreated on the next build.",
+    "whatIsLostJa": "Android のビルドが作った一時データです。次のビルドで作り直されます。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "gradle-wrapper-dists",
+    "title": "Gradle distributions",
+    "titleJa": "Gradle 本体の控え",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/.gradle/wrapper/dists",
+      "~/.gradle/daemon"
+    ],
+    "whatIsLost": "Downloaded Gradle distributions and daemon logs; re-fetched on the next build.",
+    "whatIsLostJa": "ダウンロード済みの Gradle 本体と、その動作記録です。次のビルドで取り直します。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "puppeteer-browsers",
+    "title": "Puppeteer browsers",
+    "titleJa": "Puppeteer のブラウザ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/.cache/puppeteer"
+    ],
+    "whatIsLost": "Downloaded test browsers; fetched again when needed.",
+    "whatIsLostJa": "テスト用にダウンロードしたブラウザ一式です。次に使うときに取り直します。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "node-build-caches",
+    "title": "Node build caches",
+    "titleJa": "Node のビルド用キャッシュ",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/.cache/node-gyp",
+      "~/Library/Caches/node-gyp",
+      "~/.npm/_logs",
+      "~/Library/Caches/electron",
+      "~/Library/Caches/electron-builder",
+      "~/.node-gyp/*"
+    ],
+    "whatIsLost": "Headers for native builds, Electron downloads and npm logs; re-fetched when needed.",
+    "whatIsLostJa": "ネイティブ部品のビルドに使うヘッダや、Electron の配布物、npm の実行記録です。必要になれば取り直します。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "compiler-caches",
+    "title": "Compiler caches",
+    "titleJa": "コンパイラのキャッシュ",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Caches/ccache",
+      "~/Library/Caches/Mozilla.sccache",
+      "~/.cache/ccache",
+      "~/.ccache/*"
+    ],
+    "whatIsLost": "ccache / sccache build caches; rebuilt on the next build.",
+    "whatIsLostJa": "ccache / sccache がビルドを速くするために貯めた中間結果です。次のビルドで作り直されます。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "cargo-git-cache",
+    "title": "Cargo git checkouts",
+    "titleJa": "Cargo の git 取得分",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/.cargo/git/checkouts",
+      "~/.cargo/git/db"
+    ],
+    "whatIsLost": "Rust dependencies fetched from git; re-fetched on the next build.",
+    "whatIsLostJa": "git から取ってきた Rust の部品の控えです。次のビルドで取り直します。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "conan-cache",
+    "title": "Conan cache",
+    "titleJa": "Conan のキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/.conan/data",
+      "~/.conan2/p"
+    ],
+    "whatIsLost": "Downloaded C/C++ packages; re-fetched on the next build.",
+    "whatIsLostJa": "C/C++ の部品をダウンロードして貯めた控えです。次のビルドで取り直します。",
     "minMacOS": "14.0",
     "verifiedOn": "25F84"
   }

@@ -62,6 +62,16 @@ struct PathPatternTests {
         #expect(PathPattern.staticPrefix("~/*") == "~")
     }
 
+    @Test("検証用の見本は、広げたあとの深さで測れる形にする")
+    func buildsProbePath() {
+        #expect(PathPattern.probePath("~/.node-gyp/*") == "~/.node-gyp/x")
+        #expect(PathPattern.probePath("~/*") == "~/x")
+        #expect(
+            PathPattern.probePath("~/Library/Caches/Firefox/Profiles/*/cache2")
+                == "~/Library/Caches/Firefox/Profiles/x/cache2")
+        #expect(PathPattern.probePath("~/Library/Caches") == "~/Library/Caches")
+    }
+
     @Test("リンクは辿らない")
     func doesNotFollowSymlinks() throws {
         let root = try makeTree()

@@ -21,7 +21,8 @@ cat > "$DISCLEAN_CONFIG_DIR/rules.d/00-glob.json" <<'JSON'
   "whatIsLost":"rebuilt on next launch"}]
 JSON
 
-out="$("$DISCLEAN_BIN" scan --json)"
+# 同梱ルールにも同じ形の対象があるため、この検証は対象を絞って行う。
+out="$("$DISCLEAN_BIN" scan --json --rule glob-cache)"
 assert_eq "matches every device id" 2 "$(echo "$out" | jq '[.items[] | select(.ruleId=="glob-cache")][0].paths | length')"
 assert_eq "does not follow symlinks out of home" 0 \
     "$(echo "$out" | jq '[.items[] | select(.ruleId=="glob-cache")][0].paths | map(select(contains("ESCAPE"))) | length')"
@@ -32,7 +33,7 @@ assert_eq "counts both places" "true" \
 
 # 見せた量と動かす量が一致し、戻せる
 before="$(echo "$out" | jq '[.items[] | select(.ruleId=="glob-cache")][0].bytes')"
-apply="$("$DISCLEAN_BIN" apply --tier A --yes --json)"
+apply="$("$DISCLEAN_BIN" apply --rule glob-cache --yes --json)"
 assert_eq "moves exactly what was shown" "$before" "$(echo "$apply" | jq '.totals.reclaimedBytes')"
 assert_eq "quarantines both places" 2 "$(echo "$apply" | jq '.quarantined | length')"
 

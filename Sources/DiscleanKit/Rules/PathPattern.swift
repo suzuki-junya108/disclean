@@ -105,6 +105,18 @@ public enum PathPattern {
         return joined.isEmpty ? pattern : joined
     }
 
+    /// 検証用の見本パス。ワイルドカードの段を、ふつうの名前 1 つに置き換える。
+    ///
+    /// 深さの検証は「広げたあとの深さ」で行いたい。固定部分だけで測ると
+    /// `~/.node-gyp/*`（広げれば深さ 2）まで浅すぎる扱いになってしまう。
+    public static func probePath(_ pattern: String) -> String {
+        guard hasWildcard(pattern) else { return pattern }
+        let head = pattern.hasPrefix("/") ? "/" : ""
+        let segments = pattern.split(separator: "/", omittingEmptySubsequences: true)
+            .map { hasWildcard(String($0)) ? "x" : String($0) }
+        return head + segments.joined(separator: "/")
+    }
+
     /// 実体があり、リンクではないか（リンクは対象にしない）。
     private static func isRealTarget(_ path: String) -> Bool {
         var st = stat()

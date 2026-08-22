@@ -46,6 +46,17 @@ disclean inspect --run 01J...              # 隔離庫に入れたものの中�
 
 GUI では、各項目と隔離庫の「なかを見る」から同じものが開きます。
 
+### 何を見ているか
+
+同梱ルールは 74 本です（Tier A 29 / B 34 / 見るだけ 11）。
+
+- **パッケージ管理**: npm / pnpm / Yarn / Homebrew / uv / pip / Composer / NuGet / Maven / sbt・Ivy・Coursier / RubyGems / Bun / Deno / Go / Cargo / CocoaPods / Carthage / pub (Flutter) / Conan
+- **ビルドまわり**: Xcode（DerivedData・キャッシュ・実機サポート・SwiftUI プレビュー）/ シミュレータ（端末内アプリのキャッシュ）/ Gradle / Android / node-gyp / Electron / ccache・sccache / Docker
+- **アプリ**: ブラウザ各種（Chrome / Edge / Brave / Firefox / Arc / Chromium 系）/ Slack などデスクトップアプリの表示キャッシュ / Teams / Steam / Google ドライブ / Dropbox / Spotify / Adobe
+- **見るだけ（消しません）**: ゴミ箱 / ダウンロード / iPhone のバックアップ / Ollama・Hugging Face などのモデル / Android エミュレータ / シミュレータの端末一覧
+
+`disclean rules list` で全件を確認できます。
+
 ### リスク階層（Tier）
 
 | Tier | 意味 | 既定 |
