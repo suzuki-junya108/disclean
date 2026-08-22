@@ -197,6 +197,18 @@ struct QuarantineView: View {
                                     }
                                     .foregroundStyle(Tokens.ink)
                                     Spacer()
+                                    // 預かっているものを、溶けあう塊として見せる
+                                    VStack(alignment: .trailing, spacing: 2) {
+                                        GooeyBlobs(
+                                            amounts: run.entries.map(\.bytes).sorted(by: >),
+                                            tint: Tokens.lime, height: 72
+                                        )
+                                        .frame(width: 190)
+                                        Text("大きい順に \(min(run.entries.count, 6)) 件")
+                                            .font(Tokens.body(11))
+                                            .foregroundStyle(Tokens.ink)
+                                    }
+                                    Spacer(minLength: 0)
                                     VStack(spacing: 8) {
                                         Button("なかを見る") { model.inspect(run: run) }
                                             .buttonStyle(CandyButtonStyle(fill: Tokens.lime))

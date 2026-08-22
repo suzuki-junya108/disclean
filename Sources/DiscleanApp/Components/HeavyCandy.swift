@@ -73,6 +73,8 @@ struct ChunkView: View {
     let item: ScanItem
     let selected: Bool
     let home: String
+    var index: Int = 0
+    var pulse: ChainPulse?
     let onToggle: () -> Void
     let onInspect: () -> Void
 
@@ -163,7 +165,8 @@ struct ChunkView: View {
             }
         )
         .jelly(on: selected)
-        .gummyPress(strength: item.state == .blocked || item.tier == .c ? 0 : 0.035)
+        .chainWobble(index: index, pulse: pulse)
+        .gummyPress(strength: item.state == .blocked || item.tier == .c ? 0 : 0.05)
         .animation(Motion.gummy, value: selected)
         .accessibilityElement(children: .combine)
         .accessibilityValue(
@@ -180,6 +183,8 @@ struct LeverView: View {
     let onFire: () -> Void
 
     @State private var drag: CGFloat = 0
+    @State private var recoil: CGFloat = 0  // 離したあとの行き過ぎ
+    @State private var lastDrag: CGFloat = 0
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -209,8 +214,8 @@ struct LeverView: View {
                 )
                 // 引くほど握りが縦に伸びる（ゴムを引く手応え）
                 .scaleEffect(
-                    x: 1 - min(1, drag / Tokens.leverThrow) * 0.06,
-                    y: 1 + min(1, drag / Tokens.leverThrow) * 0.1,
+                    x: 1 - min(1, drag / Tokens.leverThrow) * 0.09 + recoil * 0.5,
+                    y: 1 + min(1, drag / Tokens.leverThrow) * 0.16 - recoil,
                     anchor: .top
                 )
                 .offset(y: drag)
@@ -219,12 +224,18 @@ struct LeverView: View {
                     DragGesture(minimumDistance: 2, coordinateSpace: .local)
                         .onChanged { value in
                             guard enabled, !reduceMotion else { return }
+                            lastDrag = drag
                             drag = max(0, min(Tokens.leverThrow + 20, value.translation.height))
                         }
                         .onEnded { _ in
                             guard enabled, !reduceMotion else { return }
-                            if drag >= Tokens.leverThrow { onFire() }
+                            let fired = drag >= Tokens.leverThrow
+                            // 引いた速さぶんだけ、戻るときに行き過ぎる（ゴムの手応え）
+                            let speed = min(1, abs(drag - lastDrag) / 24)
+                            if fired { onFire() }
                             withAnimation(Motion.gummy) { drag = 0 }
+                            withAnimation(.easeOut(duration: 0.08)) { recoil = 0.12 + speed * 0.16 }
+                            withAnimation(Motion.squishy.delay(0.08)) { recoil = 0 }
                         }
                 )
                 // reduce-motion のときだけ単一クリックで確認シートへ進む（§6 / D-06）。

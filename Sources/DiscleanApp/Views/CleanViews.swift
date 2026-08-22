@@ -55,7 +55,13 @@ struct ResultListView: View {
                                             item: entry.item,
                                             selected: model.selection.contains(entry.item.ruleId),
                                             home: model.env.home,
-                                            onToggle: { toggle(entry.item) },
+                                            index: entry.index,
+                                            pulse: model.chainPulse,
+                                            onToggle: {
+                                                toggle(entry.item)
+                                                // 押した塊を起点に、隣へ波が伝わる
+                                                model.pulse(from: entry.index, strength: 1.2)
+                                            },
                                             onInspect: { model.inspect(item: entry.item) }
                                         )
                                         .plopIn(index: entry.index)

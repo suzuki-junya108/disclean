@@ -55,6 +55,15 @@ final class AppModel {
     var lastRunUndone = false
     /// 「なかみ」画面。開いている間だけ入る。
     var inspectSession: InspectSession?
+    /// 押した塊から隣へ伝わる波。押すたびに token が増える。
+    private(set) var chainPulse: ChainPulse?
+    private var pulseToken = 0
+
+    /// `index` の塊を起点に、隣へ波を伝える。
+    func pulse(from index: Int, strength: CGFloat = 1) {
+        pulseToken += 1
+        chainPulse = ChainPulse(index: index, token: pulseToken, strength: strength * 0.075)
+    }
 
     private var audit: AuditLog
 
