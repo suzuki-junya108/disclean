@@ -662,5 +662,170 @@
     "whatIsLostJa": "C/C++ の部品をダウンロードして貯めた控えです。次のビルドで取り直します。",
     "minMacOS": "14.0",
     "verifiedOn": "25F84"
+  },
+  {
+    "id": "python-lint-caches",
+    "title": "Python linter caches",
+    "titleJa": "Python の静的解析キャッシュ",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/.cache/mypy",
+      "~/.cache/ruff",
+      "~/.cache/pylint",
+      "~/.cache/black",
+      "~/.cache/pytest_cache"
+    ],
+    "whatIsLost": "Caches for mypy, ruff, pylint and black; rebuilt on the next run.",
+    "whatIsLostJa": "mypy / ruff / pylint / black が解析を速くするために貯めた結果です。次の実行で作り直されます。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "conda-pkgs-cache",
+    "title": "conda package cache",
+    "titleJa": "conda のパッケージキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/.conda/pkgs",
+      "~/miniconda3/pkgs",
+      "~/anaconda3/pkgs",
+      "~/miniforge3/pkgs",
+      "~/mambaforge/pkgs",
+      "~/opt/anaconda3/pkgs"
+    ],
+    "whatIsLost": "Downloaded conda packages. Environments are untouched; re-fetched on the next install.",
+    "whatIsLostJa": "conda がダウンロードしたパッケージの控えです。作った環境そのものは消えません。次のインストールで取り直します。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "version-manager-downloads",
+    "title": "Version manager download caches",
+    "titleJa": "バージョン管理ツールのダウンロード控え",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/.nvm/.cache",
+      "~/.pyenv/cache",
+      "~/.rbenv/cache",
+      "~/.asdf/downloads",
+      "~/.sdkman/archives",
+      "~/.sdkman/tmp",
+      "~/.volta/tmp"
+    ],
+    "whatIsLost": "Downloaded archives kept by nvm, pyenv, rbenv, asdf, SDKMAN and Volta. Installed runtimes are untouched.",
+    "whatIsLostJa": "nvm / pyenv / rbenv / asdf / SDKMAN / Volta がダウンロードした圧縮ファイルの控えです。入れたランタイム本体は消えません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "js-build-tool-caches",
+    "title": "JavaScript build tool caches",
+    "titleJa": "JavaScript ビルドツールのキャッシュ",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/.cache/turbo",
+      "~/.cache/nx",
+      "~/.cache/vite",
+      "~/.cache/webpack",
+      "~/.cache/babel-loader",
+      "~/.cache/eslint",
+      "~/.cache/jest",
+      "~/.cache/typescript",
+      "~/.cache/prisma",
+      "~/.cache/ms-playwright"
+    ],
+    "whatIsLost": "Caches for Turbo, Nx, Vite, webpack, Jest and similar; rebuilt on the next run.",
+    "whatIsLostJa": "Turbo / Nx / Vite / webpack / Jest などが速くするために貯めた中間結果です。次の実行で作り直されます。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "vscode-caches",
+    "title": "VS Code caches",
+    "titleJa": "VS Code のキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Application Support/Code/Cache",
+      "~/Library/Application Support/Code/CachedData",
+      "~/Library/Application Support/Code/CachedExtensionVSIXs",
+      "~/Library/Application Support/Code/logs"
+    ],
+    "requiresQuitApps": [
+      "com.microsoft.VSCode"
+    ],
+    "whatIsLost": "Display caches, downloaded extension packages and logs. Settings and installed extensions are untouched.",
+    "whatIsLostJa": "VS Code の表示キャッシュ・拡張機能のダウンロード控え・動作記録です。設定や拡張機能そのものは消えません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "xcode-products",
+    "title": "Xcode build products",
+    "titleJa": "Xcode のビルド成果物",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Developer/Xcode/Products"
+    ],
+    "requiresQuitApps": [
+      "com.apple.dt.Xcode"
+    ],
+    "whatIsLost": "Built products exported by Xcode; recreated on the next build.",
+    "whatIsLostJa": "Xcode が書き出したアプリの成果物です。次のビルドで作り直されます。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "xcode-doc-cache",
+    "title": "Xcode documentation cache",
+    "titleJa": "Xcode のドキュメントキャッシュ",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Developer/Xcode/DocumentationCache",
+      "~/Library/Caches/com.apple.dt.Xcode.sourcecontrol"
+    ],
+    "whatIsLost": "Documentation index and source control caches; rebuilt when needed.",
+    "whatIsLostJa": "Xcode のドキュメント索引とソース管理の一時データです。次に使うときに作り直されます。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "container-tool-caches",
+    "title": "Container and infra tool caches",
+    "titleJa": "コンテナ・インフラツールのキャッシュ",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/.kube/cache",
+      "~/.terraform.d/plugin-cache",
+      "~/.minikube/cache",
+      "~/.docker/scout",
+      "~/.vagrant.d/tmp"
+    ],
+    "whatIsLost": "Downloaded caches for kubectl, Terraform, minikube, Docker Scout and Vagrant; re-fetched when needed.",
+    "whatIsLostJa": "kubectl / Terraform / minikube / Docker Scout / Vagrant がダウンロードした控えです。次に使うときに取り直します。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "unity-caches",
+    "title": "Unity caches",
+    "titleJa": "Unity のキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Unity/cache",
+      "~/Library/Unity/Asset Store-5.x"
+    ],
+    "whatIsLost": "Downloaded packages and Asset Store archives. Projects are untouched.",
+    "whatIsLostJa": "Unity がダウンロードしたパッケージとアセットストアの控えです。プロジェクト本体は消えません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
   }
 ]

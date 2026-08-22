@@ -161,5 +161,93 @@
     "manualSteps": "Finder でこのフォルダを開き、要らないものだけを削除してください。",
     "minMacOS": "14.0",
     "verifiedOn": "25F84"
+  },
+  {
+    "id": "version-manager-runtimes",
+    "title": "Runtimes installed by version managers",
+    "titleJa": "バージョン管理ツールに入れたランタイム",
+    "tier": "C",
+    "kind": "report",
+    "paths": [
+      "~/.nvm/versions/node",
+      "~/.pyenv/versions",
+      "~/.rbenv/versions",
+      "~/.asdf/installs",
+      "~/.sdkman/candidates",
+      "~/.volta/tools/image",
+      "~/.fnm/node-versions"
+    ],
+    "manualSteps": "`nvm ls` / `pyenv versions` / `rbenv versions` で一覧を見て、使わない版を各ツールの uninstall で消してください。",
+    "whatIsLost": "Installed runtimes. Old versions pile up, but only you know which are still needed.",
+    "whatIsLostJa": "nvm / pyenv / rbenv などで入れた言語のランタイムです。古い版が溜まりやすいですが、どれが要るかはあなたにしか分かりません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "conda-environments",
+    "title": "conda environments",
+    "titleJa": "conda の環境",
+    "tier": "C",
+    "kind": "report",
+    "paths": [
+      "~/.conda/envs",
+      "~/miniconda3/envs",
+      "~/anaconda3/envs",
+      "~/miniforge3/envs"
+    ],
+    "manualSteps": "`conda env list` で一覧を見て、使わないものを `conda env remove -n <名前>` で消してください。",
+    "whatIsLost": "conda environments. Each can be several GB.",
+    "whatIsLostJa": "conda で作った Python 環境です。1 つで数 GB になることがあります。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "editor-extensions",
+    "title": "Editor extensions",
+    "titleJa": "エディタの拡張機能",
+    "tier": "C",
+    "kind": "report",
+    "paths": [
+      "~/.vscode/extensions",
+      "~/.cursor/extensions",
+      "~/.vscode-oss/extensions"
+    ],
+    "manualSteps": "エディタの拡張機能パネルで、使っていないものをアンインストールしてください。",
+    "whatIsLost": "Installed editor extensions. Remove unused ones from inside the editor.",
+    "whatIsLostJa": "VS Code / Cursor に入れた拡張機能です。使っていないものが溜まりやすいですが、消すかどうかはエディタ側で選んでください。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "final-cut-render-files",
+    "title": "Final Cut and iMovie render files",
+    "titleJa": "Final Cut / iMovie のレンダリングファイル",
+    "tier": "C",
+    "kind": "report",
+    "paths": [
+      "~/Movies/*.fcpbundle/*/Render Files",
+      "~/Movies/iMovie Library.imovielibrary/*/Render Files"
+    ],
+    "manualSteps": "Final Cut Pro: ファイル → 生成されたライブラリファイルを削除 → レンダリングファイルを削除。iMovie: ライブラリを選んで同様に削除。",
+    "whatIsLost": "Render files. Delete them from inside the app; media and edits are kept.",
+    "whatIsLostJa": "編集ソフトが作ったレンダリング結果です。アプリ側から安全に消せます（素材と編集内容は消えません）。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "logic-pro-caches",
+    "title": "Logic Pro caches",
+    "titleJa": "Logic Pro の一時データ",
+    "tier": "C",
+    "kind": "report",
+    "paths": [
+      "~/Music/Audio Music Apps/Undo Data",
+      "~/Library/Caches/com.apple.logic10"
+    ],
+    "manualSteps": "Logic Pro を終了したあと、Finder で中身を確認してから削除してください。",
+    "whatIsLost": "Undo history and caches. Projects are untouched.",
+    "whatIsLostJa": "Logic Pro の取り消し履歴と一時データです。プロジェクト本体は消えません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
   }
 ]

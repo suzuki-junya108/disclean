@@ -48,12 +48,12 @@ GUI では、各項目と隔離庫の「なかを見る」から同じものが�
 
 ### 何を見ているか
 
-同梱ルールは 74 本です（Tier A 29 / B 34 / 見るだけ 11）。
+同梱ルールは 99 本です（Tier A 35 / B 48 / 見るだけ 16）。
 
 - **パッケージ管理**: npm / pnpm / Yarn / Homebrew / uv / pip / Composer / NuGet / Maven / sbt・Ivy・Coursier / RubyGems / Bun / Deno / Go / Cargo / CocoaPods / Carthage / pub (Flutter) / Conan
 - **ビルドまわり**: Xcode（DerivedData・キャッシュ・実機サポート・SwiftUI プレビュー）/ シミュレータ（端末内アプリのキャッシュ）/ Gradle / Android / node-gyp / Electron / ccache・sccache / Docker
-- **アプリ**: ブラウザ各種（Chrome / Edge / Brave / Firefox / Arc / Chromium 系）/ Slack などデスクトップアプリの表示キャッシュ / Teams / Steam / Google ドライブ / Dropbox / Spotify / Adobe
-- **見るだけ（消しません）**: ゴミ箱 / ダウンロード / iPhone のバックアップ / Ollama・Hugging Face などのモデル / Android エミュレータ / シミュレータの端末一覧
+- **アプリ**: ブラウザ各種（Safari / Chrome / Edge / Brave / Firefox / Arc / Chromium 系）/ Slack・Discord・Teams・Zoom・Telegram・WhatsApp / Notion・Figma・Sketch / VS Code / Steam / Google ドライブ / Dropbox / Spotify・ミュージック / Adobe / Finder のサムネイル
+- **見るだけ（消しません）**: ゴミ箱 / ダウンロード / iPhone のバックアップ / Ollama・Hugging Face などのモデル / Android エミュレータ / シミュレータの端末一覧 / nvm・pyenv 等のランタイム / conda の環境 / エディタの拡張機能 / Final Cut・Logic の作業ファイル
 
 `disclean rules list` で全件を確認できます。
 

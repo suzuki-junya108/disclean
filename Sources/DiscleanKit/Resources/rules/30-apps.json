@@ -333,5 +333,203 @@
     "whatIsLostJa": "JetBrains の IDE の動作記録です。消しても、これからの動作には影響しません。",
     "minMacOS": "14.0",
     "verifiedOn": "25F84"
+  },
+  {
+    "id": "discord-cache",
+    "title": "Discord cache",
+    "titleJa": "Discord のキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Application Support/discord/Cache",
+      "~/Library/Application Support/discord/Code Cache",
+      "~/Library/Application Support/discord/GPUCache"
+    ],
+    "requiresQuitApps": [
+      "com.hnc.Discord"
+    ],
+    "whatIsLost": "Display caches only. Sign-in is kept.",
+    "whatIsLostJa": "Discord が表示を速くするために貯めた一時データです。ログイン状態は消えません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "zoom-cache",
+    "title": "Zoom cache",
+    "titleJa": "Zoom のキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Caches/us.zoom.xos"
+    ],
+    "requiresQuitApps": [
+      "us.zoom.xos"
+    ],
+    "whatIsLost": "Zoom's temporary data. Settings and recordings are untouched.",
+    "whatIsLostJa": "Zoom の一時データです。設定や録画は消えません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "telegram-media-cache",
+    "title": "Telegram media cache",
+    "titleJa": "Telegram のメディアキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Group Containers/6N38VWS5BX.ru.keepcoder.Telegram/appstore/account-*/postbox/media",
+      "~/Library/Group Containers/6N38VWS5BX.ru.keepcoder.Telegram/appstore/logs"
+    ],
+    "requiresQuitApps": [
+      "ru.keepcoder.Telegram"
+    ],
+    "whatIsLost": "Cached media and logs. Messages and sign-in are kept; media is re-downloaded when viewed.",
+    "whatIsLostJa": "受け取った画像や動画の取り置きと動作記録です。メッセージ本文とログイン状態は消えません。開き直すと取り直します。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "notion-cache",
+    "title": "Notion cache",
+    "titleJa": "Notion のキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Application Support/Notion/Partitions/*/Cache",
+      "~/Library/Application Support/Notion/Partitions/*/Code Cache",
+      "~/Library/Application Support/Notion/Partitions/*/GPUCache"
+    ],
+    "requiresQuitApps": [
+      "notion.id"
+    ],
+    "whatIsLost": "Display caches only. Your pages live in the cloud.",
+    "whatIsLostJa": "Notion が表示を速くするために貯めた一時データです。ページの内容はクラウドにあり消えません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "figma-cache",
+    "title": "Figma cache",
+    "titleJa": "Figma のキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Application Support/Figma/Cache",
+      "~/Library/Application Support/Figma/Code Cache",
+      "~/Library/Application Support/Figma/GPUCache",
+      "~/Library/Caches/com.figma.Desktop"
+    ],
+    "requiresQuitApps": [
+      "com.figma.Desktop"
+    ],
+    "whatIsLost": "Display caches only. Files live in the cloud.",
+    "whatIsLostJa": "Figma デスクトップの表示キャッシュです。ファイルはクラウドにあり消えません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "sketch-caches",
+    "title": "Sketch caches",
+    "titleJa": "Sketch のキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Caches/com.bohemiancoding.sketch3"
+    ],
+    "requiresQuitApps": [
+      "com.bohemiancoding.sketch3"
+    ],
+    "whatIsLost": "Sketch's temporary data. Documents are untouched.",
+    "whatIsLostJa": "Sketch の一時データです。書類は消えません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "whatsapp-cache",
+    "title": "WhatsApp cache",
+    "titleJa": "WhatsApp のキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Group Containers/group.net.whatsapp.WhatsApp.shared/Library/Caches",
+      "~/Library/Containers/net.whatsapp.WhatsApp/Data/Library/Caches"
+    ],
+    "requiresQuitApps": [
+      "net.whatsapp.WhatsApp"
+    ],
+    "whatIsLost": "Temporary data only. Messages and media are kept.",
+    "whatIsLostJa": "WhatsApp の一時データです。メッセージとメディア本体は消えません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "safari-webkit-cache",
+    "title": "Safari WebKit cache",
+    "titleJa": "Safari の表示キャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Caches/com.apple.Safari/WebKitCache",
+      "~/Library/Containers/com.apple.Safari/Data/Library/Caches/com.apple.Safari/WebKitCache"
+    ],
+    "requiresQuitApps": [
+      "com.apple.Safari"
+    ],
+    "whatIsLost": "Cached web assets. Logins and bookmarks are kept.",
+    "whatIsLostJa": "Safari が表示を速くするために貯めたウェブの一時データです。ログイン状態やブックマークは消えません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "quicklook-thumbnails",
+    "title": "Quick Look thumbnail cache",
+    "titleJa": "Finder のサムネイルキャッシュ",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Caches/com.apple.QuickLook.thumbnailcache",
+      "~/Library/Caches/com.apple.iconservices.store"
+    ],
+    "whatIsLost": "Preview and icon caches; rebuilt as you browse.",
+    "whatIsLostJa": "Finder がプレビューやアイコンを速く出すための控えです。開き直すと作り直されます。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "mail-caches",
+    "title": "Mail caches",
+    "titleJa": "メールの一時データ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Containers/com.apple.mail/Data/Library/Caches"
+    ],
+    "requiresQuitApps": [
+      "com.apple.mail"
+    ],
+    "whatIsLost": "Mail's temporary data. Messages and attachments are kept.",
+    "whatIsLostJa": "メール.app の一時データです。メール本文と添付は消えません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "music-caches",
+    "title": "Music and Podcasts caches",
+    "titleJa": "ミュージック・Podcast の一時データ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Caches/com.apple.Music",
+      "~/Library/Caches/com.apple.podcasts",
+      "~/Library/Group Containers/243LU875E5.groups.com.apple.podcasts/Library/Cache"
+    ],
+    "requiresQuitApps": [
+      "com.apple.Music",
+      "com.apple.podcasts"
+    ],
+    "whatIsLost": "Display caches. Your library and downloads are kept.",
+    "whatIsLostJa": "ミュージックと Podcast の表示用の一時データです。ライブラリとダウンロード済みの曲は消えません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
   }
 ]
