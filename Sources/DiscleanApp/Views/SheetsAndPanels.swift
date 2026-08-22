@@ -122,7 +122,9 @@ struct UpdateSheet: View {
                                 Text("\(entry.ruleId): \(entry.change.rawValue)")
                                     .font(Tokens.bodyBold(13))
                                 ForEach(entry.newPaths, id: \.self) { path in
-                                    Text("+ \(path)").font(Tokens.data(11))
+                                    // ひな形（*）は広げた実サイズを出す。数字が無いと承認の判断ができない。
+                                    Text("+ \(path)" + model.measureNewPath(path))
+                                        .font(Tokens.data(11))
                                 }
                             }
                             .foregroundStyle(Surface(scheme: scheme).text)

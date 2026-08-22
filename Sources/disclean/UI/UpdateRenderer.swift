@@ -135,11 +135,20 @@ struct UpdateRenderer {
         }
     }
 
+    /// 承認前に「実際にどれだけ増えるのか」を出す。
+    /// ひな形（`*`）は広げてから測る。広げずに測ると、当たる場所があるのに
+    /// 「存在しません」と出てしまい、承認の判断材料にならない。
     private func measure(_ path: String) -> String {
-        var st = stat()
-        guard lstat(path, &st) == 0 else { return out.japanese ? "（この Mac には存在しません）" : " (not present)" }
-        let measurement = DirectoryMeter.measure(path: path)
-        return "  \(Output.bytes(measurement.bytes))"
+        let matches = PathPattern.hasWildcard(path) ? PathPattern.expand(path) : [path]
+        guard !matches.isEmpty else {
+            return out.japanese ? "（この Mac には存在しません）" : " (not present)"
+        }
+        var bytes: Int64 = 0
+        for match in matches { bytes += DirectoryMeter.measure(path: match).bytes }
+        guard matches.count > 1 else { return "  \(Output.bytes(bytes))" }
+        return out.japanese
+            ? "  \(Output.bytes(bytes))（\(matches.count) か所）"
+            : "  \(Output.bytes(bytes)) (\(matches.count) places)"
     }
 
     private func describe(_ entry: DiffEntry) -> String {

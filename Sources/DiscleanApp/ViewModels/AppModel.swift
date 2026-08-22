@@ -264,6 +264,17 @@ final class AppModel {
         inspectSession = session
     }
 
+    /// 承認画面で「実際にどれだけ増えるのか」を出す。ひな形は広げてから測る。
+    func measureNewPath(_ path: String) -> String {
+        let expanded = Expand.tilde(path, home: env.home)
+        let matches = PathPattern.hasWildcard(expanded) ? PathPattern.expand(expanded) : [expanded]
+        guard !matches.isEmpty else { return "（この Mac には存在しません）" }
+        let bytes = matches.reduce(Int64(0)) { $0 + DirectoryMeter.measure(path: $1).bytes }
+        return matches.count > 1
+            ? "  " + Format.bytes(bytes) + "（\(matches.count) か所）"
+            : "  " + Format.bytes(bytes)
+    }
+
     /// ルール ID ではなく、人が読む名前を出す。
     private func ruleTitle(_ ruleId: String) -> String {
         catalog?.rules.first { $0.id == ruleId }?.titleJa ?? ruleId

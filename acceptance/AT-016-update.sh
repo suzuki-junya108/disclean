@@ -29,9 +29,15 @@ export DISCLEAN_UPDATE_TRUSTED_KEYS_FILE="$SANDBOX/keys/test-key.release-keys.js
 # 2) 拡大差分（新ルール）を含むカタログを作る
 mkdir -p "$HOME/Library/Caches/newtarget"
 dd if=/dev/zero of="$HOME/Library/Caches/newtarget/a.bin" bs=1m count=1 2>/dev/null
+# ひな形（*）を含む新ルールも入れる。承認画面で実サイズが出ることを確かめるため。
+mkdir -p "$HOME/Library/Caches/globtarget/AAA/inner" "$HOME/Library/Caches/globtarget/BBB/inner"
+dd if=/dev/zero of="$HOME/Library/Caches/globtarget/AAA/inner/a.bin" bs=1m count=2 2>/dev/null
+dd if=/dev/zero of="$HOME/Library/Caches/globtarget/BBB/inner/b.bin" bs=1m count=2 2>/dev/null
 cat > "$SANDBOX/rules/50-new.json" <<JSON
 [{"id":"new-target","title":"new","tier":"A","kind":"directory",
-  "paths":["$HOME/Library/Caches/newtarget"],"whatIsLost":"x"}]
+  "paths":["$HOME/Library/Caches/newtarget"],"whatIsLost":"x"},
+ {"id":"glob-target","title":"glob","tier":"A","kind":"directory",
+  "paths":["$HOME/Library/Caches/globtarget/*/inner"],"whatIsLost":"x"}]
 JSON
 "$CATALOG_TOOL" build --rules-dir "$SANDBOX/rules" --out-dir "$SERVE_DIR" \
     --catalog-version 2 --key-file "$SANDBOX/keys/test-key.private.key" --key-id test-key > /dev/null
@@ -78,6 +84,12 @@ assert_eq "approval is required" "true" "$(echo "$out" | jq '.requiresApproval')
 assert_eq "not applied yet" "false" "$(echo "$out" | jq '.applied')"
 assert_eq "new rule is not scanned yet" "0" \
     "$("$DEBUG_BIN" scan --json --no-update | jq '[.items[] | select(.ruleId=="new-target")] | length')"
+
+# 承認画面は、ひな形を広げた実サイズと箇所数を出す（「存在しません」で済ませない）
+human="$("$DEBUG_BIN" update 2>&1)"
+assert_contains "shows the pattern rule in the approval list" "glob-target" "$human"
+assert_contains "shows the real size behind a pattern" "4.2 MB" "$human"
+assert_contains "shows how many places the pattern matched" "2 places" "$human"
 
 # --- AC4: 承認すると適用される
 out="$("$DEBUG_BIN" update --apply --yes --json)"; code=$?
