@@ -23,8 +23,11 @@ SMOKE="$(mktemp -d)"
 tar -xzf "$TARBALL" -C "$SMOKE"
 SB="$(mktemp -d)"
 mkdir -p "$SB/Library/Caches"
-if ! HOME="$SB" DISCLEAN_STATE_DIR="$SB/state" DISCLEAN_CONFIG_DIR="$SB/config" DISCLEAN_AUTO_UPDATE=0 \
-    "$SMOKE/disclean" rules list --json | grep -q '"source" : "builtin"'; then
+# 出力はいったんファイルに落とす。`grep -q` に直接つなぐと、ルールが増えて出力が
+# パイプのバッファを超えたときに grep が先に閉じ、pipefail で誤って失敗扱いになる。
+HOME="$SB" DISCLEAN_STATE_DIR="$SB/state" DISCLEAN_CONFIG_DIR="$SB/config" DISCLEAN_AUTO_UPDATE=0 \
+    "$SMOKE/disclean" rules list --json > "$SB/rules.json" || true
+if ! grep -q '"source" : "builtin"' "$SB/rules.json"; then
     echo "smoke test failed: 展開した配布物が同梱ルールを読めません" >&2
     rm -rf "$SMOKE" "$SB"
     exit 1
