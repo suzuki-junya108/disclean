@@ -2,14 +2,103 @@ import ArgumentParser
 import Foundation
 import DiscleanKit
 
+/// ルールが見ていない場所を出す。ルールをいくら足しても世の中すべては網羅できないため、
+/// 「見えていないこと」自体を見えるようにする。読み取りだけを行う。
+extension ReportCommand {
+    fileprivate func runUnknown(context: Context) async throws {
+        let scanner = UncoveredScanner(env: context.env, config: context.config)
+        let minimum = Int64(max(1, minMegabytes)) * 1024 * 1024
+        let result = await scanner.scan(catalog: context.catalog, minimumBytes: minimum)
+
+        if options.json {
+            JSONOut.emit([
+                "command": "report",
+                "mode": "unknown",
+                "places": result.places.map { place in
+                    [
+                        "path": place.path, "bytes": place.bytes, "fileCount": place.fileCount,
+                        "newestModification": jsonOrNull(place.newestModification.map(JSONIO.string(from:))),
+                    ]
+                },
+                "totals": [
+                    "bytes": result.places.reduce(Int64(0)) { $0 + $1.bytes },
+                    "placeCount": result.places.count,
+                    "minimumBytes": result.minimumBytes,
+                    "truncated": result.truncated,
+                    "blocked": result.blocked,
+                ],
+            ])
+            return
+        }
+
+        let japanese = context.out.japanese
+        context.out.print(
+            context.out.styled(
+                japanese
+                    ? "ルールがどれも見ていない、大きな場所です（消しません）"
+                    : "large places no rule looks at (never deleted)",
+                .bold))
+        context.out.print()
+        if result.places.isEmpty {
+            context.out.print(
+                japanese
+                    ? "\(minMegabytes)MB 以上で、ルールの外にある場所は見つかりませんでした。"
+                    : "no place outside the rules is larger than \(minMegabytes)MB.")
+            return
+        }
+        for place in result.places {
+            let shown =
+                place.path.hasPrefix(context.env.home)
+                ? "~" + place.path.dropFirst(context.env.home.count)
+                : place.path
+            context.out.print("  \(Output.bytes(place.bytes))  \(shown)")
+            let modified = place.newestModification.map { Output.date($0) } ?? "-"
+            context.out.print(
+                context.out.styled(
+                    japanese
+                        ? "    \(place.fileCount) ファイル / 最終更新 \(modified)"
+                        : "    \(place.fileCount) files / last change \(modified)",
+                    .dim))
+        }
+        context.out.print()
+        if result.truncated {
+            context.out.print(
+                context.out.styled(
+                    japanese ? "多いため上位だけを出しています。" : "showing the largest ones only.", .yellow))
+        }
+        if result.blocked {
+            context.out.print(
+                context.out.styled(
+                    japanese
+                        ? "読めない場所がありました（フルディスクアクセスを付与すると全部見えます）"
+                        : "some places could not be read (grant Full Disk Access to see everything)",
+                    .yellow))
+        }
+        context.out.print(
+            japanese
+                ? "中身は disclean inspect --path <場所> で確認できます。消してよいと判断したら、ルールとして提案してください。"
+                : "inspect one with `disclean inspect --path <place>`. If it should be cleanable, propose a rule.")
+    }
+}
+
 struct ReportCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "report", abstract: "ディスクリンが触らない大きなものを見るだけ表示する")
 
     @OptionGroup var options: GlobalOptions
 
+    @Flag(name: .long, help: "ルールがどれも見ていない大きな場所を探す（消しません）")
+    var unknown = false
+
+    @Option(name: .long, help: "--unknown で報告する下限（MB）")
+    var minMegabytes: Int = 200
+
     func run() async throws {
         let context = Context(noUpdate: options.noUpdate)
+        if unknown {
+            try await runUnknown(context: context)
+            return
+        }
         let scanner = Scanner(env: context.env, config: context.config)
         let result = await scanner.scan(catalog: context.catalog, tiers: [.c])
         let items = result.items.filter { $0.tier == .c }

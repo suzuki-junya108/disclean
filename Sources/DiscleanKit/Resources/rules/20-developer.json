@@ -827,5 +827,49 @@
     "whatIsLostJa": "Unity がダウンロードしたパッケージとアセットストアの控えです。プロジェクト本体は消えません。",
     "minMacOS": "14.0",
     "verifiedOn": "25F84"
+  },
+  {
+    "id": "rustup-downloads",
+    "title": "rustup downloads",
+    "titleJa": "rustup のダウンロード控え",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/.rustup/downloads",
+      "~/.rustup/tmp"
+    ],
+    "whatIsLost": "Temporary files used while installing toolchains. Installed toolchains are untouched.",
+    "whatIsLostJa": "rustup がツールチェーンを入れるときに使う一時ファイルです。入れた版そのものは消えません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "codex-cli-caches",
+    "title": "Codex CLI caches",
+    "titleJa": "Codex CLI のキャッシュ",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/.cache/codex-runtimes",
+      "~/.codex/cache"
+    ],
+    "whatIsLost": "Downloaded runtimes for the Codex CLI; fetched again when needed.",
+    "whatIsLostJa": "Codex CLI がダウンロードした実行環境の控えです。次に使うときに取り直します。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "coredevice-caches",
+    "title": "Xcode device service caches",
+    "titleJa": "Xcode 実機サービスのキャッシュ",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Containers/com.apple.CoreDevice.CoreDeviceService/Data/Library/Caches"
+    ],
+    "whatIsLost": "Caches used when Xcode talks to devices; rebuilt on the next connection.",
+    "whatIsLostJa": "Xcode が実機とやりとりするために貯めた一時データです。次につないだときに作り直されます。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
   }
 ]

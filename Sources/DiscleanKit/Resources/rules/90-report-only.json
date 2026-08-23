@@ -210,7 +210,9 @@
     "paths": [
       "~/.vscode/extensions",
       "~/.cursor/extensions",
-      "~/.vscode-oss/extensions"
+      "~/.vscode-oss/extensions",
+      "~/.antigravity/extensions",
+      "~/.windsurf/extensions"
     ],
     "manualSteps": "エディタの拡張機能パネルで、使っていないものをアンインストールしてください。",
     "whatIsLost": "Installed editor extensions. Remove unused ones from inside the editor.",
@@ -247,6 +249,21 @@
     "manualSteps": "Logic Pro を終了したあと、Finder で中身を確認してから削除してください。",
     "whatIsLost": "Undo history and caches. Projects are untouched.",
     "whatIsLostJa": "Logic Pro の取り消し履歴と一時データです。プロジェクト本体は消えません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
+  },
+  {
+    "id": "rustup-toolchains",
+    "title": "Rust toolchains",
+    "titleJa": "rustup で入れた Rust の版",
+    "tier": "C",
+    "kind": "report",
+    "paths": [
+      "~/.rustup/toolchains"
+    ],
+    "manualSteps": "`rustup toolchain list` で一覧を見て、使わない版を `rustup toolchain uninstall <名前>` で消してください。",
+    "whatIsLost": "Installed Rust toolchains. Old ones pile up, but only you know which are needed.",
+    "whatIsLostJa": "rustup で入れた Rust の版です。古い版が溜まりやすいですが、どれが要るかはあなたにしか分かりません。",
     "minMacOS": "14.0",
     "verifiedOn": "25F84"
   }

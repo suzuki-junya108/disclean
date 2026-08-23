@@ -531,5 +531,22 @@
     "whatIsLostJa": "ミュージックと Podcast の表示用の一時データです。ライブラリとダウンロード済みの曲は消えません。",
     "minMacOS": "14.0",
     "verifiedOn": "25F84"
+  },
+  {
+    "id": "music-artwork-cache",
+    "title": "Music artwork cache",
+    "titleJa": "ミュージックのジャケット画像",
+    "tier": "B",
+    "kind": "directory",
+    "paths": [
+      "~/Library/Containers/com.apple.AMPArtworkAgent/Data/Documents/artwork"
+    ],
+    "requiresQuitApps": [
+      "com.apple.Music"
+    ],
+    "whatIsLost": "Cached album artwork; re-downloaded when shown. Songs and the index are untouched.",
+    "whatIsLostJa": "アルバムのジャケット画像の取り置きです。表示するときに取り直します。曲そのものと索引には触れません。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
   }
 ]

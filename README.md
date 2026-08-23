@@ -27,6 +27,7 @@ disclean apply      # 選んだものを隔離庫へ移す（Tier A が既定選
 disclean undo --last  # 直前の実行を取り消す
 disclean purge      # 隔離庫から完全に削除する（戻せなくなります）
 disclean report     # ディスクリンが触らない大きなものを見るだけ表示する
+disclean report --unknown   # ルールがどれも見ていない大きな場所を探す（消しません）
 disclean history    # これまでの操作の記録
 disclean update     # 掃除ルールの更新を確認・適用する
 ```
@@ -48,7 +49,10 @@ GUI では、各項目と隔離庫の「なかを見る」から同じものが�
 
 ### 何を見ているか
 
-同梱ルールは 99 本です（Tier A 35 / B 48 / 見るだけ 16）。
+同梱ルールは 105 本です（Tier A 38 / B 50 / 見るだけ 17）。
+
+ルールに無い場所は `disclean report --unknown` で見つけられます（読み取りだけ）。
+「大きいのにルールが見ていない場所」を一覧にするので、ルールの取りこぼしがそのまま分かります。
 
 - **パッケージ管理**: npm / pnpm / Yarn / Homebrew / uv / pip / Composer / NuGet / Maven / sbt・Ivy・Coursier / RubyGems / Bun / Deno / Go / Cargo / CocoaPods / Carthage / pub (Flutter) / Conan
 - **ビルドまわり**: Xcode（DerivedData・キャッシュ・実機サポート・SwiftUI プレビュー）/ シミュレータ（端末内アプリのキャッシュ）/ Gradle / Android / node-gyp / Electron / ccache・sccache / Docker

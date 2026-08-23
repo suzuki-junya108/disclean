@@ -55,6 +55,11 @@ final class AppModel {
     var lastRunUndone = false
     /// 「なかみ」画面。開いている間だけ入る。
     var inspectSession: InspectSession?
+    /// ルールが見ていない大きな場所（消さずに知らせるだけ）。
+    private(set) var uncovered: [UncoveredPlace] = []
+    private(set) var uncoveredSearching = false
+    private(set) var uncoveredDone = false
+
     /// 押した塊から隣へ伝わる波。押すたびに token が増える。
     private(set) var chainPulse: ChainPulse?
     private var pulseToken = 0
@@ -227,6 +232,18 @@ final class AppModel {
         if let url { NSWorkspace.shared.open(url) }
     }
 
+    /// ルールの外にある大きな場所を探す。時間がかかるので、押されたときだけ動かす。
+    func findUncovered() async {
+        guard let catalog, !uncoveredSearching else { return }
+        uncoveredSearching = true
+        uncoveredDone = false
+        let scanner = UncoveredScanner(env: env, config: config)
+        let result = await scanner.scan(catalog: catalog)
+        uncovered = result.places
+        uncoveredSearching = false
+        uncoveredDone = true
+    }
+
     // MARK: - なかみを見る
 
     /// これから片づける項目の中身を見る。
@@ -247,6 +264,18 @@ final class AppModel {
             roots: item.paths.map {
                 InspectSession.Root(path: $0, label: $0, note: nil, bytes: nil, fileCount: nil)
             })
+        session.start()
+        inspectSession = session
+    }
+
+    /// ルールの外にある場所の中身を見る。
+    func inspect(place: UncoveredPlace) {
+        let session = InspectSession(
+            title: (place.path as NSString).lastPathComponent,
+            whatItIs: "ディスクリンのルールがどれも見ていない場所です。中身を見て、片づけてよいものか確かめてください。",
+            fate: "ディスクリンはここを消しません。消すなら Finder で、中身を確かめてから行ってください。",
+            undoable: false,
+            roots: [InspectSession.Root(path: place.path, label: place.path)])
         session.start()
         inspectSession = session
     }

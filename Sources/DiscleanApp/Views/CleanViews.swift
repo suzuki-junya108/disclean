@@ -70,6 +70,7 @@ struct ResultListView: View {
                             }
                         }
                     }
+                    UncoveredSection(model: model)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -351,5 +352,68 @@ struct PermissionGuideView: View {
             .padding(16)
         }
         .padding(.bottom, 16)
+    }
+}
+
+/// S-36 まだ見ていない大きな場所。ルールをいくら足しても世の中すべては網羅できないため、
+/// 「見えていないこと」自体を見せる。ここからは消せない（見るだけ）。
+struct UncoveredSection: View {
+    @Environment(\.colorScheme) private var scheme
+    let model: AppModel
+
+    var body: some View {
+        let surface = Surface(scheme: scheme)
+        VStack(alignment: .leading, spacing: 10) {
+            Text("まだ見ていない大きな場所")
+                .font(Tokens.display(28))
+                .foregroundStyle(surface.text)
+            Text("ディスクリンのルールがどれも見ていない場所を探します。**消しません**。大きいのに知らなかったものが見つかったら、中身を確かめてください。")
+                .font(Tokens.body(13))
+                .foregroundStyle(surface.text)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if model.uncoveredSearching {
+                HStack(spacing: 10) {
+                    ProgressView().controlSize(.small)
+                    Text("探しています…").font(Tokens.body(13))
+                }
+                .foregroundStyle(surface.text)
+            } else {
+                Button(model.uncoveredDone ? "もう一度さがす" : "ほかに大きな場所をさがす") {
+                    Task { await model.findUncovered() }
+                }
+                .buttonStyle(CandyButtonStyle(fill: Tokens.sky))
+            }
+
+            if model.uncoveredDone && model.uncovered.isEmpty {
+                Text("200MB 以上で、ルールの外にある場所は見つかりませんでした。")
+                    .font(Tokens.body(13))
+                    .foregroundStyle(surface.text)
+            }
+
+            ForEach(Array(model.uncovered.enumerated()), id: \.element.path) { index, place in
+                HardCard(fill: Tokens.paper) {
+                    HStack(alignment: .top, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(Format.bytes(place.bytes))
+                                .font(Tokens.weightedData(18, bytes: place.bytes))
+                            Text(ScanItemFormat.shortPath(place.path, home: model.env.home))
+                                .font(Tokens.data(11))
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                            Text("\(place.fileCount) ファイル")
+                                .font(Tokens.body(11))
+                        }
+                        .foregroundStyle(Tokens.ink)
+                        Spacer(minLength: 0)
+                        Button("なかを見る") { model.inspect(place: place) }
+                            .buttonStyle(CandyButtonStyle(fill: Tokens.lime))
+                    }
+                    .padding(14)
+                }
+                .plopIn(index: index)
+            }
+        }
+        .padding(.top, 8)
     }
 }

@@ -177,5 +177,19 @@
     "whatIsLostJa": "pip がダウンロードした Python の部品の控えです。次に必要になれば取り直します。",
     "minMacOS": "14.0",
     "verifiedOn": "25F84"
+  },
+  {
+    "id": "npx-cache",
+    "title": "npx cache",
+    "titleJa": "npx のキャッシュ",
+    "tier": "A",
+    "kind": "directory",
+    "paths": [
+      "~/.npm/_npx"
+    ],
+    "whatIsLost": "Packages fetched to run one-off commands; re-fetched when used again.",
+    "whatIsLostJa": "npx で 1 回だけ動かすために取ってきた部品です。次に使うときに取り直します。",
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84"
   }
 ]
