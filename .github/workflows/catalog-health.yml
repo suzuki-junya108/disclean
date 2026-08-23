@@ -1,0 +1,68 @@
+name: Catalog health
+
+# 配信中のカタログは 90 日で失効する。失効すると利用者側に
+# 「配信が止まっています」と出て、ルールの更新が届かなくなる。
+# 人間が覚えている前提にせず、週 1 回ここで検査する（docs/requirements/11_operations.md）。
+on:
+  schedule:
+    - cron: "17 0 * * 1"   # 毎週月曜 00:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch the published manifest
+        run: |
+          set -euo pipefail
+          base="https://github.com/${{ github.repository }}/releases/latest/download"
+          curl -fsSL "$base/catalog-manifest.json" -o manifest.json
+          curl -fsSL "$base/catalog-manifest.json.sig" -o manifest.json.sig
+
+      - name: Verify the signature with the shipped keys
+        run: |
+          set -euo pipefail
+          swift run -c release disclean-catalog verify \
+            --manifest manifest.json \
+            --keys Sources/DiscleanKit/Resources/release-keys.json
+
+      - name: Fail if it expires within 30 days
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import datetime, json, sys
+
+          manifest = json.load(open("manifest.json"))
+          expires = datetime.datetime.fromisoformat(manifest["expiresAt"].replace("Z", "+00:00"))
+          left = (expires - datetime.datetime.now(datetime.timezone.utc)).days
+          print(f"catalog {manifest['catalogVersion']} / expires in {left} days / app {manifest['latestApp']['version']}")
+          if left < 30:
+              print("::error::カタログの有効期限が 30 日を切りました。同じ内容で catalogVersion を +1 して再署名・再公開してください。")
+              sys.exit(1)
+          PY
+
+      - name: Fail if the shipped rules no longer match the catalog
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import glob, hashlib, json, sys
+
+          manifest = json.load(open("manifest.json"))
+          published = {entry["name"]: entry["sha256"] for entry in manifest["files"]}
+          mismatched = []
+          for path in sorted(glob.glob("Sources/DiscleanKit/Resources/rules/*.json")):
+              name = path.rsplit("/", 1)[-1]
+              digest = hashlib.sha256(open(path, "rb").read()).hexdigest()
+              if published.get(name) != digest:
+                  mismatched.append(name)
+          if mismatched:
+              print("::warning::同梱ルールと配信カタログが違います: " + ", ".join(mismatched))
+              print("次のリリースで catalogVersion を上げて配り直してください（未配信の変更が溜まっています）。")
+          else:
+              print("同梱ルールと配信カタログは一致しています。")
+          PY

@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<main id="main">
 
 <a class="skip" href="#install">インストール手順へ移動</a>
 
@@ -146,7 +147,7 @@
       <p class="weigh__key caption" id="est-key"></p>
     </div>
 
-    <div class="tablewrap">
+    <div class="tablewrap" tabindex="0" role="group" aria-label="使っているものと、見る場所の数の表（横にスクロールできます）">
       <table>
         <caption>選んだものと、ディスクリンがそこで見る場所の数。幅は一般的な目安で、実測値ではありません。</caption>
         <thead>
@@ -358,6 +359,8 @@
 </section>
 
 <svg class="cut" style="background: var(--bubblegum)" viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0 L0 12 L100 12 L100 0 L96 7 L92 1 L88 8 L84 2 L80 9 L76 3 L72 10 L68 4 L64 11 L60 4 L56 10 L52 3 L48 9 L44 2 L40 8 L36 1 L32 7 L28 1 L24 8 L20 0 L16 7 L12 1 L8 8 L4 2 Z" fill="var(--void)"/></svg>
+
+</main>
 
 <footer id="footer" class="footer">
   <div class="wrap footer__grid">
