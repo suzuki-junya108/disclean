@@ -111,23 +111,93 @@ public struct QuarantineStore: Sendable {
     }
 
     /// 指定 run（または全 run）を即時削除する。
-    public func purge(runId: String?, all: Bool, now: Date = Date()) throws -> [PurgedRun] {
+    ///
+    /// 消すのは 1 ファイルずつ。まとめて消すより少しだけ遅いが、
+    /// 「いまどれを消しているか」「あと何件か」を出せる（`onProgress`）。
+    public func purge(
+        runId: String?, all: Bool, now: Date = Date(),
+        onProgress: WorkProgressHandler = ignoreProgress
+    ) throws -> [PurgedRun] {
         var index = loadIndex()
         var purged: [PurgedRun] = []
         var remaining: [QuarantineRun] = []
+
+        // 先に数える。数えるのは一覧を取るだけで、中身は読まない。
+        onProgress(WorkProgress(step: .counting))
+        var plans: [String: PurgePlan] = [:]
+        var total = 0
+        for run in index.runs where all || run.runId == runId {
+            let plan = PurgePlan(root: root, run: run)
+            plans[run.runId] = plan
+            total += plan.files.count
+        }
+
+        var completed = 0
         for run in index.runs {
-            let target = all || run.runId == runId
-            if target {
-                try? FileManager.default.removeItem(atPath: root + "/" + run.runId)
-                purged.append(PurgedRun(runId: run.runId, bytes: run.totalBytes, itemCount: run.entries.count))
-            } else {
+            guard all || run.runId == runId else {
                 remaining.append(run)
+                continue
             }
+            if let plan = plans[run.runId] {
+                for file in plan.files {
+                    // 見せるのは隔離庫の中の置き場所ではなく、元あった場所。
+                    onProgress(
+                        WorkProgress(
+                            step: .deleting, ruleId: file.ruleId, path: file.origin,
+                            completed: completed, total: total))
+                    unlink(file.path)
+                    completed += 1
+                }
+                // 中身を消してから、入れ物を深い順にたたむ。
+                for directory in plan.directories.reversed() { rmdir(directory) }
+            }
+            try? FileManager.default.removeItem(atPath: root + "/" + run.runId)
+            purged.append(PurgedRun(runId: run.runId, bytes: run.totalBytes, itemCount: run.entries.count))
         }
         if let runId, !all, purged.isEmpty { throw QuarantineError.unknownRun(runId) }
         index.runs = remaining
         try saveIndex(index)
+        onProgress(
+            WorkProgress(step: .deleting, path: "", completed: completed, total: max(total, completed)))
         return purged
+    }
+
+    /// 1 つの run について「何を消すか」を先に並べたもの。
+    /// 進捗を出すには消す前に総数が要る。隔離した項目ごとに辿るので、
+    /// ファイル 1 つずつに「元はどこにあったか」を付けられる。
+    private struct PurgePlan {
+        var files: [PurgeTarget] = []
+        var directories: [String] = []
+
+        init(root: String, run: QuarantineRun) {
+            let runRoot = root + "/" + run.runId
+            for entry in run.entries {
+                let base = runRoot + "/" + entry.quarantineRelativePath
+                add(base: base, origin: entry.originalPath, ruleId: entry.ruleId)
+            }
+        }
+
+        private mutating func add(base: String, origin: String, ruleId: String) {
+            var st = stat()
+            guard lstat(base, &st) == 0 else { return }
+            guard (st.st_mode & S_IFMT) == S_IFDIR else {
+                files.append(PurgeTarget(path: base, origin: origin, ruleId: ruleId))
+                return
+            }
+            directories.append(base)
+            guard let walker = FileManager.default.enumerator(atPath: base) else { return }
+            for case let relative as String in walker {
+                let full = base + "/" + relative
+                var child = stat()
+                guard lstat(full, &child) == 0 else { continue }
+                if (child.st_mode & S_IFMT) == S_IFDIR {
+                    directories.append(full)
+                } else {
+                    files.append(
+                        PurgeTarget(path: full, origin: origin + "/" + relative, ruleId: ruleId))
+                }
+            }
+        }
     }
 
     /// 索引に無い run ディレクトリを検出する（削除はしない）。
@@ -145,4 +215,11 @@ public struct PurgedRun: Sendable, Equatable {
     public let runId: String
     public let bytes: Int64
     public let itemCount: Int
+}
+
+/// 消す対象 1 件。進捗には隔離庫の中の置き場所ではなく、元あった場所を見せる。
+private struct PurgeTarget {
+    let path: String
+    let origin: String
+    let ruleId: String
 }

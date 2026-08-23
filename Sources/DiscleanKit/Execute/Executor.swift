@@ -58,30 +58,34 @@ public struct Executor: Sendable {
     }
 
     /// - Parameter dryRun: 安全ガードの判定までを行い、移動・実行はしない。
+    /// - Parameter onProgress: 1 件ごとに「いま何をしているか」を流す。既定は誰も見ていない。
     public func apply(
         plan: Plan, catalog: RuleCatalog, dryRun: Bool, now: Date = Date(),
-        isCancelled: @Sendable () -> Bool = { false }
+        isCancelled: @Sendable () -> Bool = { false },
+        onProgress: @escaping WorkProgressHandler = ignoreProgress
     ) throws -> ApplyOutcome {
         // 記録できない削除は行わない。
         try audit.ensureWritable()
 
-        var outcome = ApplyOutcome()
-        outcome.runId = plan.runId
         let expiresAt = now.addingTimeInterval(TimeInterval(config.quarantineTtlDays) * 86_400)
-        outcome.expiresAt = expiresAt
-
         var index = store.loadIndex()
-        var runEntries: [QuarantineEntry] = []
         var runDirectory: String?
+
+        // 総数を先に数える。数えるのは一覧を取るだけで、中身は読まない（すぐ終わる）。
+        onProgress(WorkProgress(step: .counting))
+        var sink = MoveSink(tally: Tally(total: plannedCount(plan: plan, catalog: catalog)))
+        sink.outcome.runId = plan.runId
+        sink.outcome.expiresAt = expiresAt
 
         for item in plan.selected {
             if isCancelled() { break }
             guard let rule = catalog.rule(id: item.ruleId) else {
-                outcome.skipped.append(.init(ruleId: item.ruleId, path: "", reason: "unknown-rule"))
+                sink.outcome.skipped.append(.init(ruleId: item.ruleId, path: "", reason: "unknown-rule"))
                 continue
             }
             if let bundleIds = rule.requiresQuitApps, let running = runningApp(in: bundleIds) {
-                outcome.skipped.append(.init(ruleId: rule.id, path: "", reason: "app-running:\(running)"))
+                sink.outcome.skipped.append(
+                    .init(ruleId: rule.id, path: "", reason: "app-running:\(running)"))
                 try audit.append(
                     record(
                         action: .apply, rule: rule, runId: plan.runId, result: .skipped,
@@ -91,7 +95,10 @@ public struct Executor: Sendable {
 
             switch rule.kind {
             case .command:
-                try runCommandRule(rule: rule, plan: plan, dryRun: dryRun, now: now, outcome: &outcome)
+                onProgress(sink.tally.report(.running, rule: rule, path: rule.command?.executable ?? ""))
+                try runCommandRule(
+                    rule: rule, plan: plan, dryRun: dryRun, now: now, outcome: &sink.outcome)
+                sink.tally.finish(bytes: 0)
             case .directory:
                 if runDirectory == nil && !dryRun {
                     runDirectory = try store.createRunDirectory(runId: plan.runId)
@@ -99,20 +106,20 @@ public struct Executor: Sendable {
                 try moveDirectoryRule(
                     MoveContext(
                         rule: rule, item: item, plan: plan, runDirectory: runDirectory,
-                        dryRun: dryRun, now: now),
-                    outcome: &outcome, runEntries: &runEntries, isCancelled: isCancelled)
+                        dryRun: dryRun, now: now, onProgress: onProgress),
+                    sink: &sink, isCancelled: isCancelled)
             case .report:
-                outcome.skipped.append(.init(ruleId: rule.id, path: "", reason: "report-only"))
+                sink.outcome.skipped.append(.init(ruleId: rule.id, path: "", reason: "report-only"))
             }
         }
 
-        if !dryRun && !runEntries.isEmpty {
+        if !dryRun && !sink.entries.isEmpty {
             let run = QuarantineRun(
-                runId: plan.runId, createdAt: now, expiresAt: expiresAt, entries: runEntries)
+                runId: plan.runId, createdAt: now, expiresAt: expiresAt, entries: sink.entries)
             index.runs.append(run)
             try store.saveIndex(index)
         }
-        return outcome
+        return sink.outcome
     }
 
     /// 1 ルール分の移動に必要な文脈（引数を増やしすぎないためのまとめ）。
@@ -123,95 +130,118 @@ public struct Executor: Sendable {
         let runDirectory: String?
         let dryRun: Bool
         let now: Date
+        let onProgress: WorkProgressHandler
+    }
+
+    /// 移動しながら積み上がっていくもの。結果・隔離庫の記録・進みぐあいを 1 つにまとめて持ち回る。
+    private struct MoveSink {
+        var outcome = ApplyOutcome()
+        var entries: [QuarantineEntry] = []
+        var tally: Tally
     }
 
     private func moveDirectoryRule(
-        _ context: MoveContext,
-        outcome: inout ApplyOutcome, runEntries: inout [QuarantineEntry],
-        isCancelled: @Sendable () -> Bool
+        _ context: MoveContext, sink: inout MoveSink, isCancelled: @Sendable () -> Bool
     ) throws {
-        let rule = context.rule
-        let item = context.item
-        let plan = context.plan
-        let runDirectory = context.runDirectory
-        let dryRun = context.dryRun
-        let now = context.now
         let fm = FileManager.default
         // スキャンが見せた場所と、いま動かす場所を必ず一致させる。
         // item.paths はスキャン時点の解決結果なので、そのまま使う。
-        for parent in item.paths {
+        for parent in context.item.paths {
             if isCancelled() { break }
             guard let children = try? fm.contentsOfDirectory(atPath: parent) else {
-                outcome.failed.append(.init(ruleId: rule.id, path: parent, error: "cannot list directory"))
+                sink.outcome.failed.append(
+                    .init(ruleId: context.rule.id, path: parent, error: "cannot list directory"))
                 try audit.append(
                     record(
-                        action: .apply, rule: rule, runId: plan.runId, result: .failed,
-                        detail: RecordDetail(path: parent, reason: "cannot-list"), now: now))
+                        action: .apply, rule: context.rule, runId: context.plan.runId, result: .failed,
+                        detail: RecordDetail(path: parent, reason: "cannot-list"), now: context.now))
                 continue
             }
             for child in children {
                 if isCancelled() { break }
-                let source = parent + "/" + child
-                var st = stat()
-                lstat(source, &st)
-                let isDirectory = (st.st_mode & S_IFMT) == S_IFDIR
-                // ディレクトリの lstat が返すのは入れ物自身の大きさと更新時刻だけ。
-                // 量も「最近使われたか」も、中身を見ないとスキャン結果と食い違う。
-                let measured =
-                    isDirectory ? DirectoryMeter.measure(path: source, isCancelled: isCancelled) : nil
-                let bytes = measured?.bytes ?? Int64(st.st_blocks) * 512
-
-                if let violation = guardian.validateForRemoval(
-                    path: source, minAgeDays: rule.minAgeDays, now: now,
-                    sameVolumeAs: dryRun ? nil : runDirectory,
-                    newestModification: measured?.newestModification)
-                {
-                    outcome.skipped.append(.init(ruleId: rule.id, path: source, reason: violation.rawValue))
-                    continue
-                }
-
-                if dryRun {
-                    outcome.quarantined.append(
-                        .init(ruleId: rule.id, originalPath: source, quarantinePath: "(dry-run)", bytes: bytes))
-                    continue
-                }
-                guard let runDirectory else {
-                    outcome.failed.append(.init(ruleId: rule.id, path: source, error: "no quarantine directory"))
-                    continue
-                }
-                let relative = rule.id + "/" + UUID().uuidString.prefix(8) + "-" + child
-                let destination = runDirectory + "/" + relative
-                do {
-                    try fm.createDirectory(
-                        atPath: (destination as NSString).deletingLastPathComponent,
-                        withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
-                    // 監査ログに書けてから動かす（記録できない削除を作らない）。
-                    try audit.append(
-                        record(
-                            action: .apply, rule: rule, runId: plan.runId, result: .ok,
-                            detail: RecordDetail(path: source, bytes: bytes), now: now))
-                    guard rename(source, destination) == 0 else {
-                        let code = errno
-                        let reason = code == EXDEV ? "cross-volume" : String(cString: strerror(code))
-                        if code == EXDEV {
-                            outcome.skipped.append(.init(ruleId: rule.id, path: source, reason: "cross-volume"))
-                        } else {
-                            outcome.failed.append(.init(ruleId: rule.id, path: source, error: reason))
-                        }
-                        continue
-                    }
-                    runEntries.append(
-                        QuarantineEntry(
-                            ruleId: rule.id, originalPath: source, quarantineRelativePath: relative,
-                            bytes: bytes, isDirectory: isDirectory, movedAt: now))
-                    outcome.quarantined.append(
-                        .init(ruleId: rule.id, originalPath: source, quarantinePath: destination, bytes: bytes))
-                } catch let error as AuditError {
-                    throw error
-                } catch {
-                    outcome.failed.append(.init(ruleId: rule.id, path: source, error: "\(error)"))
-                }
+                try moveChild(context, parent: parent, child: child, sink: &sink, isCancelled: isCancelled)
             }
+        }
+    }
+
+    /// 対象 1 件を隔離庫へ移す。飛ばした場合も失敗した場合も、必ず 1 件として数える。
+    private func moveChild(
+        _ context: MoveContext, parent: String, child: String, sink: inout MoveSink,
+        isCancelled: @Sendable () -> Bool
+    ) throws {
+        let rule = context.rule
+        let source = parent + "/" + child
+        var st = stat()
+        lstat(source, &st)
+        let isDirectory = (st.st_mode & S_IFMT) == S_IFDIR
+        // ディレクトリの lstat が返すのは入れ物自身の大きさと更新時刻だけ。
+        // 量も「最近使われたか」も、中身を見ないとスキャン結果と食い違う。
+        // 中身を測るのが 1 件のうちで最も時間を使う。始める前に知らせる
+        // （ファイルは測らないので、移すときの 1 回だけでよい）。
+        if isDirectory { context.onProgress(sink.tally.report(.measuring, rule: rule, path: source)) }
+        let measured =
+            isDirectory ? DirectoryMeter.measure(path: source, isCancelled: isCancelled) : nil
+        let bytes = measured?.bytes ?? Int64(st.st_blocks) * 512
+
+        if let violation = guardian.validateForRemoval(
+            path: source, minAgeDays: rule.minAgeDays, now: context.now,
+            sameVolumeAs: context.dryRun ? nil : context.runDirectory,
+            newestModification: measured?.newestModification)
+        {
+            sink.outcome.skipped.append(.init(ruleId: rule.id, path: source, reason: violation.rawValue))
+            sink.tally.finish(bytes: 0)
+            return
+        }
+
+        if context.dryRun {
+            sink.outcome.quarantined.append(
+                .init(ruleId: rule.id, originalPath: source, quarantinePath: "(dry-run)", bytes: bytes))
+            sink.tally.finish(bytes: bytes)
+            return
+        }
+        guard let runDirectory = context.runDirectory else {
+            sink.outcome.failed.append(
+                .init(ruleId: rule.id, path: source, error: "no quarantine directory"))
+            sink.tally.finish(bytes: 0)
+            return
+        }
+
+        let relative = rule.id + "/" + UUID().uuidString.prefix(8) + "-" + child
+        let destination = runDirectory + "/" + relative
+        context.onProgress(sink.tally.report(.moving, rule: rule, path: source, bytes: bytes))
+        do {
+            try FileManager.default.createDirectory(
+                atPath: (destination as NSString).deletingLastPathComponent,
+                withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+            // 監査ログに書けてから動かす（記録できない削除を作らない）。
+            try audit.append(
+                record(
+                    action: .apply, rule: rule, runId: context.plan.runId, result: .ok,
+                    detail: RecordDetail(path: source, bytes: bytes), now: context.now))
+            guard rename(source, destination) == 0 else {
+                let code = errno
+                let reason = code == EXDEV ? "cross-volume" : String(cString: strerror(code))
+                if code == EXDEV {
+                    sink.outcome.skipped.append(
+                        .init(ruleId: rule.id, path: source, reason: "cross-volume"))
+                } else {
+                    sink.outcome.failed.append(.init(ruleId: rule.id, path: source, error: reason))
+                }
+                sink.tally.finish(bytes: 0)
+                return
+            }
+            sink.entries.append(
+                QuarantineEntry(
+                    ruleId: rule.id, originalPath: source, quarantineRelativePath: relative,
+                    bytes: bytes, isDirectory: isDirectory, movedAt: context.now))
+            sink.outcome.quarantined.append(
+                .init(ruleId: rule.id, originalPath: source, quarantinePath: destination, bytes: bytes))
+            sink.tally.finish(bytes: bytes)
+        } catch let error as AuditError {
+            throw error
+        } catch {
+            sink.outcome.failed.append(.init(ruleId: rule.id, path: source, error: "\(error)"))
+            sink.tally.finish(bytes: 0)
         }
     }
 
@@ -271,7 +301,9 @@ public struct Executor: Sendable {
     }
 
     /// 隔離した項目を元のパスへ戻す。
-    public func undo(runId: String?, now: Date = Date()) throws -> UndoOutcome {
+    public func undo(
+        runId: String?, now: Date = Date(), onProgress: WorkProgressHandler = ignoreProgress
+    ) throws -> UndoOutcome {
         try audit.ensureWritable()
         var index = store.loadIndex()
         guard
@@ -286,13 +318,18 @@ public struct Executor: Sendable {
         var skipped: [SkippedItem] = []
         var remaining: [QuarantineEntry] = []
         let fm = FileManager.default
+        var tally = Tally(total: run.entries.count)
 
         for entry in run.entries {
             let source = runDirectory + "/" + entry.quarantineRelativePath
+            onProgress(
+                tally.report(
+                    .restoring, ruleId: entry.ruleId, path: entry.originalPath, bytes: entry.bytes))
             var st = stat()
             if lstat(entry.originalPath, &st) == 0 {
                 skipped.append(SkippedItem(path: entry.originalPath, reason: "destination-exists"))
                 remaining.append(entry)
+                tally.finish(bytes: 0)
                 continue
             }
             let parent = (entry.originalPath as NSString).deletingLastPathComponent
@@ -300,9 +337,11 @@ public struct Executor: Sendable {
             guard rename(source, entry.originalPath) == 0 else {
                 skipped.append(SkippedItem(path: entry.originalPath, reason: String(cString: strerror(errno))))
                 remaining.append(entry)
+                tally.finish(bytes: 0)
                 continue
             }
             restored.append(RestoredItem(path: entry.originalPath, bytes: entry.bytes))
+            tally.finish(bytes: entry.bytes)
             try audit.append(
                 AuditRecord(
                     ts: now, action: .undo, runId: run.runId, ruleId: entry.ruleId,
@@ -319,6 +358,54 @@ public struct Executor: Sendable {
         }
         try store.saveIndex(index)
         return UndoOutcome(restored: restored, skipped: skipped, runId: run.runId)
+    }
+
+    /// 何件のうち何件終わったかを数え、そのまま報せに変える小さな帳面。
+    /// 進捗を出す場所すべてがこれを通るので、数え落としが起きにくい。
+    struct Tally {
+        let total: Int
+        private(set) var completed = 0
+        private(set) var bytes: Int64 = 0
+
+        init(total: Int) {
+            self.total = total
+        }
+
+        /// これから触るものを知らせる（まだ終わっていない）。
+        func report(
+            _ step: WorkProgress.Step, ruleId: String, path: String, bytes: Int64 = 0
+        ) -> WorkProgress {
+            WorkProgress(
+                step: step, ruleId: ruleId, path: path, completed: completed, total: total, bytes: bytes)
+        }
+
+        func report(
+            _ step: WorkProgress.Step, rule: Rule, path: String, bytes: Int64 = 0
+        ) -> WorkProgress {
+            report(step, ruleId: rule.id, path: path, bytes: bytes)
+        }
+
+        /// 1 件終わった。飛ばした件も失敗した件も、必ずここを通す。
+        mutating func finish(bytes: Int64) {
+            completed += 1
+            self.bytes += bytes
+        }
+    }
+
+    /// 進捗のぶんぼ（総数）。一覧を取るだけなので中身の大きさは測らない。
+    private func plannedCount(plan: Plan, catalog: RuleCatalog) -> Int {
+        plan.selected.reduce(0) { sum, item in
+            guard let rule = catalog.rule(id: item.ruleId) else { return sum }
+            switch rule.kind {
+            case .command: return sum + 1
+            case .report: return sum
+            case .directory:
+                return sum
+                    + item.paths.reduce(0) { count, parent in
+                        count + ((try? FileManager.default.contentsOfDirectory(atPath: parent))?.count ?? 0)
+                    }
+            }
+        }
     }
 
     private func runningApp(in bundleIds: [String]) -> String? {

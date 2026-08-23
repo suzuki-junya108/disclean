@@ -22,9 +22,11 @@ struct ScanCommand: AsyncParsableCommand {
         let tiers = try TierParser.parse(tier) ?? [.a, .b]
         let scanner = Scanner(env: context.env, config: context.config)
         let cancel = InterruptFlag.install()
+        let progress = ProgressLine(out: context.out, home: context.env.home, quiet: options.json)
         let result = await scanner.scan(
             catalog: context.catalog, tiers: tiers, ruleIds: Set(rule), useCache: !noCache,
-            isCancelled: { cancel.isSet })
+            isCancelled: { cancel.isSet }, onProgress: progress.handler)
+        progress.finish()
 
         if options.json {
             JSONOut.emit([

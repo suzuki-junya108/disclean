@@ -79,12 +79,14 @@ public struct Scanner: Sendable {
             home: env.home, stateDir: env.stateDir, configDir: env.configDir, excludedPaths: config.excludedPaths)
     }
 
+    /// - Parameter onProgress: 1 ルール測り終わるごとに流す。既定は誰も見ていない。
     public func scan(
         catalog: RuleCatalog,
         tiers: Set<Tier> = [.a, .b],
         ruleIds: Set<String> = [],
         useCache: Bool = true,
-        isCancelled: @Sendable @escaping () -> Bool = { false }
+        isCancelled: @Sendable @escaping () -> Bool = { false },
+        onProgress: WorkProgressHandler = ignoreProgress
     ) async -> ScanResult {
         DatalessPolicy.disableMaterialization()
         let cachePath = env.cacheDir + "/scan-cache.json"
@@ -117,9 +119,16 @@ public struct Scanner: Sendable {
 
             while launched < limit, addNext(&group) { launched += 1 }
             var collected: [MeasureOutput] = []
+            onProgress(WorkProgress(step: .counting, total: targets.count))
             while let output = await group.next() {
                 collected.append(output)
                 cacheUpdates.append(contentsOf: output.cacheUpdates)
+                // 何を測り終えたかを 1 件ずつ知らせる（同時に何本も走るので、
+                // 「いま測っているもの」ではなく「いま終わったもの」を出す）。
+                onProgress(
+                    WorkProgress(
+                        step: .measuring, ruleId: output.item.ruleId, path: output.item.title,
+                        completed: collected.count, total: targets.count, bytes: output.item.bytes))
                 _ = addNext(&group)
             }
             items = collected.sorted { $0.index < $1.index }.map(\.item)

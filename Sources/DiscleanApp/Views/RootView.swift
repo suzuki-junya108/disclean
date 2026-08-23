@@ -30,6 +30,9 @@ struct RootView: View {
             }
         }
         .background(surface.background)
+        // どの画面から始めた作業でも、同じ板が同じ場所に出る。
+        // 走っている間は画面ごと覆い、うっかり別の操作が始まらないようにする。
+        .busyOverlay(model.busy)
         .task {
             await model.scan()
             #if UI_PREVIEW
@@ -95,7 +98,7 @@ struct RootView: View {
             switch model.phase {
             case .scanning: ScanningView(model: model)
             case .results: ResultListView(model: model)
-            case .applying: ApplyProgressView()
+            case .applying: ApplyProgressView(model: model)
             case .done: CompletionSummaryView(model: model)
             }
         case .quarantine: QuarantineView(model: model)

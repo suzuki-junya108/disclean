@@ -60,6 +60,10 @@ final class AppModel {
     private(set) var uncoveredSearching = false
     private(set) var uncoveredDone = false
 
+    /// 待たされている間、いま何をしているかを見せる板の状態。
+    /// 時間のかかる処理はすべてこれを通す（`work(_:coversScreen:)`）。
+    let busy = BusyState()
+
     /// 押した塊から隣へ伝わる波。押すたびに token が増える。
     private(set) var chainPulse: ChainPulse?
     private var pulseToken = 0
@@ -99,6 +103,7 @@ final class AppModel {
         let config = self.config
         let state = self.updateState
         scanProgressLabel = "ルールを読み込んでいます"
+        busy.begin(.scanning, home: env.home)
 
         let loaded = await Task.detached {
             RuleCatalogLoader(env: env, config: config).load(revocations: Set(state.revocations))
@@ -106,7 +111,13 @@ final class AppModel {
         catalog = loaded
 
         scanProgressLabel = "大きさを測っています"
-        let result = await Scanner(env: env, config: config).scan(catalog: loaded, tiers: [.a, .b, .c])
+        let (progress, report) = progressStream()
+        let scanning = Task { @MainActor in for await step in progress { busy.update(step) } }
+        let result = await Scanner(env: env, config: config)
+            .scan(catalog: loaded, tiers: [.a, .b, .c], onProgress: { report.yield($0) })
+        report.finish()
+        await scanning.value
+        busy.end()
         scanResult = result
         // 既定は Tier A のみ選択（Tier B は明示選択、Tier C は選択不可）。
         selection = Set(result.readyItems.filter { $0.tier == .a }.map(\.ruleId))
@@ -130,7 +141,9 @@ final class AppModel {
             let executor = Executor(
                 env: env, config: config, audit: audit,
                 catalogVersion: updateState.appliedCatalogVersion)
-            let outcome = try executor.apply(plan: plan, catalog: catalog, dryRun: false)
+            let outcome = try await work(.applying) { report in
+                try executor.apply(plan: plan, catalog: catalog, dryRun: false, onProgress: report)
+            }
             applyOutcome = outcome
             phase = .done
             refreshQuarantine()
@@ -144,12 +157,14 @@ final class AppModel {
         }
     }
 
-    func undo(runId: String) {
+    func undo(runId: String) async {
+        let executor = Executor(
+            env: env, config: config, audit: audit,
+            catalogVersion: updateState.appliedCatalogVersion)
         do {
-            let executor = Executor(
-                env: env, config: config, audit: audit,
-                catalogVersion: updateState.appliedCatalogVersion)
-            let outcome = try executor.undo(runId: runId)
+            let outcome = try await work(.restoring, coversScreen: true) { report in
+                try executor.undo(runId: runId, onProgress: report)
+            }
             if outcome.restored.isEmpty, let first = outcome.skipped.first {
                 errorMessage = "戻せませんでした: \(first.reason)（\(first.path)）"
             } else if runId == applyOutcome?.runId {
@@ -163,21 +178,53 @@ final class AppModel {
     }
 
     /// 直前の実行分を、いま完全に削除して空き容量にする。
-    func purgeLastRun() {
+    func purgeLastRun() async {
         guard let runId = applyOutcome?.runId else { return }
-        purge(runId: runId)
-        purgedLastRun = true
+        await purge(runId: runId)
     }
 
-    func purge(runId: String) {
+    func purge(runId: String) async {
+        let store = QuarantineStore(root: env.quarantineDir)
         do {
-            _ = try QuarantineStore(root: env.quarantineDir).purge(runId: runId, all: false)
+            _ = try await work(.deleting, coversScreen: true) { report in
+                try store.purge(runId: runId, all: false, onProgress: report)
+            }
             if runId == applyOutcome?.runId { purgedLastRun = true }
             refreshQuarantine()
             refreshHistory()
         } catch {
             errorMessage = "\(error)"
         }
+    }
+
+    /// 時間のかかる仕事を裏側で走らせ、進みぐあいを板へ流す。
+    ///
+    /// 画面を持つ側（メインスレッド）は空けたままにする。
+    /// これを通さない重い処理を書くと、カーソルが回るだけの画面に戻ってしまう。
+    private func work<Value: Sendable>(
+        _ job: BusyState.Job, coversScreen: Bool = false,
+        _ body: @escaping @Sendable (@escaping WorkProgressHandler) throws -> Value
+    ) async throws -> Value {
+        busy.begin(job, home: env.home, coversScreen: coversScreen)
+        defer { busy.end() }
+        let (progress, report) = progressStream()
+        let pump = Task { @MainActor in for await step in progress { busy.update(step) } }
+        defer { pump.cancel() }
+        do {
+            let value = try await Task.detached { try body { report.yield($0) } }.value
+            report.finish()
+            await pump.value
+            return value
+        } catch {
+            report.finish()
+            await pump.value
+            throw error
+        }
+    }
+
+    /// 進みぐあいの通り道。速く流れすぎても画面が溺れないよう、新しいものだけを残す。
+    private func progressStream() -> (AsyncStream<WorkProgress>, AsyncStream<WorkProgress>.Continuation) {
+        AsyncStream<WorkProgress>.makeStream(bufferingPolicy: .bufferingNewest(8))
     }
 
     func refreshQuarantine() {
@@ -338,11 +385,32 @@ final class AppModel {
                 Task { await apply() }
             } else if scenario == "confirm" {
                 showConfirmSheet = true
+            } else if scenario == "busy" {
+                Task { await showBusyBoardPreview() }
             } else if scenario.hasPrefix("inspect-rule:") {
                 let ruleId = String(scenario.dropFirst("inspect-rule:".count))
                 if let item = scanResult?.items.first(where: { $0.ruleId == ruleId }) {
                     inspect(item: item)
                 }
+            }
+        }
+
+        /// 画面確認用。作業中の板を、実際の処理を待たずにゆっくり流して見せる。
+        private func showBusyBoardPreview() async {
+            let places = [
+                "\(env.home)/Library/Caches/com.apple.dt.Xcode/DerivedData/App-abc/Build/Intermediates",
+                "\(env.home)/Library/Developer/CoreSimulator/Devices/DEV-1/data/Library/Caches",
+                "\(env.home)/.cache/uv/wheels/cp313/numpy-2.1.0.whl",
+                "\(env.home)/Library/Caches/Homebrew/downloads/ffmpeg-7.1.tar.gz",
+                "\(env.home)/.npm/_cacache/content-v2/sha512/ab/cd",
+            ]
+            busy.begin(.deleting, home: env.home, coversScreen: true)
+            for (index, place) in places.enumerated() {
+                busy.update(
+                    WorkProgress(
+                        step: .deleting, ruleId: "preview", path: place,
+                        completed: index, total: places.count, bytes: 1_400_000_000))
+                try? await Task.sleep(for: .seconds(1.4))
             }
         }
     #endif

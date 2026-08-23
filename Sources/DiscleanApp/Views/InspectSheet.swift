@@ -134,9 +134,13 @@ struct InspectSheet: View {
                 .plopIn(index: index)
             }
             if session.loading {
-                Text("大きさを数えています…")
-                    .font(Tokens.body(12))
-                    .foregroundStyle(surface.text)
+                // 待っている間の見せ方は 1 つに揃える（`BusyBoard` と同じ跳ねる玉）。
+                HStack(spacing: 10) {
+                    WorkingDots(accent: Tokens.sky)
+                    Text("大きさを数えています")
+                        .font(Tokens.body(12))
+                        .foregroundStyle(surface.text)
+                }
             }
         }
     }
@@ -150,9 +154,12 @@ struct InspectSheet: View {
                 fill: Tokens.sunbeam, title: "場所の一覧はありません",
                 message: "この項目は外部ツールが自分で消します。ディスクリンは場所を持っていないため、ファイル単位では見せられません。")
         } else if session.loading && session.inventory == nil {
-            Text("中を見ています…")
-                .font(Tokens.body(14))
-                .foregroundStyle(surface.text)
+            HStack(spacing: 10) {
+                WorkingDots(accent: Tokens.sky)
+                Text("中を見ています")
+                    .font(Tokens.body(14))
+                    .foregroundStyle(surface.text)
+            }
         } else if let inventory = session.inventory {
             if inventory.notFound {
                 ExplainCard(fill: Tokens.sunbeam, title: "この場所はもうありません", message: "すでに片づけられたか、移動されたようです。")

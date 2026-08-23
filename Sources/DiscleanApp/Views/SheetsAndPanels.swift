@@ -212,9 +212,9 @@ struct QuarantineView: View {
                                     VStack(spacing: 8) {
                                         Button("なかを見る") { model.inspect(run: run) }
                                             .buttonStyle(CandyButtonStyle(fill: Tokens.lime))
-                                        Button("元に戻す") { model.undo(runId: run.runId) }
+                                        Button("元に戻す") { Task { await model.undo(runId: run.runId) } }
                                             .buttonStyle(CandyButtonStyle(fill: Tokens.grape, textColor: Tokens.paper))
-                                        Button("いま完全に削除") { model.purge(runId: run.runId) }
+                                        Button("いま完全に削除") { Task { await model.purge(runId: run.runId) } }
                                             .buttonStyle(CandyButtonStyle(fill: Tokens.tomato))
                                     }
                                 }

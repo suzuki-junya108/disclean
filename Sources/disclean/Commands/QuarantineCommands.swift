@@ -17,8 +17,10 @@ struct UndoCommand: AsyncParsableCommand {
         }
         let executor = Executor(
             env: context.env, config: context.config, audit: context.audit, catalogVersion: context.catalogVersion)
+        let progress = ProgressLine(out: context.out, home: context.env.home, quiet: options.json)
         do {
-            let result = try executor.undo(runId: last ? nil : runId)
+            let result = try executor.undo(runId: last ? nil : runId, onProgress: progress.handler)
+            progress.finish()
             let restoredBytes = result.restored.reduce(Int64(0)) { $0 + $1.bytes }
             if options.json {
                 JSONOut.emit([
@@ -43,6 +45,7 @@ struct UndoCommand: AsyncParsableCommand {
                 throw fail(.partialFailure)
             }
         } catch let error as QuarantineError {
+            progress.finish()
             if case .unknownRun(let id) = error {
                 throw fail(.argumentError, "undo: unknown run id \"\(id)\"")
             }
@@ -84,9 +87,12 @@ struct PurgeCommand: AsyncParsableCommand {
                     return
                 }
             }
+            let progress = ProgressLine(out: context.out, home: context.env.home, quiet: options.json)
             do {
-                purged += try store.purge(runId: run, all: all)
+                purged += try store.purge(runId: run, all: all, onProgress: progress.handler)
+                progress.finish()
             } catch QuarantineError.unknownRun(let id) {
+                progress.finish()
                 throw fail(.argumentError, "purge: unknown run id \"\(id)\"")
             }
         }

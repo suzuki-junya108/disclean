@@ -2,21 +2,11 @@ import DiscleanKit
 import SwiftUI
 
 struct ScanningView: View {
-    @Environment(\.colorScheme) private var scheme
     let model: AppModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("しらべています")
-                .font(Tokens.display(44))
-                .foregroundStyle(Surface(scheme: scheme).text)
-            Text(model.scanProgressLabel)
-                .font(Tokens.body())
-                .foregroundStyle(Surface(scheme: scheme).text)
-            ProgressView().progressViewStyle(.linear)
-            Text("読み取りだけを行います。この間、何も消えません。")
-                .font(Tokens.body(12))
-                .foregroundStyle(Surface(scheme: scheme).text)
+            BusyBoard(busy: model.busy)
             Spacer()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -177,17 +167,11 @@ struct EmptyStateView: View {
 }
 
 struct ApplyProgressView: View {
-    @Environment(\.colorScheme) private var scheme
+    let model: AppModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("うつしています")
-                .font(Tokens.display(44))
-                .foregroundStyle(Surface(scheme: scheme).text)
-            ProgressView().progressViewStyle(.linear)
-            Text("同じディスクの中を移動しているだけなので、容量によらず短時間で終わります。")
-                .font(Tokens.body(12))
-                .foregroundStyle(Surface(scheme: scheme).text)
+            BusyBoard(busy: model.busy)
             Spacer()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -301,7 +285,7 @@ struct CompletionSummaryView: View {
                     .font(Tokens.body(12))
                     .fixedSize(horizontal: false, vertical: true)
                     Button("いま完全に削除して " + Format.bytes(bytes) + " を空ける") {
-                        model.purgeLastRun()
+                        Task { await model.purgeLastRun() }
                     }
                     .buttonStyle(CandyButtonStyle(fill: Tokens.tomato))
                 }

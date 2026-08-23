@@ -120,48 +120,58 @@ struct ApplyCommand: AsyncParsableCommand {
         let executor = Executor(
             env: context.env, config: context.config, audit: context.audit, catalogVersion: context.catalogVersion)
         let cancel = InterruptFlag.install()
+        let progress = ProgressLine(out: out, home: context.env.home, quiet: options.json)
         let outcome: ApplyOutcome
         do {
             outcome = try executor.apply(
-                plan: plan, catalog: context.catalog, dryRun: dryRun, isCancelled: { cancel.isSet })
+                plan: plan, catalog: context.catalog, dryRun: dryRun, isCancelled: { cancel.isSet },
+                onProgress: progress.handler)
+            progress.finish()
         } catch is AuditError {
+            progress.finish()
             throw fail(.generalError, "audit: cannot write log (\(context.env.auditDir))")
         } catch {
+            progress.finish()
             throw fail(.quarantineInconsistent, "apply: \(error)")
         }
 
         let after = CapacityProbe(path: context.env.home).sample(includeSnapshots: false)
         let delta = (after.strictBytes ?? 0) - (before.strictBytes ?? 0)
 
-        if options.json {
-            JSONOut.emit([
-                "command": "apply",
-                "runId": outcome.runId,
-                "dryRun": dryRun,
-                "quarantined": outcome.quarantined.map {
-                    [
-                        "ruleId": $0.ruleId, "originalPath": $0.originalPath,
-                        "quarantinePath": $0.quarantinePath, "bytes": $0.bytes,
-                    ]
-                },
-                "skipped": outcome.skipped.map { ["ruleId": $0.ruleId, "path": $0.path, "reason": $0.reason] },
-                "failed": outcome.failed.map { ["ruleId": $0.ruleId, "path": $0.path, "error": $0.error] },
-                "commands": outcome.commandsRun.map {
-                    [
-                        "ruleId": $0.ruleId, "exitCode": Int($0.exitCode),
-                        "reclaimedBytes": jsonOrNull($0.reclaimedBytes),
-                    ]
-                },
-                "totals": ["reclaimedBytes": outcome.reclaimedBytes, "itemCount": outcome.quarantined.count],
-                "capacity": ["freeSpaceDeltaBytes": delta],
-                "expiresAt": jsonOrNull(outcome.expiresAt.map(JSONIO.string(from:))),
-            ])
-        } else {
-            ApplyRenderer(out: out).render(outcome: outcome, delta: delta, dryRun: dryRun)
-        }
+        report(outcome: outcome, delta: delta, out: out)
 
         if cancel.isSet { throw fail(.interrupted) }
         if !outcome.failed.isEmpty { throw fail(.partialFailure) }
+    }
+
+    /// 実行結果を出す。`--json` は 1 オブジェクト、そうでなければ人が読む形。
+    private func report(outcome: ApplyOutcome, delta: Int64, out: Output) {
+        guard options.json else {
+            ApplyRenderer(out: out).render(outcome: outcome, delta: delta, dryRun: dryRun)
+            return
+        }
+        JSONOut.emit([
+            "command": "apply",
+            "runId": outcome.runId,
+            "dryRun": dryRun,
+            "quarantined": outcome.quarantined.map {
+                [
+                    "ruleId": $0.ruleId, "originalPath": $0.originalPath,
+                    "quarantinePath": $0.quarantinePath, "bytes": $0.bytes,
+                ]
+            },
+            "skipped": outcome.skipped.map { ["ruleId": $0.ruleId, "path": $0.path, "reason": $0.reason] },
+            "failed": outcome.failed.map { ["ruleId": $0.ruleId, "path": $0.path, "error": $0.error] },
+            "commands": outcome.commandsRun.map {
+                [
+                    "ruleId": $0.ruleId, "exitCode": Int($0.exitCode),
+                    "reclaimedBytes": jsonOrNull($0.reclaimedBytes),
+                ]
+            },
+            "totals": ["reclaimedBytes": outcome.reclaimedBytes, "itemCount": outcome.quarantined.count],
+            "capacity": ["freeSpaceDeltaBytes": delta],
+            "expiresAt": jsonOrNull(outcome.expiresAt.map(JSONIO.string(from:))),
+        ])
     }
 }
 
