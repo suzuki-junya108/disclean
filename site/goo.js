@@ -180,35 +180,6 @@
     })();
   }
 
-  /* --- スクロールでページ全体が少したわむ --- */
-  function scrollElasticity() {
-    if (reduce.matches) return;
-    var last = window.scrollY;
-    var skew = 0;
-    var ticking = false;
-
-    function update() {
-      var now = window.scrollY;
-      var delta = now - last;
-      last = now;
-      skew += (delta - skew) * 0.2;
-      var amount = Math.max(-4.5, Math.min(4.5, skew * 0.22));
-      document.body.style.setProperty("--scroll-skew", amount.toFixed(2) + "deg");
-      if (Math.abs(skew) > 0.05) {
-        window.requestAnimationFrame(update);
-      } else {
-        document.body.style.setProperty("--scroll-skew", "0deg");
-        ticking = false;
-      }
-    }
-
-    window.addEventListener("scroll", function () {
-      if (ticking) return;
-      ticking = true;
-      window.requestAnimationFrame(update);
-    }, { passive: true });
-  }
-
   window.Goo = {
     squish: squish,
     chain: chain,
@@ -220,7 +191,6 @@
     installGooFilter();
     waveHeading(document.querySelector(".hero__h1"));
     stickyCursor();
-    scrollElasticity();
     // 瓶とブランドマークは、押す対象ではないので常時ゆらしてよい
     Array.prototype.forEach.call(document.querySelectorAll("[data-breathe]"), function (el) {
       breathe(el, parseFloat(el.dataset.breathe) || 0.012);

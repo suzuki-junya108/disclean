@@ -741,9 +741,6 @@ td.num { text-align: right; white-space: nowrap; }
   50%      { transform: translateY(-4px) scaleY(1.06); font-variation-settings: "wght" 800, "wdth" 88; }
 }
 
-/* スクロールでページ全体が少したわむ */
-.band { transform: skewY(var(--scroll-skew, 0deg)); transform-origin: center top; }
-
 /* ── 何を使っていますか（ヒーローのチップ） ──────────────────────── */
 .picker { margin: 18px 0 8px; }
 .picker__ask { margin: 0 0 8px; font-weight: 700; }
@@ -824,7 +821,6 @@ td.num { text-align: right; white-space: nowrap; }
 
 @media (prefers-reduced-motion: reduce) {
   .hero__h1.is-waving .glyph { animation: none; }
-  .band { transform: none; }
   .gcard { animation: none; }
   .goo { filter: none; }
 }
