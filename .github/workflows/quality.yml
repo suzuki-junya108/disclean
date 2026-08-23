@@ -33,7 +33,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: trivy (CRITICAL / HIGH は落とす)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scanners: vuln,secret,misconfig
@@ -48,8 +48,9 @@ jobs:
       image: semgrep/semgrep
     steps:
       - uses: actions/checkout@v4
-      - name: semgrep --config auto
-        run: semgrep scan --config auto --error --metrics off
+      # auto は計測データの送信を求めるため使わない。規則集を明示して、送信は止める。
+      - name: semgrep（security-audit / secrets）
+        run: semgrep scan --config p/security-audit --config p/secrets --error --metrics off
 
   accessibility:
     name: LP accessibility (axe-core)
@@ -88,7 +89,8 @@ jobs:
           let failed = false;
 
           for (const size of sizes) {
-            const page = await browser.newPage({ viewport: size });
+            const context = await browser.newContext({ viewport: size });
+            const page = await context.newPage();
             await page.goto("http://127.0.0.1:8080/", { waitUntil: "load" });
             const { violations } = await new AxeBuilder({ page }).analyze();
             const blocking = violations.filter((v) => v.impact === "critical" || v.impact === "serious");
@@ -97,7 +99,7 @@ jobs:
             }
             if (blocking.length > 0) failed = true;
             console.log(`[${size.name}] critical/serious: ${blocking.length} 件`);
-            await page.close();
+            await context.close();
           }
 
           await browser.close();
