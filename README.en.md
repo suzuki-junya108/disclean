@@ -91,6 +91,17 @@ rm -rf ~/.local/state/disclean ~/.config/disclean   # state and settings
 
 Then drag `Disclean.app` to the Trash if you installed the GUI.
 
+## About 1.0
+
+1.0 means the safety promises are settled:
+
+- Deletion always goes through quarantine, and nothing is deleted if the audit log cannot be written
+- Rule updates are signature-checked, and anything that adds targets waits for your approval
+- Secrets, dependencies, static analysis and accessibility are checked by CI on every push
+- The published catalog's expiry is watched weekly, so updates never stop silently
+
+Looks and motion will keep changing. **Those four will not, for the whole 1.x line.**
+
 ## Getting help
 
 - **Bugs and requests**: open a [GitHub Issue](https://github.com/suzuki-junya108/disclean/issues).
