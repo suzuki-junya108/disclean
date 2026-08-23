@@ -6,7 +6,7 @@ struct ScanningView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            BusyBoard(busy: model.busy)
+            BusyBoard(busy: model.busy, onStop: { model.stopWork() })
             Spacer()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -98,6 +98,11 @@ struct ResultListView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
+            if model.stopped {
+                Text("途中でやめました。ここまでに測れたぶんだけを出しています。")
+                    .font(Tokens.bodyBold(13))
+                    .foregroundStyle(Surface(scheme: scheme).text)
+            }
             Text("片づける")
                 .font(Tokens.display(44))
                 .foregroundStyle(Surface(scheme: scheme).text)
@@ -171,7 +176,7 @@ struct ApplyProgressView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            BusyBoard(busy: model.busy)
+            BusyBoard(busy: model.busy, onStop: { model.stopWork() })
             Spacer()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -185,7 +190,7 @@ struct CompletionSummaryView: View {
     var body: some View {
         let outcome = model.applyOutcome
         VStack(alignment: .leading, spacing: 16) {
-            Text("おわりました")
+            Text(model.stopped ? "途中でやめました" : "おわりました")
                 .font(Tokens.display(44))
                 .foregroundStyle(Surface(scheme: scheme).text)
             HardCard(fill: Tokens.lime) {
@@ -360,6 +365,8 @@ struct UncoveredSection: View {
                 HStack(spacing: 10) {
                     ProgressView().controlSize(.small)
                     Text("探しています…").font(Tokens.body(13))
+                    Button("やめる") { model.stopWork() }
+                        .buttonStyle(CandyButtonStyle(fill: Tokens.paper))
                 }
                 .foregroundStyle(surface.text)
             } else {
@@ -369,7 +376,11 @@ struct UncoveredSection: View {
                 .buttonStyle(CandyButtonStyle(fill: Tokens.sky))
             }
 
-            if model.uncoveredDone && model.uncovered.isEmpty {
+            if model.uncoveredStopped {
+                Text("途中でやめました。ここまでに見つかったぶんだけを出しています。")
+                    .font(Tokens.bodyBold(13))
+                    .foregroundStyle(surface.text)
+            } else if model.uncoveredDone && model.uncovered.isEmpty {
                 Text("200MB 以上で、ルールの外にある場所は見つかりませんでした。")
                     .font(Tokens.body(13))
                     .foregroundStyle(surface.text)

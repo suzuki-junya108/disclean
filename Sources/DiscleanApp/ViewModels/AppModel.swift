@@ -59,10 +59,16 @@ final class AppModel {
     private(set) var uncovered: [UncoveredPlace] = []
     private(set) var uncoveredSearching = false
     private(set) var uncoveredDone = false
+    /// 探索を途中でやめた。「見つかりませんでした」と混同させない。
+    private(set) var uncoveredStopped = false
 
     /// 待たされている間、いま何をしているかを見せる板の状態。
     /// 時間のかかる処理はすべてこれを通す（`work(_:coversScreen:)`）。
     let busy = BusyState()
+    /// いま走っている仕事を止めるための旗。走っていないときは nil。
+    private(set) var work: CancelToken?
+    /// 直前の仕事を、利用者が途中で止めた。
+    private(set) var stopped = false
 
     /// 押した塊から隣へ伝わる波。押すたびに token が増える。
     private(set) var chainPulse: ChainPulse?
@@ -111,13 +117,20 @@ final class AppModel {
         catalog = loaded
 
         scanProgressLabel = "大きさを測っています"
+        let token = CancelToken()
+        work = token
+        stopped = false
         let (progress, report) = progressStream()
         let scanning = Task { @MainActor in for await step in progress { busy.update(step) } }
         let result = await Scanner(env: env, config: config)
-            .scan(catalog: loaded, tiers: [.a, .b, .c], onProgress: { report.yield($0) })
+            .scan(
+                catalog: loaded, tiers: [.a, .b, .c], isCancelled: token.check,
+                onProgress: { report.yield($0) })
         report.finish()
         await scanning.value
         busy.end()
+        work = nil
+        stopped = result.interrupted
         scanResult = result
         // 既定は Tier A のみ選択（Tier B は明示選択、Tier C は選択不可）。
         selection = Set(result.readyItems.filter { $0.tier == .a }.map(\.ruleId))
@@ -141,9 +154,16 @@ final class AppModel {
             let executor = Executor(
                 env: env, config: config, audit: audit,
                 catalogVersion: updateState.appliedCatalogVersion)
-            let outcome = try await work(.applying) { report in
-                try executor.apply(plan: plan, catalog: catalog, dryRun: false, onProgress: report)
+            let token = CancelToken()
+            work = token
+            stopped = false
+            let outcome = try await runWork(.applying) { report in
+                try executor.apply(
+                    plan: plan, catalog: catalog, dryRun: false, isCancelled: token.check,
+                    onProgress: report)
             }
+            work = nil
+            stopped = token.isCancelled
             applyOutcome = outcome
             phase = .done
             refreshQuarantine()
@@ -162,7 +182,7 @@ final class AppModel {
             env: env, config: config, audit: audit,
             catalogVersion: updateState.appliedCatalogVersion)
         do {
-            let outcome = try await work(.restoring, coversScreen: true) { report in
+            let outcome = try await runWork(.restoring, coversScreen: true) { report in
                 try executor.undo(runId: runId, onProgress: report)
             }
             if outcome.restored.isEmpty, let first = outcome.skipped.first {
@@ -186,7 +206,7 @@ final class AppModel {
     func purge(runId: String) async {
         let store = QuarantineStore(root: env.quarantineDir)
         do {
-            _ = try await work(.deleting, coversScreen: true) { report in
+            _ = try await runWork(.deleting, coversScreen: true) { report in
                 try store.purge(runId: runId, all: false, onProgress: report)
             }
             if runId == applyOutcome?.runId { purgedLastRun = true }
@@ -197,11 +217,17 @@ final class AppModel {
         }
     }
 
+    /// いま走っている仕事を止める。区切りのよいところまで進んでから止まる。
+    func stopWork() {
+        work?.cancel()
+        busy.markStopping()
+    }
+
     /// 時間のかかる仕事を裏側で走らせ、進みぐあいを板へ流す。
     ///
     /// 画面を持つ側（メインスレッド）は空けたままにする。
     /// これを通さない重い処理を書くと、カーソルが回るだけの画面に戻ってしまう。
-    private func work<Value: Sendable>(
+    private func runWork<Value: Sendable>(
         _ job: BusyState.Job, coversScreen: Bool = false,
         _ body: @escaping @Sendable (@escaping WorkProgressHandler) throws -> Value
     ) async throws -> Value {
@@ -284,11 +310,16 @@ final class AppModel {
         guard let catalog, !uncoveredSearching else { return }
         uncoveredSearching = true
         uncoveredDone = false
+        uncoveredStopped = false
+        let token = CancelToken()
+        work = token
         let scanner = UncoveredScanner(env: env, config: config)
-        let result = await scanner.scan(catalog: catalog)
+        let result = await scanner.scan(catalog: catalog, isCancelled: token.check)
         uncovered = result.places
         uncoveredSearching = false
         uncoveredDone = true
+        uncoveredStopped = token.isCancelled
+        work = nil
     }
 
     // MARK: - なかみを見る

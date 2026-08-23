@@ -8,6 +8,8 @@ import SwiftUI
 struct BusyBoard: View {
     @Environment(\.colorScheme) private var scheme
     let busy: BusyState
+    /// 押されたら、区切りのよいところで止める。渡さなければボタンは出ない。
+    var onStop: (() -> Void)?
 
     var body: some View {
         let surface = Surface(scheme: scheme)
@@ -71,6 +73,19 @@ struct BusyBoard: View {
                         .font(Tokens.body(12))
                         .foregroundStyle(surface.text)
                         .fixedSize(horizontal: false, vertical: true)
+
+                    if let onStop {
+                        HStack(spacing: 10) {
+                            Button(busy.stopping ? "とめています…" : "やめる", action: onStop)
+                                .buttonStyle(CandyButtonStyle(fill: Tokens.paper))
+                                .disabled(busy.stopping)
+                            if busy.stopping {
+                                Text("いま触っているものを終えたら止まります。")
+                                    .font(Tokens.body(12))
+                                    .foregroundStyle(surface.text)
+                            }
+                        }
+                    }
                 }
                 .padding(22)
                 .frame(maxWidth: .infinity, alignment: .leading)

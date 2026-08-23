@@ -11,6 +11,8 @@ import SwiftUI
 @MainActor
 @Observable
 final class BusyState {
+    /// 「やめる」を押されたが、まだ止まっていない。
+    private(set) var stopping = false
     /// 終わったものを下に積んでいくときの 1 行。
     struct Line: Identifiable {
         let id: Int
@@ -77,6 +79,7 @@ final class BusyState {
 
     /// 作業を始める。`coversScreen` が true のときは画面全体を覆って出す。
     func begin(_ job: Job, home: String, coversScreen: Bool = false) {
+        stopping = false
         self.job = job
         self.home = home
         self.coversScreen = coversScreen
@@ -106,6 +109,12 @@ final class BusyState {
     }
 
     /// 作業を終える。板は消える。
+    /// 「やめる」を押されたことを、板の表示にすぐ反映する。
+    /// 実際に止まるのは区切りのよいところなので、待たせている理由を出す。
+    func markStopping() {
+        stopping = true
+    }
+
     func end() {
         job = nil
         current = ""
