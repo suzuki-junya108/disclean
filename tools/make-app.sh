@@ -53,6 +53,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>CFBundleName</key><string>Disclean</string>
     <key>CFBundleDisplayName</key><string>ディスクリン</string>
     <key>CFBundleIdentifier</key><string>jp.i4u.disclean</string>
+    <key>ATSApplicationFontsPath</key><string>fonts</string>
     <key>CFBundleExecutable</key><string>Disclean</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleShortVersionString</key><string>$VERSION</string>
@@ -67,6 +68,16 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 PLIST
 
 [ -f "$ROOT/build/AppIcon.icns" ] && cp "$ROOT/build/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
+
+# 書体を同梱する。入っていないと、意図した字面（重さ・幅）にならない。
+mkdir -p "$APP/Contents/Resources/LICENSES"
+FONT_SRC="$ROOT/Sources/DiscleanApp/Resources/fonts"
+if [ -d "$FONT_SRC" ]; then
+    mkdir -p "$APP/Contents/Resources/fonts"
+    cp "$FONT_SRC"/*.ttf "$APP/Contents/Resources/fonts/"
+    # OFL は「配布物にライセンス文を同梱すること」を求めている
+    cp "$FONT_SRC"/OFL-*.txt "$APP/Contents/Resources/LICENSES/" 2>/dev/null || true
+fi
 
 # ライセンス（同梱物のクレジット）を必ず入れる
 mkdir -p "$APP/Contents/Resources/LICENSES"

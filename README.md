@@ -1,5 +1,7 @@
 # ディスクリン / disclean
 
+[English](README.en.md)
+
 macOS のディスクを、**消す前に重さで見せて**片づけるツールです。
 削除は隔離庫（quarantine）を経由し、既定で 7 日間は元の場所へ戻せます。
 
@@ -148,6 +150,17 @@ xcrun swift-format lint --recursive --strict Sources Tests
 
 このリポジトリの `mac_cleanup.sh` は **非推奨**です。無確認で削除し、失敗を握り潰し、記録も残しません。
 `disclean scan` → `disclean apply` に置き換えてください。
+
+## 困ったときは
+
+- **不具合・要望**: [GitHub Issues](https://github.com/suzuki-junya108/disclean/issues) に書いてください。
+  `disclean doctor` の出力（環境と権限の状態）を貼ってもらえると原因がすぐ分かります
+- **ルールを足したい・外したい**: `disclean report --unknown` の結果を添えて Issue を立ててください。
+  自分の Mac だけで済ませたい場合は `~/.config/disclean/rules.d/` に置けます（[自分でルールを足す](#自分でルールを足す上書きする)）
+- **誤って消してしまった**: 7 日以内なら `disclean undo --last` で戻せます。
+  失効後は戻せません（[安全のしくみ](#安全のしくみ)）
+- **セキュリティに関わる報告**: 公開の Issue ではなく、リポジトリの
+  [Security Advisories](https://github.com/suzuki-junya108/disclean/security/advisories/new) から非公開で送ってください
 
 ## ライセンス
 

@@ -38,20 +38,21 @@ enum Tokens {
 
     static func display(_ size: CGFloat) -> Font {
         custom(
-            "BricolageGrotesque-ExtraBold", size: size, fallback: .system(size: size, weight: .heavy, design: .rounded))
+            Names.display, size: size,
+            fallback: .system(size: size, weight: .heavy, design: .rounded))
     }
 
     static func body(_ size: CGFloat = 15) -> Font {
-        custom("ZenMaruGothic-Regular", size: size, fallback: .system(size: size, weight: .regular, design: .rounded))
+        custom(Names.body, size: size, fallback: .system(size: size, weight: .regular, design: .rounded))
     }
 
     static func bodyBold(_ size: CGFloat = 15) -> Font {
-        custom("ZenMaruGothic-Bold", size: size, fallback: .system(size: size, weight: .bold, design: .rounded))
+        custom(Names.bodyBold, size: size, fallback: .system(size: size, weight: .bold, design: .rounded))
     }
 
     static func data(_ size: CGFloat = 12) -> Font {
         custom(
-            "MartianMono-SemiBold", size: size, fallback: .system(size: size, weight: .semibold, design: .monospaced))
+            Names.data, size: size, fallback: .system(size: size, weight: .semibold, design: .monospaced))
     }
 
     /// 容量の数字は、量が増えるほど字面を重くする（LP と同じ考え方）。
@@ -59,16 +60,39 @@ enum Tokens {
     static func weightedData(_ size: CGFloat, bytes: Int64) -> Font {
         let gigabytes = Double(bytes) / 1_000_000_000
         let heaviness = min(1, gigabytes / 100)
-        if NSFont(name: "MartianMono-SemiBold", size: size) != nil {
-            return Font.custom("MartianMono-SemiBold", size: size)
+        if let resolved = Names.resolve(Names.data, size: size) {
+            return Font.custom(resolved, size: size)
                 .width(.init((82 + heaviness * 30) / 100))
         }
         return .system(size: size, weight: heaviness > 0.35 ? .black : .semibold, design: .monospaced)
     }
 
     /// 同梱フォントがあれば使い、無ければシステムのフォールバックで描く（機能は損なわない）。
-    private static func custom(_ name: String, size: CGFloat, fallback: Font) -> Font {
-        NSFont(name: name, size: size) != nil ? Font.custom(name, size: size) : fallback
+    private static func custom(_ candidates: [String], size: CGFloat, fallback: Font) -> Font {
+        guard let name = Names.resolve(candidates, size: size) else { return fallback }
+        return Font.custom(name, size: size)
+    }
+
+    /// 書体の名前。可変フォントは名前付きインスタンスごとに PostScript 名が変わるため、
+    /// 候補を順に試す。同梱・システム導入・どちらでも同じ見た目になるようにする。
+    enum Names {
+        static let display = [
+            "BricolageGrotesque-96ptExtraBold_ExtraBold",   // 同梱の可変フォント
+            "BricolageGrotesque-ExtraBold",                 // 利用者が別途入れている場合
+            "BricolageGrotesque-Regular",
+        ]
+        static let body = ["ZenMaruGothic-Regular"]
+        static let bodyBold = ["ZenMaruGothic-Bold"]
+        static let data = [
+            "MartianMono-SemiExpandedRegular_SemiBold",
+            "MartianMono-SemiBold",
+            "MartianMono-SemiExpandedRegular",
+        ]
+
+        /// 実際に使える最初の名前を返す。1 つも無ければ nil（＝システム書体で描く）。
+        static func resolve(_ candidates: [String], size: CGFloat) -> String? {
+            candidates.first { NSFont(name: $0, size: size) != nil }
+        }
     }
 }
 

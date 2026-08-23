@@ -1,0 +1,109 @@
+name: Quality
+
+# 手で走らせた検査は、次に誰も走らせない。
+# 秘密・脆弱性・静的解析・アクセシビリティを、押すたびに機械が見る。
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    name: Secret scan (full history)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 履歴の全コミットを見る（今のファイルだけでは足りない）
+
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
+          GITLEAKS_ENABLE_SUMMARY: "true"
+
+  vulnerabilities:
+    name: Dependencies and misconfig
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: trivy (CRITICAL / HIGH は落とす)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scanners: vuln,secret,misconfig
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+
+  static-analysis:
+    name: semgrep
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v4
+      - name: semgrep --config auto
+        run: semgrep scan --config auto --error --metrics off
+
+  accessibility:
+    name: LP accessibility (axe-core)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install axe + browser
+        run: npm init -y && npm i -D @axe-core/playwright playwright && npx playwright install --with-deps chromium
+
+      - name: Serve the LP
+        run: |
+          python3 -m http.server 8080 --directory site &
+          for _ in $(seq 1 30); do
+            curl -sf -o /dev/null http://127.0.0.1:8080/ && break
+            sleep 0.3
+          done
+
+      - name: Run axe (critical と serious は 0 でなければ落とす)
+        run: |
+          cat > axe-check.mjs <<'JS'
+          import { chromium } from "playwright";
+          import AxeBuilder from "@axe-core/playwright";
+
+          // 幅を変えると出方が変わる規則があるため、広い画面と携帯の両方で見る。
+          const sizes = [
+            { name: "desktop", width: 1280, height: 900 },
+            { name: "mobile", width: 390, height: 844 },
+          ];
+
+          const browser = await chromium.launch();
+          let failed = false;
+
+          for (const size of sizes) {
+            const page = await browser.newPage({ viewport: size });
+            await page.goto("http://127.0.0.1:8080/", { waitUntil: "load" });
+            const { violations } = await new AxeBuilder({ page }).analyze();
+            const blocking = violations.filter((v) => v.impact === "critical" || v.impact === "serious");
+            for (const violation of violations) {
+              console.log(`[${size.name}] ${violation.impact}\t${violation.id}\t${violation.nodes.length} 件\t${violation.help}`);
+            }
+            if (blocking.length > 0) failed = true;
+            console.log(`[${size.name}] critical/serious: ${blocking.length} 件`);
+            await page.close();
+          }
+
+          await browser.close();
+          if (failed) {
+            console.log("::error::アクセシビリティの critical / serious が残っています");
+            process.exit(1);
+          }
+          JS
+          node axe-check.mjs
