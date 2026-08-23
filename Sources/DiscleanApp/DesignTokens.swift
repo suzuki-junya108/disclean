@@ -77,8 +77,8 @@ enum Tokens {
     /// 候補を順に試す。同梱・システム導入・どちらでも同じ見た目になるようにする。
     enum Names {
         static let display = [
-            "BricolageGrotesque-96ptExtraBold_ExtraBold",   // 同梱の可変フォント
-            "BricolageGrotesque-ExtraBold",                 // 利用者が別途入れている場合
+            "BricolageGrotesque-96ptExtraBold_ExtraBold",  // 同梱の可変フォント
+            "BricolageGrotesque-ExtraBold",  // 利用者が別途入れている場合
             "BricolageGrotesque-Regular",
         ]
         static let body = ["ZenMaruGothic-Regular"]
