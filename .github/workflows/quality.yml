@@ -23,6 +23,9 @@ jobs:
       - name: gitleaks
         uses: gitleaks/gitleaks-action@v2
         env:
+          # pull_request での走査にはトークンが要る（無いと検査自体が動かず落ちる）。
+          # 自動発行のものをそのまま使う。読み取りだけで足りる。
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
           GITLEAKS_ENABLE_SUMMARY: "true"
 
