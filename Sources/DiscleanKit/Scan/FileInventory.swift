@@ -110,6 +110,8 @@ public enum FileKind: String, Codable, Sendable, CaseIterable {
             [
                 ".tar.gz", ".tar.bz2", ".tar.xz", ".tgz", ".zip", ".gz", ".bz2", ".xz", ".7z",
                 ".whl", ".jar", ".rar", ".tar",
+                // 配布物のディスクイメージ・インストーラも「取り直せる固まり」として扱う
+                ".dmg", ".iso", ".img", ".pkg",
             ]
         ),
         (.image, [".png", ".jpg", ".jpeg", ".gif", ".heic", ".webp", ".tiff", ".bmp", ".svg", ".icns"]),

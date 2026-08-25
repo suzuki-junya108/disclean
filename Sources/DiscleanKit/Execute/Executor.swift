@@ -40,11 +40,14 @@ public struct ApplyOutcome: Sendable {
 
 /// すべての破壊的操作が通る唯一の経路。入口で必ず `PathGuard` を適用する。
 public struct Executor: Sendable {
+    /// 人が選んだ「大きいもの」を記録するときの名前。ルール ID とぶつからない値にする。
+    public static let bigItemRuleId = "big-item"
+
     private let env: DiscleanEnvironment
     private let config: Config
-    private let guardian: PathGuard
-    private let store: QuarantineStore
-    private let audit: AuditLog
+    fileprivate let guardian: PathGuard
+    fileprivate let store: QuarantineStore
+    fileprivate let audit: AuditLog
     private let catalogVersion: Int
 
     public init(env: DiscleanEnvironment, config: Config, audit: AuditLog, catalogVersion: Int) {
@@ -113,6 +116,19 @@ public struct Executor: Sendable {
             }
         }
 
+        // 人が 1 件ずつ選んだ「大きいもの」。ルールを通らないだけで、道は同じ。
+        for item in plan.files {
+            if isCancelled() { break }
+            if runDirectory == nil && !dryRun {
+                runDirectory = try store.createRunDirectory(runId: plan.runId)
+            }
+            try moveBigItem(
+                BigMoveContext(
+                    item: item, plan: plan, runDirectory: runDirectory, dryRun: dryRun, now: now,
+                    onProgress: onProgress),
+                sink: &sink)
+        }
+
         if !dryRun && !sink.entries.isEmpty {
             let run = QuarantineRun(
                 runId: plan.runId, createdAt: now, expiresAt: expiresAt, entries: sink.entries)
@@ -134,7 +150,7 @@ public struct Executor: Sendable {
     }
 
     /// 移動しながら積み上がっていくもの。結果・隔離庫の記録・進みぐあいを 1 つにまとめて持ち回る。
-    private struct MoveSink {
+    fileprivate struct MoveSink {
         var outcome = ApplyOutcome()
         var entries: [QuarantineEntry] = []
         var tally: Tally
@@ -394,18 +410,19 @@ public struct Executor: Sendable {
 
     /// 進捗のぶんぼ（総数）。一覧を取るだけなので中身の大きさは測らない。
     private func plannedCount(plan: Plan, catalog: RuleCatalog) -> Int {
-        plan.selected.reduce(0) { sum, item in
-            guard let rule = catalog.rule(id: item.ruleId) else { return sum }
-            switch rule.kind {
-            case .command: return sum + 1
-            case .report: return sum
-            case .directory:
-                return sum
-                    + item.paths.reduce(0) { count, parent in
-                        count + ((try? FileManager.default.contentsOfDirectory(atPath: parent))?.count ?? 0)
-                    }
+        plan.files.count
+            + plan.selected.reduce(0) { sum, item in
+                guard let rule = catalog.rule(id: item.ruleId) else { return sum }
+                switch rule.kind {
+                case .command: return sum + 1
+                case .report: return sum
+                case .directory:
+                    return sum
+                        + item.paths.reduce(0) { count, parent in
+                            count + ((try? FileManager.default.contentsOfDirectory(atPath: parent))?.count ?? 0)
+                        }
+                }
             }
-        }
     }
 
     private func runningApp(in bundleIds: [String]) -> String? {
@@ -418,19 +435,121 @@ public struct Executor: Sendable {
         action: AuditAction, rule: Rule, runId: String, result: ResultKind,
         detail: RecordDetail = RecordDetail(), now: Date
     ) -> AuditRecord {
+        record(action: action, ruleId: rule.id, runId: runId, result: result, detail: detail, now: now)
+    }
+
+    /// ルールを持たない操作（人が選んだ「大きいもの」）用。記録の形は同じ。
+    fileprivate func record(
+        action: AuditAction, ruleId: String, runId: String, result: ResultKind,
+        detail: RecordDetail = RecordDetail(), now: Date
+    ) -> AuditRecord {
         AuditRecord(
-            ts: now, action: action, runId: runId, ruleId: rule.id, path: detail.path, bytes: detail.bytes,
+            ts: now, action: action, runId: runId, ruleId: ruleId, path: detail.path, bytes: detail.bytes,
             result: result, reason: detail.reason, toolExitCode: detail.exitCode,
             toolOutputHead: detail.outputHead, env: env, catalogVersion: catalogVersion)
     }
 
     /// 監査ログの任意項目。
-    private struct RecordDetail {
+    fileprivate struct RecordDetail {
         var path: String?
         var bytes: Int64 = 0
         var reason: String?
         var exitCode: Int?
         var outputHead: String?
+    }
+}
+
+/// 人が選んだ「大きいもの」を動かすための文脈（引数を増やしすぎないためのまとめ）。
+struct BigMoveContext {
+    let item: BigItem
+    let plan: Plan
+    let runDirectory: String?
+    let dryRun: Bool
+    let now: Date
+    let onProgress: WorkProgressHandler
+}
+
+extension Executor {
+    /// 選ばれた「大きいもの」1 件を隔離庫へ移す。
+    ///
+    /// ルール経由と違うのは「何を動かすか」を人が決めた点だけで、
+    /// 安全ガード・監査ログ・隔離庫の記録はまったく同じものを通す。
+    fileprivate func moveBigItem(_ context: BigMoveContext, sink: inout MoveSink) throws {
+        let item = context.item
+        let plan = context.plan
+        let dryRun = context.dryRun
+        let now = context.now
+        let ruleId = Executor.bigItemRuleId
+        context.onProgress(sink.tally.report(.moving, ruleId: ruleId, path: item.path, bytes: item.bytes))
+
+        // 量は選んだ時点のものではなく、いまの実体で測り直す（表示と実際をずらさない）。
+        let measured = DirectoryMeter.measure(path: item.path)
+        let bytes = measured.bytes
+
+        if let violation = guardian.validateForRemoval(
+            path: item.path, minAgeDays: nil, now: now,
+            sameVolumeAs: dryRun ? nil : context.runDirectory,
+            newestModification: measured.newestModification)
+        {
+            sink.outcome.skipped.append(
+                .init(ruleId: ruleId, path: item.path, reason: violation.rawValue))
+            try audit.append(
+                record(
+                    action: .apply, ruleId: ruleId, runId: plan.runId, result: .skipped,
+                    detail: RecordDetail(path: item.path, reason: violation.rawValue), now: now))
+            sink.tally.finish(bytes: 0)
+            return
+        }
+
+        if dryRun {
+            sink.outcome.quarantined.append(
+                .init(ruleId: ruleId, originalPath: item.path, quarantinePath: "(dry-run)", bytes: bytes))
+            sink.tally.finish(bytes: bytes)
+            return
+        }
+        guard let runDirectory = context.runDirectory else {
+            sink.outcome.failed.append(
+                .init(ruleId: ruleId, path: item.path, error: "no quarantine directory"))
+            sink.tally.finish(bytes: 0)
+            return
+        }
+
+        let relative = ruleId + "/" + UUID().uuidString.prefix(8) + "-" + item.name
+        let destination = runDirectory + "/" + relative
+        do {
+            try FileManager.default.createDirectory(
+                atPath: (destination as NSString).deletingLastPathComponent,
+                withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+            // 記録できてから動かす。順序はルール経由とそろえる。
+            try audit.append(
+                record(
+                    action: .apply, ruleId: ruleId, runId: plan.runId, result: .ok,
+                    detail: RecordDetail(path: item.path, bytes: bytes), now: now))
+            guard rename(item.path, destination) == 0 else {
+                let code = errno
+                let reason = code == EXDEV ? "cross-volume" : String(cString: strerror(code))
+                if code == EXDEV {
+                    sink.outcome.skipped.append(
+                        .init(ruleId: ruleId, path: item.path, reason: "cross-volume"))
+                } else {
+                    sink.outcome.failed.append(.init(ruleId: ruleId, path: item.path, error: reason))
+                }
+                sink.tally.finish(bytes: 0)
+                return
+            }
+            sink.entries.append(
+                QuarantineEntry(
+                    ruleId: ruleId, originalPath: item.path, quarantineRelativePath: relative,
+                    bytes: bytes, isDirectory: item.isDirectory, movedAt: now))
+            sink.outcome.quarantined.append(
+                .init(ruleId: ruleId, originalPath: item.path, quarantinePath: destination, bytes: bytes))
+            sink.tally.finish(bytes: bytes)
+        } catch let error as AuditError {
+            throw error
+        } catch {
+            sink.outcome.failed.append(.init(ruleId: ruleId, path: item.path, error: "\(error)"))
+            sink.tally.finish(bytes: 0)
+        }
     }
 }
 

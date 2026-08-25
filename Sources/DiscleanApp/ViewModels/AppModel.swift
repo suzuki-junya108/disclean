@@ -16,6 +16,7 @@ final class AppModel {
 
     enum Section: String, CaseIterable, Identifiable {
         case clean
+        case big
         case quarantine
         case history
         case settings
@@ -25,6 +26,7 @@ final class AppModel {
         var title: String {
             switch self {
             case .clean: "片づける"
+            case .big: "大きいもの"
             case .quarantine: "隔離庫"
             case .history: "履歴"
             case .settings: "設定"
@@ -55,6 +57,20 @@ final class AppModel {
     var lastRunUndone = false
     /// 「なかみ」画面。開いている間だけ入る。
     var inspectSession: InspectSession?
+    /// 書類の中にある大きいもの。探すのは読み取りだけで、消すかどうかは 1 件ずつ人が選ぶ。
+    private(set) var bigItems: [BigItem] = []
+    private(set) var bigSearching = false
+    private(set) var bigDone = false
+    private(set) var bigStopped = false
+    /// 探した結果の但し書き（読めなかった・打ち切った・iCloud を飛ばした）。
+    private(set) var bigNotes: BigSearchNotes?
+    /// 隔離庫へ移すために選ばれたもの。既定は空（自動では 1 件も選ばない）。
+    var bigSelection: Set<String> = []
+    var bigMinimumMegabytes = 200
+    var bigIncludeLibrary = false
+    var showBigConfirmSheet = false
+    private(set) var bigOutcome: ApplyOutcome?
+
     /// ルールが見ていない大きな場所（消さずに知らせるだけ）。
     private(set) var uncovered: [UncoveredPlace] = []
     private(set) var uncoveredSearching = false
@@ -95,6 +111,10 @@ final class AppModel {
     }
 
     var selectedBytes: Int64 { selectedItems.reduce(0) { $0 + $1.bytes } }
+
+    var selectedBigItems: [BigItem] { bigItems.filter { bigSelection.contains($0.path) } }
+
+    var selectedBigBytes: Int64 { selectedBigItems.reduce(0) { $0 + $1.bytes } }
 
     var needsPermissionGuide: Bool {
         guard let doctorReport else { return false }
@@ -393,7 +413,8 @@ final class AppModel {
 
     /// ルール ID ではなく、人が読む名前を出す。
     private func ruleTitle(_ ruleId: String) -> String {
-        catalog?.rules.first { $0.id == ruleId }?.titleJa ?? ruleId
+        if ruleId == Executor.bigItemRuleId { return "自分で選んだ大きいもの" }
+        return catalog?.rules.first { $0.id == ruleId }?.titleJa ?? ruleId
     }
 
     func revealInFinder(path: String) {
@@ -416,6 +437,9 @@ final class AppModel {
                 Task { await apply() }
             } else if scenario == "confirm" {
                 showConfirmSheet = true
+            } else if scenario == "big" {
+                section = .big
+                Task { await findBigItems() }
             } else if scenario == "busy" {
                 Task { await showBusyBoardPreview() }
             } else if scenario.hasPrefix("inspect-rule:") {
@@ -454,5 +478,115 @@ final class AppModel {
         try? FileManager.default.createDirectory(
             atPath: env.rulesOverrideDir, withIntermediateDirectories: true)
         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: env.rulesOverrideDir)])
+    }
+}
+
+/// 大きいもの（新しいタブ）の状態と動き。
+///
+/// 本体（`AppModel`）と同じ値・同じ板を使うが、ルール経由の片づけとは
+/// 判断のしかたが違う（既定では 1 件も選ばない）ので、ここにまとめて置く。
+extension AppModel {
+    // MARK: - 大きいもの
+
+    /// 書類の中の大きいものを探す。読み取りだけを行い、1 件も選ばれた状態にしない。
+    func findBigItems() async {
+        guard !bigSearching else { return }
+        bigSearching = true
+        bigDone = false
+        bigStopped = false
+        bigOutcome = nil
+        bigSelection = []
+        let token = CancelToken()
+        work = token
+        let scanner = BigItemScanner(env: env, config: config)
+        let minimum = Int64(max(1, bigMinimumMegabytes)) * 1024 * 1024
+        let includeLibrary = bigIncludeLibrary
+        let result = await runAsyncWork(.scanning) { report in
+            await scanner.scan(
+                minimumBytes: minimum, includeLibrary: includeLibrary,
+                isCancelled: token.check, onProgress: report)
+        }
+        bigItems = result.items
+        bigNotes = BigSearchNotes(result: result)
+        bigSearching = false
+        bigDone = true
+        bigStopped = token.isCancelled
+        work = nil
+    }
+
+    /// 選んだ「大きいもの」を隔離庫へ移す。ルールと同じ道（`Executor`）を通る。
+    func applyBigItems() async {
+        guard let catalog else { return }
+        let chosen = selectedBigItems
+        guard !chosen.isEmpty else { return }
+        showBigConfirmSheet = false
+        do {
+            let plan = Planner().plan(files: chosen)
+            let executor = Executor(
+                env: env, config: config, audit: audit,
+                catalogVersion: updateState.appliedCatalogVersion)
+            let token = CancelToken()
+            work = token
+            let outcome = try await runWork(.applying, coversScreen: true) { report in
+                try executor.apply(
+                    plan: plan, catalog: catalog, dryRun: false, isCancelled: token.check,
+                    onProgress: report)
+            }
+            work = nil
+            bigOutcome = outcome
+            // 移したものは一覧から外す（もうその場所には無い）。
+            let moved = Set(outcome.quarantined.map(\.originalPath))
+            bigItems.removeAll { moved.contains($0.path) }
+            bigSelection = []
+            refreshQuarantine()
+            refreshHistory()
+        } catch let error as AuditError {
+            errorMessage = "記録できないため、何も動かしていません（\(error)）"
+        } catch {
+            errorMessage = "\(error)"
+        }
+    }
+
+    func toggleBig(_ item: BigItem) {
+        if bigSelection.contains(item.path) {
+            bigSelection.remove(item.path)
+        } else {
+            bigSelection.insert(item.path)
+        }
+    }
+
+    /// 見つけた「大きいもの」の中身を見る。
+    func inspect(big item: BigItem) {
+        let fate =
+            bigSelection.contains(item.path)
+            ? "「隔離庫へうつす」を押すと、ここへ移ります。"
+                + "\(config.quarantineTtlDays) 日以内なら、そのまま元の場所に戻せます。"
+            : "いまは選ばれていません。選ばない限り、ディスクリンはここに触れません。"
+        let session = InspectSession(
+            title: item.name,
+            whatItIs: item.adviceJa,
+            fate: fate,
+            undoable: true,
+            roots: [
+                InspectSession.Root(path: item.path, label: item.path, isDirectory: item.isDirectory)
+            ])
+        session.start()
+        inspectSession = session
+    }
+
+    /// 中身が非同期の仕事を、同じ板に流して走らせる（`runWork` の async 版）。
+    private func runAsyncWork<Value: Sendable>(
+        _ job: BusyState.Job, coversScreen: Bool = false,
+        _ body: @escaping @Sendable (@escaping WorkProgressHandler) async -> Value
+    ) async -> Value {
+        busy.begin(job, home: env.home, coversScreen: coversScreen)
+        defer { busy.end() }
+        let (progress, report) = progressStream()
+        let pump = Task { @MainActor in for await step in progress { busy.update(step) } }
+        defer { pump.cancel() }
+        let value = await body { report.yield($0) }
+        report.finish()
+        await pump.value
+        return value
     }
 }

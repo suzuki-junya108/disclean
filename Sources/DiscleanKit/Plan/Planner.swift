@@ -5,9 +5,23 @@ public struct Plan: Sendable {
     public let runId: String
     public let createdAt: Date
     public let selected: [ScanItem]
+    /// 人が 1 件ずつ選んだ「大きいもの」。ルールとは別の経路で選ばれるが、
+    /// 隔離庫へ移す道は同じ（`Executor` だけが動かす）。
+    public let files: [BigItem]
 
-    public var totalBytes: Int64 { selected.reduce(0) { $0 + $1.bytes } }
+    public init(runId: String, createdAt: Date, selected: [ScanItem], files: [BigItem] = []) {
+        self.runId = runId
+        self.createdAt = createdAt
+        self.selected = selected
+        self.files = files
+    }
+
+    public var totalBytes: Int64 {
+        selected.reduce(0) { $0 + $1.bytes } + files.reduce(0) { $0 + $1.bytes }
+    }
+
     public var hasIrreversible: Bool { selected.contains { !$0.undoable } }
+    public var isEmpty: Bool { selected.isEmpty && files.isEmpty }
 }
 
 public enum PlannerError: Error, Equatable {
@@ -39,6 +53,16 @@ public struct Planner: Sendable {
         chosen.removeAll { deselect.contains($0.ruleId) }
         chosen.sort { $0.bytes > $1.bytes }
         return Plan(runId: ULID.generate(now: now), createdAt: now, selected: chosen)
+    }
+
+    /// 人が選んだ「大きいもの」だけの計画。ルールは 1 本も通らない。
+    ///
+    /// 既定で選ばれるものは無い（Tier A のような自動選択をここには作らない）。
+    /// 選ぶのは必ず人で、この関数は選ばれたものを並べ替えるだけ。
+    public func plan(files: [BigItem], now: Date = Date()) -> Plan {
+        Plan(
+            runId: ULID.generate(now: now), createdAt: now, selected: [],
+            files: files.sorted { $0.bytes > $1.bytes })
     }
 }
 
