@@ -47,6 +47,12 @@ struct RootView: View {
         }
         .sheet(
             isPresented: Binding(
+                get: { model.showBigConfirmSheet }, set: { model.showBigConfirmSheet = $0 })
+        ) {
+            BigConfirmSheet(model: model)
+        }
+        .sheet(
+            isPresented: Binding(
                 get: { model.inspectSession != nil },
                 set: { if !$0 { model.inspectSession = nil } })
         ) {
@@ -101,6 +107,7 @@ struct RootView: View {
             case .applying: ApplyProgressView(model: model)
             case .done: CompletionSummaryView(model: model)
             }
+        case .big: BigItemsView(model: model)
         case .quarantine: QuarantineView(model: model)
         case .history: HistoryView(model: model)
         case .settings: SettingsView(model: model)

@@ -30,11 +30,34 @@ disclean undo --last        # undo the last run
 disclean purge      # delete from quarantine for good (cannot be undone)
 disclean report     # show the big things disclean never touches
 disclean report --unknown   # find large places no rule looks at (deletes nothing)
+disclean big        # find the largest things in your documents (reads only; --move quarantines what you pick)
 disclean history    # what has been done so far
 disclean update     # review and apply rule updates
 ```
 
 Every subcommand accepts `--json` and prints a single object with a `schemaVersion`.
+
+### Clean up the large things in your documents
+
+`disclean big` (the "大きいもの" tab in the GUI) looks through the **visible folders in your home**
+— `~/Documents`, `~/Downloads`, `~/Movies` and so on. These are your own files rather than caches,
+so **nothing is selected by default**. Only what you pick is moved into quarantine, undoable for 7 days.
+
+```bash
+disclean big                       # everything at or above 200MB, largest first (deletes nothing)
+disclean big --min-megabytes 1000  # only 1GB and above
+disclean big --in ~/Movies         # only this place
+disclean big --include-library     # also look inside ~/Library (off by default)
+disclean big --move ~/Downloads/big.dmg --yes   # move just that one into quarantine
+```
+
+The listing is not a flat file dump: entries are **grouped by what owns them**. Bundles
+(`.app`, `.photoslibrary`, `.xcarchive`) and dependency/build stores (`node_modules`, `.venv`,
+`.git`, `DerivedData`) are reported as a single item rather than opened up, because on a real
+machine a flat "largest files" list is almost entirely parts that cannot be removed one by one.
+
+Out of scope: files sitting directly in your home folder (outside the movable range), hidden
+folders, excluded paths, and iCloud files that are not downloaded yet (skipped without opening them).
 
 ### See what is inside before deleting
 

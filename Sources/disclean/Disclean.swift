@@ -10,7 +10,8 @@ struct Disclean: AsyncParsableCommand {
         version: "disclean " + DiscleanVersion.current,
         subcommands: [
             ScanCommand.self, PlanCommand.self, ApplyCommand.self, UndoCommand.self,
-            PurgeCommand.self, InspectCommand.self, HistoryCommand.self, ReportCommand.self, DoctorCommand.self,
+            PurgeCommand.self, InspectCommand.self, BigCommand.self, HistoryCommand.self, ReportCommand.self,
+            DoctorCommand.self,
             RulesCommand.self, UpdateCommand.self,
         ],
         defaultSubcommand: ScanCommand.self

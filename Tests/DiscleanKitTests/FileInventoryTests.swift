@@ -46,6 +46,7 @@ struct FileInventoryTests {
         let inventory = FileInventory.list(paths: [root + "/packages", root])
         let byName = Dictionary(uniqueKeysWithValues: inventory.entries.map { ($0.name, $0.kind) })
         #expect(byName["big.tgz"] == .archive)
+        #expect(FileKind.infer(name: "Xcode_16.dmg", isDirectory: false) == .archive, "配布用イメージも固まり")
         #expect(byName["small.whl"] == .archive)
         #expect(byName["install.log"] == .log)
         #expect(byName["0a1b2c3d4e5f60718293"] == .contentBlob, "拡張子の無い 16 進名はキャッシュの実体")
