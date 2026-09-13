@@ -42,6 +42,11 @@ struct ConfirmSheet: View {
                                     + item.whatIsLost
                             )
                             .font(Tokens.body(12))
+                            ForEach(item.details, id: \.self) { line in
+                                Text("・" + line)
+                                    .font(Tokens.body(12))
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
                             ForEach(item.paths, id: \.self) { path in
                                 Text(ScanItemFormat.shortPath(path, home: model.env.home))
                                     .font(Tokens.data(11))

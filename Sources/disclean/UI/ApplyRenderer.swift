@@ -30,6 +30,9 @@ struct ConfirmPrompt {
                 : out.styled(out.japanese ? "  ← 取り消せません" : "  <- not undoable", .yellow)
             out.print("  \(item.ruleId)  \(Output.bytes(item.bytes))  \(item.title)\(undo)")
             out.print(out.styled("    \(item.whatIsLost)", .dim))
+            for line in item.details {
+                out.print("    - \(line)")
+            }
         }
         out.print()
         out.print(

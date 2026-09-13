@@ -30,6 +30,7 @@ disclean undo --last        # undo the last run
 disclean purge      # delete from quarantine for good (cannot be undone)
 disclean report     # show the big things disclean never touches
 disclean report --unknown   # find large places no rule looks at (deletes nothing)
+disclean report --system    # see what is inside System Data and how to reduce it (deletes nothing)
 disclean big        # find the largest things in your documents (reads only; --move quarantines what you pick)
 disclean history    # what has been done so far
 disclean update     # review and apply rule updates
@@ -72,8 +73,9 @@ disclean inspect --run 01J...                # what is inside a quarantined run
 
 ### What disclean looks at
 
-105 bundled rules (Tier A 38 / B 50 / look-only 17), covering package managers, build tools,
-browsers, desktop apps, simulators and local model caches. `disclean rules list` prints them all.
+108 bundled rules (Tier A 39 / B 52 / look-only 17), covering package managers, build tools,
+browsers, desktop apps, simulators (including outdated or unused runtimes and parallel-testing clones)
+and local model caches. `disclean rules list` prints them all.
 
 Anything **not** covered shows up in `disclean report --unknown`, so the gaps in the rule set are
 visible on your own machine instead of being invisible.
@@ -87,7 +89,22 @@ visible on your own machine instead of being invisible.
 | look-only (C) | **Never deleted.** Size and manual steps only | cannot be selected |
 
 - Directory rules move things into quarantine and can be undone with `disclean undo`.
-- A few rules hand the work to an external tool (Docker, simulators). Those **cannot be undone**, and the confirmation screen says so.
+- A few rules hand the work to an external tool (Docker, simulator runtimes and devices). Those **cannot be undone**, and the confirmation screen says so.
+
+### Reducing System Data
+
+macOS "System Data" reaches well outside your home folder, and disclean **never deletes outside your home**.
+Instead, `disclean report --system` (below the clean list in the GUI) measures it read-only and, for each part,
+says why disclean leaves it alone and how you can reduce it yourself.
+
+| Part | What disclean does |
+|---|---|
+| Simulator runtimes (iOS and other OS images) | Cleanable through Apple's `simctl` (outdated builds = A, unused for 30 days = B). Not undoable |
+| Parallel-testing simulator clones | Cleanable through `simctl` (B). Not undoable |
+| Swap, sleep image, macOS updates, logs, sync staging, temporary files, purgeable space | Look only, with how to reduce them |
+
+Runtime sizes include their shared caches. Deleting one 8.7 GB runtime freed 12.5 GB in our measurement;
+the image size alone would under-report what you get back.
 
 ## Rule updates
 

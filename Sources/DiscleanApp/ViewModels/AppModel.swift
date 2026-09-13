@@ -78,6 +78,10 @@ final class AppModel {
     /// 探索を途中でやめた。「見つかりませんでした」と混同させない。
     private(set) var uncoveredStopped = false
 
+    /// システムデータの中身（消さずに知らせるだけ）。
+    private(set) var systemData: SystemDataResult?
+    private(set) var systemDataMeasuring = false
+
     /// 待たされている間、いま何をしているかを見せる板の状態。
     /// 時間のかかる処理はすべてこれを通す（`work(_:coversScreen:)`）。
     let busy = BusyState()
@@ -421,55 +425,6 @@ final class AppModel {
         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
     }
 
-    #if UI_PREVIEW
-        /// 画面確認用。`DISCLEAN_PREVIEW` で指定された画面を起動直後に開く。
-        /// このコードは `--preview` ビルドにしか含まれない（配布物には入らない）。
-        func applyPreviewScenario() {
-            guard let scenario = ProcessInfo.processInfo.environment["DISCLEAN_PREVIEW"] else { return }
-            if scenario == "quarantine" {
-                section = .quarantine
-                refreshQuarantine()
-            } else if scenario == "inspect-run" {
-                section = .quarantine
-                refreshQuarantine()
-                if let run = quarantineRuns.first { inspect(run: run) }
-            } else if scenario == "done" {
-                Task { await apply() }
-            } else if scenario == "confirm" {
-                showConfirmSheet = true
-            } else if scenario == "big" {
-                section = .big
-                Task { await findBigItems() }
-            } else if scenario == "busy" {
-                Task { await showBusyBoardPreview() }
-            } else if scenario.hasPrefix("inspect-rule:") {
-                let ruleId = String(scenario.dropFirst("inspect-rule:".count))
-                if let item = scanResult?.items.first(where: { $0.ruleId == ruleId }) {
-                    inspect(item: item)
-                }
-            }
-        }
-
-        /// 画面確認用。作業中の板を、実際の処理を待たずにゆっくり流して見せる。
-        private func showBusyBoardPreview() async {
-            let places = [
-                "\(env.home)/Library/Caches/com.apple.dt.Xcode/DerivedData/App-abc/Build/Intermediates",
-                "\(env.home)/Library/Developer/CoreSimulator/Devices/DEV-1/data/Library/Caches",
-                "\(env.home)/.cache/uv/wheels/cp313/numpy-2.1.0.whl",
-                "\(env.home)/Library/Caches/Homebrew/downloads/ffmpeg-7.1.tar.gz",
-                "\(env.home)/.npm/_cacache/content-v2/sha512/ab/cd",
-            ]
-            busy.begin(.deleting, home: env.home, coversScreen: true)
-            for (index, place) in places.enumerated() {
-                busy.update(
-                    WorkProgress(
-                        step: .deleting, ruleId: "preview", path: place,
-                        completed: index, total: places.count, bytes: 1_400_000_000))
-                try? await Task.sleep(for: .seconds(1.4))
-            }
-        }
-    #endif
-
     func openQuarantineInFinder() {
         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: env.quarantineDir)])
     }
@@ -511,6 +466,23 @@ extension AppModel {
         bigSearching = false
         bigDone = true
         bigStopped = token.isCancelled
+        work = nil
+    }
+
+    // MARK: - システムデータ
+
+    /// システムデータの中身を測る。読むだけで、何も消さない。時間がかかるので押されたときだけ動かす。
+    func findSystemData() async {
+        guard !systemDataMeasuring else { return }
+        systemDataMeasuring = true
+        let token = CancelToken()
+        work = token
+        let probe = SystemDataProbe(env: env)
+        let result = await runAsyncWork(.scanning) { report in
+            await probe.scan(isCancelled: token.check, onProgress: report)
+        }
+        systemData = result
+        systemDataMeasuring = false
         work = nil
     }
 

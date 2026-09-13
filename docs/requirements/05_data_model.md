@@ -11,7 +11,7 @@
 | `Tier` | リスク階層 | `A`（既定選択）/ `B`（要確認・既定未選択）/ `C`（提示のみ・選択不可） |
 | `RuleKind` | 処理方式 | `directory`（隔離庫へ移動、undo 可）/ `command`（外部コマンド実行、undo 不可）/ `report`（計測と表示のみ） |
 | `PathsFrom` | 対象の場所をツールに聞く指定 | `command: CommandSpec`（場所を答えるコマンド）, `subpaths: [String]`（その下の実際の格納場所）。同じルールの `paths` は、ツールが答えられないときの控えとして使う |
-| `MeasureSpec` | `command` 型の対象量の測り方 | `kind: paths \| commandPath \| dockerReclaimable \| simctlUnavailable`, `paths: [String]?`, `command: CommandSpec?` |
+| `MeasureSpec` | `command` 型の対象量の測り方 | `kind: paths \| commandPath \| dockerReclaimable \| simctlUnavailable \| simctlRuntimes`, `paths: [String]?`, `command: CommandSpec?` |
 | `CommandSpec` | 外部コマンド 1 件 | `executable: String`（絶対パスまたは PATH 探索名）, `arguments: [String]`, `expectSuccess: Bool`（既定 true） |
 | `ScanItem` | スキャン結果 1 件 | `ruleId: String`, `tier: Tier`, `title: String`, `bytes: Int64`（実割当サイズ合計）, `fileCount: Int`, `paths: [String]`, `state: ItemState`, `reason: String?`, `dataless: Bool`, `cacheHit: Bool`, `sizeKnown: Bool`（false は「不明」であり 0 バイトではない） |
 | `ItemState` | 項目の状態 | `ready` / `blocked`（権限で測定不能）/ `skipped`（対象なし・ツール未検出・条件未達） |

@@ -118,6 +118,13 @@ struct ChunkView: View {
                     .font(Tokens.body(12))
                     .foregroundStyle(Tokens.ink)
                     .fixedSize(horizontal: false, vertical: true)
+                // 外部ツールに任せる項目は、何が消えるのかを 1 件ずつ見せる（装飾しない）。
+                ForEach(item.details, id: \.self) { line in
+                    Text("・" + line)
+                        .font(Tokens.body(12))
+                        .foregroundStyle(Tokens.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 // どこにあるものなのかを、選ぶ前に見せる。
                 if let first = item.paths.first {
                     Text(

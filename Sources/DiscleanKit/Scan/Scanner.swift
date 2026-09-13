@@ -28,13 +28,16 @@ public struct ScanItem: Codable, Sendable, Equatable {
     public let sizeKnown: Bool
     /// 対象の場所が多すぎて数えきれなかった。見せている量は実際より少ない。
     public let pathsTruncated: Bool
+    /// 実行すると何が消えるのかを 1 件 1 行で（外部ツールに任せる項目で、中身を場所で示せないとき）。
+    public let details: [String]
 
     public init(
         ruleId: String, tier: Tier, title: String, bytes: Int64, fileCount: Int, paths: [String],
         state: ItemState, reason: String?, dataless: Bool, cacheHit: Bool, whatIsLost: String,
         manualSteps: String?, kind: RuleKind, undoable: Bool, sizeKnown: Bool,
-        pathsTruncated: Bool = false
+        pathsTruncated: Bool = false, details: [String] = []
     ) {
+        self.details = details
         self.ruleId = ruleId
         self.tier = tier
         self.title = title
@@ -186,12 +189,19 @@ public struct Scanner: Sendable {
             }
         }
 
+        // 起動中のアプリがあると実行時に必ず見送られる。ディレクトリ型と同じく、候補として数えない。
+        if let running = runningApp(in: rule.requiresQuitApps ?? []) {
+            return makeItem(
+                rule: rule, japanese: japanese, measurement: PathMeasurement(),
+                state: .skipped, reason: "app-running:\(running)")
+        }
+
         // 実行前に量を測る。測れないルールだけが「実行してみるまで不明」になる。
         // スキャン中の測定には上限を置く。遅いツール 1 つでスキャン全体を止めない。
         // 測れなければ「不明」として扱い、0 バイトとは区別する。
         guard let spec = rule.measure,
-            let bytes = CommandSizeProbe.measure(
-                spec, home: env.home, timeoutSeconds: CommandSizeProbe.scanTimeoutSeconds,
+            let measured = CommandSizeProbe.measureDetailed(
+                spec, home: env.home, japanese: japanese, timeoutSeconds: CommandSizeProbe.scanTimeoutSeconds,
                 isCancelled: isCancelled)
         else {
             return makeItem(
@@ -199,13 +209,16 @@ public struct Scanner: Sendable {
                 state: .ready, reason: nil, sizeKnown: false)
         }
         var measurement = PathMeasurement()
-        measurement.bytes = bytes
+        measurement.bytes = measured.bytes
+        measurement.paths = measured.paths
         // 空なら実行する意味がない。理由を付けて外す。
-        if bytes == 0 {
+        if measured.bytes == 0 {
             return makeItem(
                 rule: rule, japanese: japanese, measurement: measurement, state: .skipped, reason: "empty")
         }
-        return makeItem(rule: rule, japanese: japanese, measurement: measurement, state: .ready, reason: nil)
+        return makeItem(
+            rule: rule, japanese: japanese, measurement: measurement, state: .ready, reason: nil,
+            details: measured.details)
     }
 
     private static func measureDirectoryRule(
@@ -346,7 +359,7 @@ public struct Scanner: Sendable {
 
     private static func makeItem(
         rule: Rule, japanese: Bool, measurement: PathMeasurement, state: ItemState, reason: String?,
-        sizeKnown: Bool = true, pathsTruncated: Bool = false
+        sizeKnown: Bool = true, pathsTruncated: Bool = false, details: [String] = []
     ) -> ScanItem {
         ScanItem(
             ruleId: rule.id, tier: rule.tier, title: rule.displayTitle(japanese: japanese),
@@ -354,7 +367,7 @@ public struct Scanner: Sendable {
             state: state, reason: reason, dataless: measurement.dataless, cacheHit: measurement.cacheHit,
             whatIsLost: rule.displayWhatIsLost(japanese: japanese), manualSteps: rule.manualSteps,
             kind: rule.kind, undoable: rule.kind == .directory, sizeKnown: sizeKnown,
-            pathsTruncated: pathsTruncated)
+            pathsTruncated: pathsTruncated, details: details)
     }
 }
 

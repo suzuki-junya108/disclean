@@ -14,6 +14,9 @@ public struct MeasureSpec: Codable, Sendable, Equatable {
         case dockerReclaimable
         /// 現在の Xcode が対応しないシミュレータのデバイスだけを測る。
         case simctlUnavailable
+        /// `simctl runtime delete ... --dry-run` が挙げたシミュレータ本体と、その共有キャッシュを測る。
+        /// `command` は必ず dry-run にする（`--dry-run` が無ければ測らない）。`paths` は共有キャッシュの置き場所。
+        case simctlRuntimes
     }
 
     public let kind: Kind
@@ -27,6 +30,21 @@ public struct MeasureSpec: Codable, Sendable, Equatable {
     }
 }
 
+/// 測った結果。量に加えて、消す前に読ませたい補足と、対象の場所を持つ。
+public struct CommandMeasurement: Sendable, Equatable {
+    public let bytes: Int64
+    /// 何が消えるのかを 1 件 1 行で（例: シミュレータ本体の名前と最後に使った日）。
+    public let details: [String]
+    /// 実在する対象の場所（中身を見せられる場合だけ）。
+    public let paths: [String]
+
+    public init(bytes: Int64, details: [String] = [], paths: [String] = []) {
+        self.bytes = bytes
+        self.details = details
+        self.paths = paths
+    }
+}
+
 /// `MeasureSpec` に従って対象量を測る。測れない場合は nil を返す（0 と区別する）。
 public enum CommandSizeProbe {
     /// スキャン中に許す測定時間。実行時（apply）はルールの timeoutSeconds に従う。
@@ -36,10 +54,22 @@ public enum CommandSizeProbe {
         _ spec: MeasureSpec, home: String, timeoutSeconds: Int = 20,
         isCancelled: @Sendable () -> Bool = { false }
     ) -> Int64? {
+        measureDetailed(
+            spec, home: home, japanese: false, timeoutSeconds: timeoutSeconds, isCancelled: isCancelled)?.bytes
+    }
+
+    public static func measureDetailed(
+        _ spec: MeasureSpec, home: String, japanese: Bool, timeoutSeconds: Int = 20,
+        isCancelled: @Sendable () -> Bool = { false }
+    ) -> CommandMeasurement? {
         switch spec.kind {
         case .paths:
             guard let paths = spec.paths, !paths.isEmpty else { return nil }
-            return measurePaths(paths.map { Expand.tilde($0, home: home) }, isCancelled: isCancelled)
+            let expanded = paths.map { Expand.tilde($0, home: home) }
+            var st = stat()
+            return CommandMeasurement(
+                bytes: measurePaths(expanded, isCancelled: isCancelled),
+                paths: expanded.filter { lstat($0, &st) == 0 })
 
         case .commandPath:
             guard let command = spec.command else { return nil }
@@ -50,13 +80,14 @@ public enum CommandSizeProbe {
                 .split(separator: "\n").first
                 .map { $0.trimmingCharacters(in: .whitespaces) } ?? ""
             guard path.hasPrefix("/") || path.hasPrefix("~") else { return nil }
-            return measurePaths([Expand.tilde(path, home: home)], isCancelled: isCancelled)
+            return CommandMeasurement(
+                bytes: measurePaths([Expand.tilde(path, home: home)], isCancelled: isCancelled))
 
         case .dockerReclaimable:
             guard let command = spec.command else { return nil }
             let result = CommandRunner.run(command, timeoutSeconds: timeoutSeconds)
             guard result.succeeded else { return nil }
-            return dockerReclaimable(result.standardOutput)
+            return dockerReclaimable(result.standardOutput).map { CommandMeasurement(bytes: $0) }
 
         case .simctlUnavailable:
             guard let command = spec.command else { return nil }
@@ -64,7 +95,18 @@ public enum CommandSizeProbe {
             guard result.succeeded else { return nil }
             let paths = unavailableSimulatorPaths(result.standardOutput, home: home)
             // 対応するデバイスが 1 つも無いなら「0 バイト」と分かっている状態。
-            return measurePaths(paths, isCancelled: isCancelled)
+            return CommandMeasurement(bytes: measurePaths(paths, isCancelled: isCancelled))
+
+        case .simctlRuntimes:
+            guard let command = spec.command,
+                let targets = SimulatorRuntimes.targets(
+                    dryRun: command, cacheRoots: spec.paths ?? [SimulatorRuntimes.defaultCacheRoot],
+                    timeoutSeconds: timeoutSeconds, isCancelled: isCancelled)
+            else { return nil }
+            // 実測では、本体を 1 つ消すと本体の量と共有キャッシュの量の合計だけ空きが増えた。
+            return CommandMeasurement(
+                bytes: targets.reduce(0) { $0 + $1.totalBytes },
+                details: targets.map { $0.describe(japanese: japanese) })
         }
     }
 
