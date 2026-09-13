@@ -112,6 +112,19 @@ npm 10 は `npm config get cache` を「保護された項目」として拒み�
 | `commandPath` | コマンドの標準出力をパスとして扱い、そのディレクトリを測る | `{"kind":"commandPath","command":{"executable":"brew","arguments":["--cache"]}}` |
 | `dockerReclaimable` | `docker system df` の「回収可能」量を読む | `{"kind":"dockerReclaimable","command":{"executable":"docker","arguments":["system","df","--format","{{json .}}"]}}` |
 | `simctlUnavailable` | 対応ランタイムが無いシミュレータのデバイスだけを測る | `{"kind":"simctlUnavailable","command":{"executable":"/usr/bin/xcrun","arguments":["simctl","list","devices","--json"]}}` |
+| `simctlRuntimes` | `simctl runtime delete ... --dry-run` が挙げたシミュレータ本体の量と、その共有キャッシュ（`paths` の下）を足す | `{"kind":"simctlRuntimes","command":{"executable":"/usr/bin/xcrun","arguments":["simctl","runtime","delete","--outdated","--dry-run"]},"paths":["/Library/Developer/CoreSimulator/Caches/dyld"]}` |
+
+`simctlRuntimes` の `command` は**必ず dry-run** にします。引数に `--dry-run`（または `-n`）が無いと、
+量を測るつもりで本体を消してしまうため、**実行せずに「不明」として扱います**。
+何が消えるかは Apple の simctl 自身に答えさせ、ディスクリンは選び方をまねません（見せた量と実際に減る量をずらさないため）。
+`paths` は読むだけの場所で、ホームの外（`/Library`）でも構いません。
+
+量は「本体の `sizeBytes` ＋ その本体の共有キャッシュ」です。2026-09-13 に iOS 26.1 のベータ版（23B5059e）を
+1 つ消した実測では、`sizeBytes` 8.7GB と共有キャッシュ 3.8GB が両方消え、空き容量は 12.5GB 増えました。
+本体の量だけでは、実際に空く量を 3〜4GB 少なく見せてしまいます。
+
+見積もりには、消える本体ごとの 1 行（名前・量・最後に使った日・使えなくなる端末の数）が付き、
+`scan --json` の `details` と、確認画面に出ます。
 
 - 測った結果が **0 バイトなら、そのルールは `skipped(reason: "empty")` になり実行されません**（空のキャッシュを掃除しに行かない）。
 - `measure` を持たないルールは「不明」として表示され、**0 バイトとは区別されます**（合計には「＋ 実行後に判明する N 件」と添えます）。

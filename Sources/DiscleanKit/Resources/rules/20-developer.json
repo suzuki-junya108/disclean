@@ -76,6 +76,148 @@
     }
   },
   {
+    "id": "simulator-runtimes-outdated",
+    "title": "Outdated simulator runtimes",
+    "titleJa": "古いビルドのシミュレータ本体",
+    "tier": "A",
+    "kind": "command",
+    "detect": {
+      "executable": "/usr/bin/xcrun",
+      "arguments": [
+        "simctl",
+        "runtime",
+        "list",
+        "-j"
+      ]
+    },
+    "command": {
+      "executable": "/usr/bin/xcrun",
+      "arguments": [
+        "simctl",
+        "runtime",
+        "delete",
+        "--outdated"
+      ]
+    },
+    "requiresQuitApps": [
+      "com.apple.iphonesimulator"
+    ],
+    "whatIsLost": "Simulator OS images that have a newer build of the same version installed, with their shared caches. Devices keep working on the newer build. Cannot be undone; restoring means downloading it again.",
+    "whatIsLostJa": "同じ版の新しいビルドが入っている、古いシミュレータ本体とその共有キャッシュです。端末は新しいビルドでそのまま動きます。元には戻せません（戻すには再ダウンロードが要ります）。",
+    "timeoutSeconds": 600,
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84",
+    "measure": {
+      "kind": "simctlRuntimes",
+      "command": {
+        "executable": "/usr/bin/xcrun",
+        "arguments": [
+          "simctl",
+          "runtime",
+          "delete",
+          "--outdated",
+          "--dry-run"
+        ]
+      },
+      "paths": [
+        "/Library/Developer/CoreSimulator/Caches/dyld"
+      ]
+    }
+  },
+  {
+    "id": "simulator-runtimes-unused",
+    "title": "Unused simulator runtimes",
+    "titleJa": "しばらく使っていないシミュレータ本体",
+    "tier": "B",
+    "kind": "command",
+    "detect": {
+      "executable": "/usr/bin/xcrun",
+      "arguments": [
+        "simctl",
+        "runtime",
+        "list",
+        "-j"
+      ]
+    },
+    "command": {
+      "executable": "/usr/bin/xcrun",
+      "arguments": [
+        "simctl",
+        "runtime",
+        "delete",
+        "--notUsedSinceDays",
+        "30"
+      ]
+    },
+    "requiresQuitApps": [
+      "com.apple.iphonesimulator"
+    ],
+    "whatIsLost": "Simulator OS images not used in the last 30 days, with their shared caches. Devices on a version with no other build left stop working. Cannot be undone; restoring means downloading it again (about 8 GB each).",
+    "whatIsLostJa": "30 日以上使っていないシミュレータ本体とその共有キャッシュです。ほかのビルドが残らない版の端末は使えなくなります。元には戻せません（戻すには 1 つ 8GB ほどの再ダウンロードが要ります）。",
+    "timeoutSeconds": 900,
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84",
+    "measure": {
+      "kind": "simctlRuntimes",
+      "command": {
+        "executable": "/usr/bin/xcrun",
+        "arguments": [
+          "simctl",
+          "runtime",
+          "delete",
+          "--notUsedSinceDays",
+          "30",
+          "--dry-run"
+        ]
+      },
+      "paths": [
+        "/Library/Developer/CoreSimulator/Caches/dyld"
+      ]
+    }
+  },
+  {
+    "id": "xctest-device-clones",
+    "title": "Parallel testing device clones",
+    "titleJa": "テスト用に複製されたシミュレータ端末",
+    "tier": "B",
+    "kind": "command",
+    "detect": {
+      "executable": "/usr/bin/xcrun",
+      "arguments": [
+        "simctl",
+        "--set",
+        "testing",
+        "list",
+        "devices"
+      ]
+    },
+    "command": {
+      "executable": "/usr/bin/xcrun",
+      "arguments": [
+        "simctl",
+        "--set",
+        "testing",
+        "delete",
+        "all"
+      ]
+    },
+    "requiresQuitApps": [
+      "com.apple.dt.Xcode",
+      "com.apple.iphonesimulator"
+    ],
+    "whatIsLost": "Simulator copies Xcode makes for parallel testing. Xcode creates them again on the next parallel test run. Removed through simctl so the simulator service stays consistent; cannot be undone.",
+    "whatIsLostJa": "Xcode が並列テストのために複製したシミュレータ端末です。次に並列テストを動かすと作り直されます。シミュレータの管理役と食い違わないよう simctl を通して消すため、元には戻せません。",
+    "timeoutSeconds": 300,
+    "minMacOS": "14.0",
+    "verifiedOn": "25F84",
+    "measure": {
+      "kind": "paths",
+      "paths": [
+        "~/Library/Developer/XCTestDevices"
+      ]
+    }
+  },
+  {
     "id": "swiftpm-cache",
     "title": "SwiftPM cache",
     "titleJa": "SwiftPM のキャッシュ",

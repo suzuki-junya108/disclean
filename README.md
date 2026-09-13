@@ -30,6 +30,7 @@ disclean undo --last  # 直前の実行を取り消す
 disclean purge      # 隔離庫から完全に削除する（戻せなくなります）
 disclean report     # ディスクリンが触らない大きなものを見るだけ表示する
 disclean report --unknown   # ルールがどれも見ていない大きな場所を探す（消しません）
+disclean report --system    # システムデータの中身と、減らし方を見る（消しません）
 disclean big        # 書類の中の大きいものを探す（読むだけ。--move で選んだものだけ隔離庫へ）
 disclean history    # これまでの操作の記録
 disclean update     # 掃除ルールの更新を確認・適用する
@@ -80,13 +81,13 @@ disclean big --move ~/Downloads/big.dmg --yes   # 選んだものだけ隔離庫
 
 ### 何を見ているか
 
-同梱ルールは 105 本です（Tier A 38 / B 50 / 見るだけ 17）。
+同梱ルールは 108 本です（Tier A 39 / B 52 / 見るだけ 17）。
 
 ルールに無い場所は `disclean report --unknown` で見つけられます（読み取りだけ）。
 「大きいのにルールが見ていない場所」を一覧にするので、ルールの取りこぼしがそのまま分かります。
 
 - **パッケージ管理**: npm / pnpm / Yarn / Homebrew / uv / pip / Composer / NuGet / Maven / sbt・Ivy・Coursier / RubyGems / Bun / Deno / Go / Cargo / CocoaPods / Carthage / pub (Flutter) / Conan
-- **ビルドまわり**: Xcode（DerivedData・キャッシュ・実機サポート・SwiftUI プレビュー）/ シミュレータ（端末内アプリのキャッシュ）/ Gradle / Android / node-gyp / Electron / ccache・sccache / Docker
+- **ビルドまわり**: Xcode（DerivedData・キャッシュ・実機サポート・SwiftUI プレビュー）/ シミュレータ（端末内アプリのキャッシュ・古いビルドや使っていない本体・テスト用の複製端末）/ Gradle / Android / node-gyp / Electron / ccache・sccache / Docker
 - **アプリ**: ブラウザ各種（Safari / Chrome / Edge / Brave / Firefox / Arc / Chromium 系）/ Slack・Discord・Teams・Zoom・Telegram・WhatsApp / Notion・Figma・Sketch / VS Code / Steam / Google ドライブ / Dropbox / Spotify・ミュージック / Adobe / Finder のサムネイル
 - **見るだけ（消しません）**: ゴミ箱 / ダウンロード / iPhone のバックアップ / Ollama・Hugging Face などのモデル / Android エミュレータ / シミュレータの端末一覧 / nvm・pyenv 等のランタイム / conda の環境 / エディタの拡張機能 / Final Cut・Logic の作業ファイル
 
@@ -104,7 +105,22 @@ disclean big --move ~/Downloads/big.dmg --yes   # 選んだものだけ隔離庫
 
 - ディレクトリを隔離庫へ移す種類（Xcode の DerivedData 等）は `disclean undo` で戻せます。
 - パッケージマネージャのキャッシュ（npm / pnpm / Yarn / Homebrew / uv / pip）も隔離庫を通るため戻せます。
-- 外部ツールに任せる種類（Docker / シミュレータ）は**取り消せません**。実行前の確認画面で明示します。
+- 外部ツールに任せる種類（Docker / シミュレータ本体・端末）は**取り消せません**。実行前の確認画面で明示します。
+
+### システムデータを減らす
+
+macOS の「システムデータ」は、ホームの外にも広がっています。ディスクリンは**ホームの外を消しません**。
+その代わり `disclean report --system`（GUI では「片づける」の一覧の下）で、中身を読むだけで測り、
+項目ごとに「消さない理由」と「自分でどう減らせるか」を出します。
+
+| 中身 | ディスクリンの扱い |
+|---|---|
+| シミュレータ本体（iOS などのランタイム） | Apple の `simctl` を通して片づけられます（古いビルド = A、30 日使っていない = B）。取り消せません |
+| テスト用に複製されたシミュレータ端末 | `simctl` を通して片づけられます（B）。取り消せません |
+| 仮想メモリ・スリープ用ファイル・macOS アップデート・ログ・同期の作業領域・一時置き場・purgeable | 見るだけ。減らし方を案内します |
+
+シミュレータ本体の量は、本体に共有キャッシュを足して出します。本体 1 つ（8.7GB）を消した実測で、
+空きは 12.5GB 増えました。本体の量だけでは、実際に空く量を少なく見せてしまうためです。
 
 ## 掃除ルールの更新について
 

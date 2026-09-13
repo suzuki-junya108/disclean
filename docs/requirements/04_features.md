@@ -28,6 +28,8 @@
 | F-19 | OS 変化の検知とルールの OS 条件評価 | Must | MVP | `swift test --filter OSDrift` 全 PASS, AT-018 PASS |
 | F-20 | 対象と隔離物の中身をファイル単位で見る（なかみ） | Must | v0.3 | `swift test --filter FileInventory`・`--filter InventoryBrowser` 全 PASS, AT-019 PASS |
 | F-21 | ルールが見ていない大きな場所を知らせる（取りこぼしの可視化） | Must | v0.8 | `swift test --filter Uncovered` 全 PASS, AT-021 PASS |
+| F-22 | シミュレータ本体とテスト用の複製端末を simctl 経由で片づける | Must | v1.2 | `swift test --filter SimulatorRuntime` 全 PASS, AT-023 PASS |
+| F-23 | システムデータの中身を見せる（見るだけ・消さない理由と減らし方） | Must | v1.2 | `swift test --filter SystemData` 全 PASS, AT-024 PASS |
 
 **共通の終了コード規約**（全 CLI サブコマンド）
 
@@ -814,6 +816,60 @@
   | 除外設定に入っている場所 | `canInspect` | 報告しない（`UncoveredTests`） |
   | 一部だけ対象の親 | 1 段下降 | 親ではなく、対象外の子を報告する（`UncoveredTests`） |
   | 実行後 | ファイル数 | 1 つも消えていない（AT-021） |
+
+#### F-22: シミュレータ本体とテスト用の複製端末を片づける
+
+- **Trigger**: `disclean scan` / `apply`、GUI「片づける」の一覧（同梱ルール 3 本）
+- **背景**: macOS の「システムデータ」で最も大きかったのはシミュレータ本体だった（2026-09-13 の実測で
+  `/Library/Developer/CoreSimulator` 約 91GB、同じ iOS 26.1 のビルドが 2 つ入っていた）。
+  本体はホームの外にあり、NG2（特権昇格しない）と PathGuard（ホーム外は消さない）を崩さずに扱う必要がある
+- **方針**: 自分では消さず、Apple の `simctl` に任せる（`command` 型）。何が消えるかは `--dry-run` に答えさせる
+- **ルール**:
+  | id | Tier | コマンド | 理由 |
+  |---|---|---|---|
+  | `simulator-runtimes-outdated` | A | `simctl runtime delete --outdated` | 同じ版の新しいビルドが残り、端末はそのまま動く |
+  | `simulator-runtimes-unused` | B | `simctl runtime delete --notUsedSinceDays 30` | 版ごと消えると端末が使えなくなることがある |
+  | `xctest-device-clones` | B | `simctl --set testing delete all` | 並列テストの複製。フォルダを移すだけではシミュレータの管理役が古い一覧を持ち続けた（実測）ため、simctl を通す |
+- **量の測り方**: `measure.kind = simctlRuntimes`（本体の `sizeBytes` ＋ 共有キャッシュ）。本体 1 つを消した実測で、
+  空き容量の増加（12.5GB）が本体（8.7GB）と共有キャッシュ（3.8GB）の合計と一致した
+- **安全**:
+  - 3 本とも**取り消せない**。スキャン結果・確認画面・完了画面に「取り消せません」を出す
+  - 測り方に `--dry-run` が無ければ実行しない（`SimulatorRuntimeRuleTests`・`SimulatorRuntimesTests`）
+  - シミュレータ（Xcode）が起動中なら見送る（`requiresQuitApps`）。スキャンの時点でも候補にしない
+- **受入基準**:
+  | 状況 | 判定 | 結果 |
+  |------|------|------|
+  | 実行前 | 見積もり | 本体＋共有キャッシュの量と、消える本体ごとの 1 行を出す（AT-023） |
+  | 実行後 | 前後の差 | 見せた量と同じだけ空いたと報告する（AT-023） |
+  | 新しいビルド | 残存 | 消えない（AT-023） |
+  | dry-run でない測り方 | 実行有無 | 実行せず「不明」（`SimulatorRuntimeRuleTests`） |
+  | 対象なし | 状態 | `skipped(reason: "empty")`（AT-023） |
+
+#### F-23: システムデータの中身を見せる
+
+- **Trigger**: `disclean report --system` / GUI「片づける」の一覧下部「システムデータをしらべる」
+- **Postconditions**: ファイルシステムを変更しない。**この機能からは削除できない**
+- **背景**: 「システムデータ」の多くは消してはいけないもの（スワップ・同期の作業領域・ログ）。
+  黙っていると「なぜ減らないのか」が分からないため、量と一緒に**消さない理由と減らし方**を出す
+- **測る場所**: コードに固定する（`SystemDataLocations.live`）。配信されるルールでは広げない
+  （ホームの外を読む入口を、遠隔から書き換えられる場所に置かないため）
+  | id | 測り方 |
+  |---|---|
+  | `simulator-runtimes` | `simctl runtime list -j` の合計 ＋ 共有キャッシュ（Xcode が無ければ「なし」） |
+  | `swap` | `vm.swapusage` の使用量 |
+  | `sleep-image` | `/private/var/vm/sleepimage` の実割当 |
+  | `software-updates` | `/Library/Updates` |
+  | `system-logs` | `/private/var/db/diagnostics`・`/private/var/db/uuidtext` |
+  | `file-provider` | `~/Library/Application Support/FileProvider`・一時置き場の `com.apple.fileproviderd` |
+  | `user-temporary` | ユーザーの一時置き場とキャッシュ（`/private/var/folders`、同期の分は除く） |
+  | `purgeable` | 空き容量の「重要な用途向け」と「即時」の差、ローカルスナップショットの数 |
+- **受入基準**:
+  | 状況 | 判定 | 結果 |
+  |------|------|------|
+  | 全項目 | 説明 | 「消さない理由」「減らし方」を持つ（AT-024・`SystemDataTests`） |
+  | 読めない場所 | 量 | `null`（0 と区別）・「読めません」（`SystemDataTests`） |
+  | 同期の作業領域 | 二重計上 | 一時置き場から除く（`SystemDataTests`） |
+  | 実行後 | ファイル一覧 | 何も増えず、何も消えない（AT-024） |
 
 #### F-18: 本体バージョンの更新検知とインストール導線
 

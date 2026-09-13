@@ -114,7 +114,9 @@ public struct UncoveredScanner: Sendable {
     private func coveredPaths(catalog: RuleCatalog) -> [String] {
         var paths: [String] = []
         for rule in catalog.rules {
-            for raw in rule.paths ?? [] {
+            // 外部ツールに任せるルールでも、量を測っている場所は「見ている」場所として扱う。
+            let measured = rule.measure?.kind == .paths ? rule.measure?.paths ?? [] : []
+            for raw in (rule.paths ?? []) + measured {
                 let expanded = PathGuard.normalize(Expand.tilde(raw, home: env.home))
                 if PathPattern.hasWildcard(expanded) {
                     paths.append(contentsOf: PathPattern.expand(expanded))

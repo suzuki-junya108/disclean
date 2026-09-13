@@ -90,13 +90,23 @@ struct ReportCommand: AsyncParsableCommand {
     @Flag(name: .long, help: "ルールがどれも見ていない大きな場所を探す（消しません）")
     var unknown = false
 
+    @Flag(name: .long, help: "システムデータの中身と、減らし方を見る（消しません）")
+    var system = false
+
     @Option(name: .long, help: "--unknown で報告する下限（MB）")
     var minMegabytes: Int = 200
 
     func run() async throws {
         let context = Context(noUpdate: options.noUpdate)
+        if unknown && system {
+            throw fail(.argumentError, "report: --unknown and --system cannot be used together")
+        }
         if unknown {
             try await runUnknown(context: context)
+            return
+        }
+        if system {
+            await runSystem(context: context)
             return
         }
         let scanner = Scanner(env: context.env, config: context.config)

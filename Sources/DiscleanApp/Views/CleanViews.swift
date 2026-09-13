@@ -61,6 +61,7 @@ struct ResultListView: View {
                         }
                     }
                     UncoveredSection(model: model)
+                    SystemDataSection(model: model)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }

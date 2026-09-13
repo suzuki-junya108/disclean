@@ -19,6 +19,10 @@ struct ScanRenderer {
         let mark = item.undoable ? "" : out.styled(out.japanese ? " 取り消せません" : " not undoable", .yellow)
         out.print("  \(pad(item.ruleId, 26)) \(pad(size, 10)) \(item.title)\(mark)")
         out.print(out.styled("    \(item.whatIsLost)", .dim))
+        // 外部ツールに任せる項目は、場所の代わりに「何が消えるか」を 1 件ずつ出す。
+        for line in item.details {
+            out.print("    - \(line)")
+        }
         if item.state == .blocked {
             out.print(
                 out.styled(
@@ -75,20 +79,7 @@ struct ScanRenderer {
                 : " + \(unknown) item(s) measured after running"
         }
         out.print(out.styled(totalLine, .bold))
-
-        // 「候補に出ていないもの」を黙って消さない。理由ごとに件数を添える。
-        let setAside = result.items.filter { $0.state == .skipped && $0.tier != .c }
-        if !setAside.isEmpty {
-            let grouped = Dictionary(grouping: setAside, by: { $0.reason ?? "unknown" })
-            let summary =
-                grouped
-                .sorted { $0.value.count > $1.value.count }
-                .map { "\(SkipReason.describe($0.key, japanese: out.japanese)) \($0.value.count) 件" }
-                .joined(separator: " / ")
-            out.print(
-                out.styled(
-                    (out.japanese ? "対象外: " : "not listed: ") + summary, .dim))
-        }
+        renderSetAside(result: result)
         renderCapacity(result.capacity)
         out.print(
             out.styled(
@@ -101,6 +92,8 @@ struct ScanRenderer {
     private func renderEmpty(result: ScanResult) {
         out.print()
         out.print(out.japanese ? "回収可能な項目はありません。" : "Nothing to reclaim.")
+        // 全部が見送りだったときこそ、理由を出さないと「対象がない」と誤読される。
+        renderSetAside(result: result)
         renderCapacity(result.capacity)
         out.print(
             out.styled(
@@ -108,6 +101,20 @@ struct ScanRenderer {
                     ? "大きいものを見るだけなら disclean report を実行してください。"
                     : "Run `disclean report` to see large items disclean never deletes.",
                 .cyan))
+    }
+
+    /// 「候補に出ていないもの」を黙って消さない。理由ごとに件数を添える。
+    private func renderSetAside(result: ScanResult) {
+        let setAside = result.items.filter { $0.state == .skipped && $0.tier != .c }
+        guard !setAside.isEmpty else { return }
+        let summary = Dictionary(grouping: setAside, by: { $0.reason ?? "unknown" })
+            .sorted { $0.value.count > $1.value.count }
+            .map { reason, items in
+                let count = out.japanese ? "\(items.count) 件" : "\(items.count)"
+                return "\(SkipReason.describe(reason, japanese: out.japanese)) \(count)"
+            }
+            .joined(separator: " / ")
+        out.print(out.styled((out.japanese ? "対象外: " : "not listed: ") + summary, .dim))
     }
 
     private func renderCapacity(_ sample: CapacitySample) {

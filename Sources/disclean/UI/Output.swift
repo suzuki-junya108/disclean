@@ -102,6 +102,7 @@ enum JSONOut {
             "undoable": item.undoable,
             "sizeKnown": item.sizeKnown,
             "whatIsLost": item.whatIsLost,
+            "details": item.details,
         ]
         if let reason = item.reason { dict["reason"] = reason }
         if let manual = item.manualSteps { dict["manualSteps"] = manual }
