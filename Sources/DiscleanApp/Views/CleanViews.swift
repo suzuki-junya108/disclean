@@ -60,6 +60,9 @@ struct ResultListView: View {
                             }
                         }
                     }
+                    if let result, !result.heldByRunningApp.isEmpty {
+                        HeldByAppSection(model: model, items: result.heldByRunningApp)
+                    }
                     UncoveredSection(model: model)
                     SystemDataSection(model: model)
                 }
@@ -342,6 +345,65 @@ struct PermissionGuideView: View {
             .padding(16)
         }
         .padding(.bottom, 16)
+    }
+}
+
+/// アプリが起動中のため、今回は選べないもの。件数だけでは「終了すれば大きく空く」ことが伝わらないので、
+/// アプリごとに量を並べ、何をすれば選べるようになるかを書く。
+struct HeldByAppSection: View {
+    @Environment(\.colorScheme) private var scheme
+    let model: AppModel
+    let items: [ScanItem]
+
+    var body: some View {
+        let surface = Surface(scheme: scheme)
+        let byApp = Dictionary(grouping: items) { SkipReason.runningAppBundleId($0.reason) ?? "" }
+            .sorted { $0.key < $1.key }
+        let measured = items.filter(\.sizeKnown).reduce(Int64(0)) { $0 + $1.bytes }
+        VStack(alignment: .leading, spacing: 10) {
+            Text("アプリを終了すると空けられるもの")
+                .font(Tokens.display(28))
+                .foregroundStyle(surface.text)
+            Text("使っているアプリのデータなので、いまは選べません。アプリを終了してから「もう一度しらべる」を押すと、上の一覧に出てきます。")
+                .font(Tokens.body(13))
+                .foregroundStyle(surface.text)
+                .fixedSize(horizontal: false, vertical: true)
+            HardCard(fill: Tokens.paper) {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(Format.bytes(measured))
+                            .font(Tokens.weightedData(26, bytes: measured))
+                        Text("あと \(items.count) 件")
+                            .font(Tokens.body(13))
+                    }
+                    ForEach(byApp, id: \.key) { bundleId, appItems in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("\(SkipReason.appName(bundleId: bundleId)) が起動中")
+                                .font(Tokens.bodyBold(14))
+                            ForEach(appItems.sorted { $0.bytes > $1.bytes }, id: \.ruleId) { item in
+                                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                    Text(item.sizeKnown ? Format.bytes(item.bytes) : "実行後に判明")
+                                        .font(Tokens.data(11))
+                                        .frame(width: 84, alignment: .leading)
+                                    Text(item.title)
+                                        .font(Tokens.body(12))
+                                    // 取り消せるかどうかは安全に関わるので、飾らず平文で書く。
+                                    if !item.undoable {
+                                        Text("取り消せません")
+                                            .font(Tokens.bodyBold(12))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                .foregroundStyle(Tokens.ink)
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            Button("もう一度しらべる") { Task { await model.scan() } }
+                .buttonStyle(CandyButtonStyle(fill: Tokens.sky))
+        }
     }
 }
 

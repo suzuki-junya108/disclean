@@ -67,6 +67,10 @@ public struct ScanResult: Sendable {
     public var totalBytes: Int64 { items.filter { $0.state == .ready }.reduce(0) { $0 + $1.bytes } }
     public var readyItems: [ScanItem] { items.filter { $0.state == .ready } }
     public var hasBlocked: Bool { items.contains { $0.state == .blocked } }
+    /// アプリが起動中のため見送った項目。終了すれば候補に戻る。
+    public var heldByRunningApp: [ScanItem] {
+        items.filter { $0.state == .skipped && SkipReason.runningAppBundleId($0.reason) != nil }
+    }
 }
 
 /// 読み取り専用のスキャン。ファイルシステムへの書き込みはスキャンキャッシュのみ。
@@ -167,13 +171,33 @@ public struct Scanner: Sendable {
         let japanese = input.env.isJapanese
 
         // command 型: ツールの有無だけを確かめる。回収量は実行してみるまで分からない。
-        if rule.kind == .command {
-            return MeasuredItem(
+        let measured =
+            rule.kind == .command
+            ? MeasuredItem(
                 item: measureCommandRule(
                     rule, env: input.env, japanese: japanese, isCancelled: isCancelled),
                 cacheUpdates: [])
-        }
-        return measureDirectoryRule(input, isCancelled: isCancelled)
+            : measureDirectoryRule(input, isCancelled: isCancelled)
+        return holdForRunningApp(measured, rule: rule)
+    }
+
+    /// 起動中のアプリがあると実行時に必ず見送られるため、候補としては数えない。
+    /// ただし量は測ったまま残す。量を捨てると、アプリを終了すれば空く最大の候補に気づけなくなる。
+    /// 測るのは読み取りだけなので、起動中でも安全に行える。
+    private static func holdForRunningApp(_ measured: MeasuredItem, rule: Rule) -> MeasuredItem {
+        guard measured.item.state == .ready,
+            let running = runningApp(in: rule.requiresQuitApps ?? [])
+        else { return measured }
+        let item = measured.item
+        return MeasuredItem(
+            item: ScanItem(
+                ruleId: item.ruleId, tier: item.tier, title: item.title, bytes: item.bytes,
+                fileCount: item.fileCount, paths: item.paths, state: .skipped,
+                reason: SkipReason.appRunningPrefix + running, dataless: item.dataless,
+                cacheHit: item.cacheHit, whatIsLost: item.whatIsLost, manualSteps: item.manualSteps,
+                kind: item.kind, undoable: item.undoable, sizeKnown: item.sizeKnown,
+                pathsTruncated: item.pathsTruncated, details: item.details),
+            cacheUpdates: measured.cacheUpdates)
     }
 
     private static func measureCommandRule(
@@ -187,13 +211,6 @@ public struct Scanner: Sendable {
                     rule: rule, japanese: japanese, measurement: PathMeasurement(),
                     state: .skipped, reason: reason)
             }
-        }
-
-        // 起動中のアプリがあると実行時に必ず見送られる。ディレクトリ型と同じく、候補として数えない。
-        if let running = runningApp(in: rule.requiresQuitApps ?? []) {
-            return makeItem(
-                rule: rule, japanese: japanese, measurement: PathMeasurement(),
-                state: .skipped, reason: "app-running:\(running)")
         }
 
         // 実行前に量を測る。測れないルールだけが「実行してみるまで不明」になる。
@@ -226,15 +243,6 @@ public struct Scanner: Sendable {
     ) -> MeasuredItem {
         let rule = input.entry.rule
         let japanese = input.env.isJapanese
-
-        // 起動中のアプリのデータは実行時に必ず見送られる。候補として数えない。
-        if let running = runningApp(in: rule.requiresQuitApps ?? []) {
-            return MeasuredItem(
-                item: makeItem(
-                    rule: rule, japanese: japanese, measurement: PathMeasurement(),
-                    state: .skipped, reason: "app-running:\(running)"),
-                cacheUpdates: [])
-        }
 
         var measurement = PathMeasurement()
         var blocked = false
