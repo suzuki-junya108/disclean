@@ -79,6 +79,7 @@ struct ScanRenderer {
                 : " + \(unknown) item(s) measured after running"
         }
         out.print(out.styled(totalLine, .bold))
+        renderHeldByRunningApp(result: result)
         renderSetAside(result: result)
         renderCapacity(result.capacity)
         out.print(
@@ -93,6 +94,7 @@ struct ScanRenderer {
         out.print()
         out.print(out.japanese ? "回収可能な項目はありません。" : "Nothing to reclaim.")
         // 全部が見送りだったときこそ、理由を出さないと「対象がない」と誤読される。
+        renderHeldByRunningApp(result: result)
         renderSetAside(result: result)
         renderCapacity(result.capacity)
         out.print(
@@ -103,9 +105,44 @@ struct ScanRenderer {
                 .cyan))
     }
 
+    /// アプリが起動中で見送ったものは、量を付けて 1 件ずつ出す。件数だけだと、
+    /// 終了すれば空く大きな候補があることに気づけない。
+    private func renderHeldByRunningApp(result: ScanResult) {
+        let held = result.heldByRunningApp
+        guard !held.isEmpty else { return }
+        let byApp = Dictionary(grouping: held) { SkipReason.runningAppBundleId($0.reason) ?? "" }
+        let measured = held.filter(\.sizeKnown).reduce(Int64(0)) { $0 + $1.bytes }
+        out.print()
+        out.print(
+            out.styled(
+                out.japanese
+                    ? "アプリを終了すると、あと \(Output.bytes(measured)) 空けられます（\(held.count) 件）"
+                    : "quit these apps to reclaim \(Output.bytes(measured)) more (\(held.count) items)",
+                .green))
+        for (bundleId, items) in byApp.sorted(by: { $0.key < $1.key }) {
+            let name = SkipReason.appName(bundleId: bundleId)
+            out.print(out.japanese ? "  \(name) が起動中:" : "  \(name) is running:")
+            for item in items.sorted(by: { $0.bytes > $1.bytes }) {
+                let size =
+                    item.sizeKnown ? Output.bytes(item.bytes) : (out.japanese ? "実行後に判明" : "known after running")
+                let mark = item.undoable ? "" : out.styled(out.japanese ? " 取り消せません" : " not undoable", .yellow)
+                out.print("    \(pad(item.ruleId, 24)) \(pad(size, 10)) \(item.title)\(mark)")
+            }
+        }
+        out.print(
+            out.styled(
+                out.japanese
+                    ? "  → アプリを終了してから、もう一度 disclean scan を実行してください。"
+                    : "  → quit the app, then run disclean scan again.",
+                .cyan))
+    }
+
     /// 「候補に出ていないもの」を黙って消さない。理由ごとに件数を添える。
+    /// アプリ起動中のものは上で 1 件ずつ出しているので、ここでは数えない。
     private func renderSetAside(result: ScanResult) {
-        let setAside = result.items.filter { $0.state == .skipped && $0.tier != .c }
+        let setAside = result.items.filter {
+            $0.state == .skipped && $0.tier != .c && SkipReason.runningAppBundleId($0.reason) == nil
+        }
         guard !setAside.isEmpty else { return }
         let summary = Dictionary(grouping: setAside, by: { $0.reason ?? "unknown" })
             .sorted { $0.value.count > $1.value.count }

@@ -134,12 +134,12 @@
       } else {
         b.setAttribute("aria-pressed", state[item.id] === "on" ? "true" : "false");
       }
+      // 読み上げの名前は、見えている文字をそのまま先頭に置く（音声で操作する人が、見えた言葉で呼べるように）。
+      // 選択中かどうかは aria-pressed / disabled が伝えるので、名前には重ねない。
       b.setAttribute(
         "aria-label",
-        item.name + "、よくある目安 " + rangeText(item) + " ギガバイト、区分 " +
-        (item.tier === "C" ? "見るだけ" : item.tier) + "、" +
-        (item.tier === "C" ? "選べません" : (state[item.id] === "on" ? "選択中" : "未選択")) +
-        "、ルール " + item.rules + " 本"
+        rangeText(item) + "GB " + item.name + " ルール " + item.rules + " 本 ・ よくある目安、区分 " +
+        (item.tier === "C" ? "見るだけ" : item.tier)
       );
 
       var skin = document.createElement("span");

@@ -31,6 +31,9 @@ import SwiftUI
                 // 一覧の下にある欄を、スクロールせずに撮れるよう単独の窓に出す。
                 showPreviewWindow(SystemDataSection(model: self))
                 Task { await findSystemData() }
+            } else if scenario == "held-card" {
+                // 一覧の下にある欄を、スクロールせずに撮れるよう単独の窓に出す。
+                showPreviewWindow(HeldByAppSection(model: self, items: scanResult?.heldByRunningApp ?? []))
             } else if scenario == "confirm-card" {
                 // シートは窓として撮れないことがあるため、同じ中身を単独の窓に出す。
                 showPreviewWindow(ConfirmSheet(model: self))
@@ -54,6 +57,24 @@ import SwiftUI
             window.orderFront(nil)
             PreviewWindows.keep.append(window)
             print("preview-window \(window.windowNumber)")
+            fflush(stdout)
+            // 画面収録の権限が無いと screencapture で撮れないため、窓の中身を直接 PNG に書き出せるようにする。
+            if let output = ProcessInfo.processInfo.environment["DISCLEAN_PREVIEW_SNAPSHOT"] {
+                Task { @MainActor in
+                    // 測り終えて中身が描かれるまで待ってから書き出す。
+                    try? await Task.sleep(for: .seconds(3))
+                    Self.writeSnapshot(of: window, to: output)
+                }
+            }
+        }
+
+        private static func writeSnapshot(of window: NSWindow, to output: String) {
+            guard let view = window.contentView,
+                let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds)
+            else { return }
+            view.cacheDisplay(in: view.bounds, to: rep)
+            try? rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: output))
+            print("preview-snapshot \(output)")
             fflush(stdout)
         }
 

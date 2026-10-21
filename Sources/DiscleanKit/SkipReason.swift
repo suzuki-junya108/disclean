@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 /// スキップ・失敗の理由を、人が読める言葉にする。
@@ -11,7 +12,22 @@ public enum SkipReason {
         return (japanese ? japaneseTable : englishTable)[reason] ?? reason
     }
 
-    private static let appRunningPrefix = "app-running:"
+    public static let appRunningPrefix = "app-running:"
+
+    /// 「アプリが起動中」の理由なら、そのアプリの bundle ID を返す。
+    public static func runningAppBundleId(_ reason: String?) -> String? {
+        guard let reason, reason.hasPrefix(appRunningPrefix) else { return nil }
+        return String(reason.dropFirst(appRunningPrefix.count))
+    }
+
+    /// bundle ID を、利用者が知っているアプリの名前にする。見つからなければ bundle ID のまま。
+    public static func appName(bundleId: String) -> String {
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) else {
+            return bundleId
+        }
+        let name = FileManager.default.displayName(atPath: url.path)
+        return name.hasSuffix(".app") ? String(name.dropLast(4)) : name
+    }
 
     private static let japaneseTable: [String: String] = [
         "too-recent": "新しすぎます",
