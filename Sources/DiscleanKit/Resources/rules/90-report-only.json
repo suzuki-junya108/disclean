@@ -80,7 +80,35 @@
     ],
     "whatIsLost": "The Linux VM disk, including anything stored inside it.",
     "whatIsLostJa": "Linux の仮想マシンのディスクです。中に置いたものも一緒に消えます。",
-    "manualSteps": "colima stop && colima delete で VM ごと作り直します（中身は失われます）。",
+    "manualSteps": "colima stop && colima delete で VM ごと作り直します（中身は失われます）。Docker Desktop・OrbStack・Colima を重ねて入れているなら、使っていない方をアンインストールすると丸ごと空きます。",
+    "minMacOS": "14.0"
+  },
+  {
+    "id": "docker-desktop-disk",
+    "title": "Docker Desktop disk image",
+    "titleJa": "Docker Desktop のディスクイメージ",
+    "tier": "C",
+    "kind": "report",
+    "paths": [
+      "~/Library/Containers/com.docker.docker/Data/vms"
+    ],
+    "whatIsLost": "The Linux VM disk Docker Desktop runs on, with every image, container and volume inside it. What docker-prune frees is part of this.",
+    "whatIsLostJa": "Docker Desktop が動かす Linux の仮想マシンのディスクです。イメージ・コンテナ・ボリュームがすべて入っています。docker-prune で空くぶんも、この中に含まれます。",
+    "manualSteps": "中の不要なものは disclean apply で docker-prune を選ぶと減らせます。Docker Desktop・OrbStack・Colima を重ねて入れているなら、使っていない方をアンインストールすると丸ごと空きます。",
+    "minMacOS": "14.0"
+  },
+  {
+    "id": "orbstack-data",
+    "title": "OrbStack data",
+    "titleJa": "OrbStack のデータ",
+    "tier": "C",
+    "kind": "report",
+    "paths": [
+      "~/Library/Group Containers/HUAQ24HBR6.dev.orbstack/data"
+    ],
+    "whatIsLost": "The disk OrbStack's containers and Linux machines live on, with everything stored inside them.",
+    "whatIsLostJa": "OrbStack のコンテナと Linux マシンが置かれたディスクです。中に置いたものも一緒に消えます。",
+    "manualSteps": "不要なコンテナやイメージは、OrbStack に切り替えた状態で `docker system prune` を実行すると消せます。使わない Linux マシンは OrbStack の画面から削除します。Docker Desktop・OrbStack・Colima を重ねて入れているなら、使っていない方をアンインストールすると丸ごと空きます。",
     "minMacOS": "14.0"
   },
   {

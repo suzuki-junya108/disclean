@@ -20,7 +20,7 @@ OUT = ROOT / "site/rules.js"
 # ここに載らないものは "everyone"（誰の Mac にもあるもの）として扱う。
 GROUPS = [
     ("xcode", "Xcode / iOS", r"xcode|simulator|coresimulator|simctl|cocoapods|carthage|swiftpm"),
-    ("docker", "Docker / インフラ", r"docker|colima|container-tool|kube|terraform|minikube"),
+    ("docker", "Docker / インフラ", r"docker|colima|orbstack|container-tool|kube|terraform|minikube"),
     ("node", "Web / Node.js", r"npm|pnpm|yarn|bun|deno|node-build|js-build|playwright|cypress|puppeteer|electron"),
     ("python", "Python / データ", r"pip|uv|conda|python-|poetry|pipenv"),
     ("jvm", "Android / JVM", r"gradle|maven|android|scala|nuget|jetbrains|unity"),
